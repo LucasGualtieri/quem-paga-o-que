@@ -19,6 +19,9 @@ Web app de divisão de despesas em grupo. Front estático no GitHub Pages, back-
   screenshots em apps/web/test-results)
 - emuladores: npm run emulators (precisa de Java 21+; app em dev usa eles)
 - protótipo: node scripts/serve-reference.mjs (http://localhost:8000)
+- deploy no staging: npm run deploy:staging (regras + Functions em
+  qpq-staging); o Pages publica o app sozinho a cada push na main.
+  Nunca publique em produção.
 - Hook (.claude/settings.json) já roda typecheck e testes depois de cada
   edição de código; se ele acusar falha, corrija antes de seguir.
 

@@ -127,7 +127,7 @@ Decisões: 1 ✅, 2 ✅. **Status: concluída.**
   - **O Pages publica com as telas de desenvolvimento ligadas** até o lançamento, para revisar no celular pelo link. Desligar `VITE_DEV_TOOLS` no workflow antes de lançar.
   - A prévia da Paleta mostra os componentes; a tela de Saldo entra na prévia na Fase 6, quando existir.
   - Mudanças feitas na Paleta valem só no navegador de quem mexeu (localStorage) até alguém colar o "Copiar CSS" em `tokens.css`.
-  - `.firebaserc` só tem o projeto de demonstração `demo-qpq` (emuladores não precisam de projeto real). Os aliases `staging` e `prod` entram quando os projetos existirem; o emulador de Functions entra na Fase 3, junto com o código das Functions.
+  - `.firebaserc`: `demo-qpq` (padrão, emuladores) e `staging` → `qpq-staging`. O alias `prod` entra quando o projeto de produção existir.
   - Os emuladores exigem **Java 21+** (o `firebase-tools` 15 recusa versões anteriores). No CI sobem com Temurin 21.
   - Texto do toast de erro do otimismo ("Não deu para salvar. Voltamos ao que estava.") não está na spec; revisar.
 
@@ -149,7 +149,8 @@ Decisões: 3 ✅, 4 ✅.
   - App: home (lista, total, filtros), Novo split, "está pronto" com link/código, Entrar com código ou link, "Quem é você?", tela do split com abas e Pessoas completa, menu com Convidar, tema e Sair do split.
   - UX otimista: Pessoas (tornar/tirar admin, liberar nome, remover) muda na hora e volta com toast se o servidor recusar; criar abre o convite na hora; entrar abre o split na hora (carregando); sair tira o split da home na hora. As mesmas checagens do servidor rodam antes na tela (avisos na própria linha).
   - Abas Transações, Saldo e Minha visão mostram só "Nenhuma despesa ainda" (sem o "+") até as Fases 5 e 6. Capa com foto fica para a Fase 6.
-  - **O Pages ainda não mostra o produto:** sem `VITE_FIREBASE_*` de um projeto de staging, o build publicado só tem as telas de revisão. Falta criar o projeto (Blaze, us-east1), pôr a configuração nos secrets do Actions e fazer o deploy de regras e Functions.
+  - **Staging ligado (23/10/2026):** projeto `qpq-staging` (Firestore em us-east1, login anônimo), regras e as 7 Functions publicadas em us-east1 com `npm run deploy:staging`. O Pages lê `VITE_FIREBASE_*` das variáveis do repositório (configuração pública do app web) e publica o produto ligado ao staging, com as telas de revisão ainda em `/#/dev`.
+  - Dois problemas que os emuladores não mostravam, corrigidos no deploy: as Functions chamáveis precisam de invoker público (a autenticação e as checagens ficam dentro de cada função), e o `getFirestore` precisa receber o app (o `firebase-admin` carregava por dois caminhos de módulo no pacote publicado).
   - Textos novos que não estão no protótipo (revisar): "chegou pelo convite", "ainda não entrou", "Liberar nome", "Deixar de ser admin", "Sair do split" (folha e avisos), mensagens de convite inválido e de nome já escolhido.
 
 ### Fase 4 — Contas
