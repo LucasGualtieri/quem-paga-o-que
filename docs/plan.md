@@ -33,8 +33,9 @@ Decisões que moldam o plano:
 - `users/{uid}`: `displayName`, `email?`, `photoPath?`, `prefs {inapp, email, selfName, askProof, theme, lang}`, `createdAt`. O campo `push` não existe na v1, que só tem web.
 - `splits/{splitId}`:
   - `name, emoji, photoPath?, status: open|done, doneAt?, code, createdAt`
-  - `members: { [memberId]: { name, uid|null, joinOrder, joinedAt, isNew? } }`
-  - `uids: string[]` (UIDs vinculados, usado pelas regras), `adminUids: string[]`, `nextJoinOrder`
+  - `members: { [memberId]: { name, nameKey, uid|null, admin, joinOrder, joinedAt, isNew? } }`; `nameKey` é o nome normalizado (minúsculas, sem acentos, espaços colapsados), único no split (decisão 3).
+  - `uids: string[]` e `adminUids: string[]` (espelhos derivados de `members`, usados pelas regras), `nextJoinOrder`.
+  - O admin é do **participante** (`members[x].admin`), não do UID: "Liberar nome" e "Sair do split" desvinculam o UID e tiram o admin juntos (decisões 3 e 4).
   - Participante = `memberId` (estável); o vínculo com o usuário é `members[x].uid`. Quem cria entra já vinculado ao próprio uid.
 - `splits/{id}/expenses/{expId}`:
   - `name, amount, payer, members[], mode, w, items[], rest[], restMode, restW, date, tags[], note, longDesc, receiptPath?, author, version, createdAt, updatedAt`
@@ -66,9 +67,14 @@ A parte quitada é `min(paid[x], share[x])`. Se `paid[x] < share[x]`, a diferen�
 | Registrar acerto | Rules: `from` ou `to` = caller, ou admin; `open` | Terceiro não-admin nega |
 | Desfazer acerto | Rules (delete): `from`/`to` ou admin; `open` | Idem |
 | Anexar comprovante depois | Rules: campo antes ausente + Storage rules por caminho `splits/{id}/proofs/...` | Segundo upload nega |
-| Convidar / promover / tirar admin | Rules: só admin muda `adminUids`; `adminUids.size() >= 1` | Último admin não sai |
+| Participantes e papéis (qualquer mudança em `members`, `uids`, `adminUids`) | Rules: **nenhuma escrita direta**; tudo passa por Functions em transação, que mantêm os espelhos coerentes e a regra "sempre ao menos um admin" | Escrita direta em `members` nega, até para admin |
+| Criar split | **Function** `createSplit`: nomes sem repetir (`nameKey`), quem cria vira admin | Nomes "Lucas" e "lúcas" juntos falham |
+| Promover / tirar admin de outro | **Function** `setAdmin` (só admin; nunca deixa zero admins) | Membro nega; admin tira outro admin ok |
+| Deixar de ser admin | **Function** `setAdmin` sobre si mesmo: só se restar outro admin | Último admin nega com a mensagem da spec |
+| Liberar nome | **Function** `releaseName` (só admin): `uid = null`, `admin = false`, tira dos espelhos | Membro nega; quem foi liberado perde a leitura do split |
+| Sair do split | **Function** `leaveSplit`: recalcula com `packages/calc`, exige `net` 0; admin só se restar outro admin | Bloqueia com saldo; último admin nega; depois de sair, não lê mais o split |
 | Remover participante | **Function** `removeMember`: recalcula com `packages/calc`, exige `net` 0 e ausência em despesas | Emulador: bloqueia com saldo e com despesa |
-| Entrar por convite / "Quem é você?" | **Function** `joinByCode` + `claimMember` (transação; nome travado se já tem uid) | Dois claims no mesmo nome: o segundo falha |
+| Entrar por convite / "Quem é você?" | **Function** `joinByCode` + `claimMember` (transação; nome travado se já tem uid) e "Não estou na lista" com `nameKey` único | Dois claims no mesmo nome: o segundo falha; nome repetido falha |
 | Finalizar / reabrir | Rules: só admin muda `status`/`doneAt` | Membro nega |
 | Notificações | **Function** triggers em `expenses`/`payments` | Marcar pago gera 1 notificação para o payer |
 | Link de recuperação | **Function** `createRecoveryLink` / `redeemRecovery` → `createCustomToken` | Token revogado falha |
@@ -126,11 +132,14 @@ Decisões: 1 ✅, 2 ✅. **Status: concluída.**
   - Texto do toast de erro do otimismo ("Não deu para salvar. Voltamos ao que estava.") não está na spec; revisar.
 
 ### Fase 3 — Splits, participantes e permissões
-Decisões: 3, 4.
+Decisões: 3 ✅, 4 ✅.
 - Login anônimo automático; home vazia ("Nenhum split por aqui").
-- Criar split; tela de convite (link + código + Compartilhar).
-- `joinByCode`, "Quem é você?" / "Não estou na lista".
-- Aba Pessoas (admin × membro com cadeado e "fale com…"), promover/tirar admin, `removeMember`.
+- Criar split (`createSplit`, sem nomes repetidos); tela de convite (link + código + Compartilhar).
+- `joinByCode`, "Quem é você?" (nome já escolhido aparece desabilitado com "Já escolhido") / "Não estou na lista" (sem nome repetido).
+- Aba Pessoas (admin × membro com cadeado e "fale com…"): promover/tirar admin, "Liberar nome", `removeMember`; "Deixar de ser admin" na sua linha.
+- "Sair do split" no menu de três pontos (`leaveSplit`, só com saldo zero; último admin bloqueado).
+- Emulador de Functions e `functions/` (TypeScript, `us-east1`), importando `@qpq/calc`.
+- Normalização de nome (`nameKey`) num módulo compartilhado, com testes (maiúsculas, acentos, espaços).
 - `firestore.rules` + `storage.rules` com a suíte de regras da seção 3. O prompt de regras do MCP do Firebase ajuda aqui.
 - **Pronto:** suíte de rules verde no emulador; e2e "cria split → convida → outro navegador entra pelo código"; screenshots ok.
 
