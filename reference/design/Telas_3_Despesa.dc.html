@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Telas — lançar despesa, divisão e detalhe</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&amp;family=Figtree:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+sc-for,sc-if{display:contents}
+</style>
+</helmet>
+<div style="width: 6618px; height: 1010px; box-sizing: border-box; padding: 40px 48px; background: #E7E7E2; font-family: 'Figtree', system-ui, sans-serif; color: #18181B; display: flex; gap: 48px">
+  <sc-for list="{{screens}}" as="s" hint-placeholder-count="15">
+    <div style="display: flex; flex-direction: column; gap: 14px; width: 390px; flex: none">
+      <div style="height: 64px; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px">
+        <span style="font: 800 13px 'Figtree', sans-serif; letter-spacing: .06em; color: #5D5E66">{{s.num}}</span>
+        <span style="font: 800 21px 'Bricolage Grotesque', sans-serif; letter-spacing: -.01em">{{s.label}}</span>
+      </div>
+      <div style="width: 390px; height: 844px; border-radius: 36px; overflow: hidden; box-shadow: 0 20px 50px rgba(20,20,40,.18)">
+        <dc-import name="Main" preset="{{s.p}}" theme="light" role="{{s.role}}" hint-size="390px,844px"></dc-import>
+      </div>
+    </div>
+  </sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":6618,"height":1010}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const L = [
+      ['add-empty', '5) Nova despesa · padrões', 'admin'],
+      ['add', 'Nova despesa · preenchida', 'admin'],
+      ['add-error', 'Nova despesa · erro de validação', 'admin'],
+      ['add-more', 'Mais detalhes aberto', 'admin'],
+      ['adjust-equal', '6) Igualmente · sem o Fellipe', 'admin'],
+      ['adjust-frac', '6) Frações (pizza)', 'admin'],
+      ['adjust-pct-error', '6) Porcentagem · não soma 100%', 'admin'],
+      ['adjust-exact', '6) Valor exato · faltam R$ 12,00', 'admin'],
+      ['add-items', 'Novo · dividir por itens (mercado)', 'admin'],
+      ['add-items-error', 'Por itens · itens passam do total', 'admin'],
+      ['add-items-big', 'Por itens · 7 pessoas (Lucas e Luca)', 'admin'],
+      ['toast', 'Sucesso · volta à lista', 'admin'],
+      ['detail', '7) Detalhe · admin', 'admin'],
+      ['detail', '7) Detalhe · membro', 'member'],
+      ['delete', 'Excluir · confirmação', 'admin']
+    ];
+    return { screens: L.map((x, i) => ({ p: x[0], label: x[1], role: x[2], num: '3.' + (i + 1) })) };
+  }
+}
+</script>
+</body>
+</html>

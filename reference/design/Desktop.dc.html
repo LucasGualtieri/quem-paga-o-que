@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Ano Novo Amigubis — desktop</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&amp;family=Figtree:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+sc-for,sc-if{display:contents}
+.dk{min-height:100vh;background:var(--bg);color:var(--text);font-family:'Figtree',system-ui,sans-serif;font-size:15px;line-height:1.4;-webkit-font-smoothing:antialiased}
+.dk *{box-sizing:border-box}
+.theme-light{--me-soft:#F6F3FF;--bg:#F3F3F0;--surface:#FFFFFF;--surface2:#EAEAE6;--line:#DADAD4;--text:#18181B;--muted:#5D5E66;--accent:#5534E0;--accent-ink:#FFFFFF;--accent-soft:#ECE8FF;--pos:#0B7A43;--pos-soft:#DFF3E7;--neg:#B53A08;--neg-soft:#FCE9DE;--zero:#5F616B;--zero-soft:#EAEAE6;--shadow:0 1px 2px rgba(24,24,40,.05),0 6px 20px rgba(24,24,40,.06)}
+.theme-dark{--me-soft:#221D3A;--bg:#111114;--surface:#1C1C21;--surface2:#27272E;--line:#363640;--text:#F3F3F5;--muted:#A6A7B2;--accent:#A08CFF;--accent-ink:#140F2E;--accent-soft:#2B2452;--pos:#52D38E;--pos-soft:#14301F;--neg:#FF9257;--neg-soft:#3B2013;--zero:#A0A1AC;--zero-soft:#2A2A31;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.22)}
+.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.sm{width:15px;height:15px;stroke-width:2.4}
+.card{background:var(--surface);border-radius:20px;box-shadow:var(--shadow)}
+.btn{min-height:44px;border-radius:12px;border:0;font:700 15px 'Figtree',sans-serif;padding:0 16px;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;white-space:nowrap}
+.btn-p{background:var(--accent);color:var(--accent-ink)}
+.btn-s{background:var(--surface);color:var(--text);box-shadow:inset 0 0 0 1.5px var(--line)}
+.btn-g{background:transparent;color:var(--accent)}
+.btn-sm{min-height:40px;font-size:13.5px;padding:0 12px}
+.iconbtn{width:44px;height:44px;border-radius:12px;border:0;background:transparent;color:var(--text);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+.iconbtn:hover{background:var(--surface2)}
+.bdg{position:absolute;top:5px;right:4px;min-width:18px;height:18px;border-radius:9px;background:#C22F0A;color:#FFFFFF;font:800 11px 'Figtree',sans-serif;display:flex;align-items:center;justify-content:center;padding:0 5px;box-shadow:0 0 0 2px var(--surface)}
+.av{width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font:800 13px 'Figtree',sans-serif;flex:none}
+.av.sm{width:26px;height:26px;font-size:11px}
+.av-lucas{background:#E4DEFF;color:#3A23A8}.av-bia{background:#FFDDEA;color:#981A4C}.av-cat{background:#D3F1EA;color:#0A5C52}.av-fel{background:#FFE9C2;color:#734400}
+.theme-dark .av-lucas{background:#3B3080;color:#E9E4FF}.theme-dark .av-bia{background:#6A2343;color:#FFE1EC}.theme-dark .av-cat{background:#134D45;color:#D5F5EE}.theme-dark .av-fel{background:#5E3D0A;color:#FFEBC8}
+.cover{width:44px;height:44px;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;font-size:22px;flex:none}
+.cover.lg{width:64px;height:64px;border-radius:20px;font-size:32px}
+.cv1{background:#E9E4FF}.cv2{background:#FFE3D6}.cv3{background:#DCF1E4}
+.theme-dark .cv1{background:#2E2753}.theme-dark .cv2{background:#45291D}.theme-dark .cv3{background:#1B3A29}
+.badge{display:inline-flex;align-items:center;gap:4px;min-height:26px;padding:0 9px;border-radius:999px;font:800 12.5px 'Figtree',sans-serif;white-space:nowrap}
+.b-pos{background:var(--pos-soft);color:var(--pos)}.b-neg{background:var(--neg-soft);color:var(--neg)}.b-zero{background:var(--zero-soft);color:var(--zero)}
+.pos{color:var(--pos)}.neg{color:var(--neg)}.zero{color:var(--zero)}
+.amt{font-variant-numeric:tabular-nums;white-space:nowrap}
+.cap{font-size:13px;color:var(--muted);margin:0}
+.h4{font:800 16px/1.3 'Figtree',sans-serif;margin:0}
+.navitem{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;padding:10px 12px;border:0;border-radius:16px;background:transparent;color:var(--text);text-align:left;font:inherit;cursor:pointer}
+.navitem:hover{background:var(--surface2)}
+.navitem.on{background:var(--surface);box-shadow:var(--shadow)}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px;background:var(--surface2);border-radius:14px;padding:4px}
+.seg button{min-height:40px;border:0;border-radius:10px;background:transparent;font:800 13px 'Figtree',sans-serif;color:var(--muted);cursor:pointer}
+.seg button.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{min-height:48px;padding:0 14px;border:0;background:none;font:800 14px 'Figtree',sans-serif;color:var(--muted);cursor:pointer;border-bottom:2.5px solid transparent;white-space:nowrap}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+.row{display:flex;align-items:center;gap:14px;padding:12px 16px;min-height:64px;border-top:1px solid var(--line)}
+.rows{margin-top:-1px}
+.list{background:var(--surface);border-radius:18px;box-shadow:var(--shadow);overflow:hidden}
+.tagico{width:42px;height:42px;border-radius:13px;background:var(--surface2);display:inline-flex;align-items:center;justify-content:center;flex:none}
+.day{display:flex;justify-content:space-between;padding:16px 4px 8px;font:800 13px 'Figtree',sans-serif;color:var(--muted)}
+.chip{height:44px;padding:0 14px;border-radius:999px;border:0;background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--line);color:var(--text);font:700 14px 'Figtree',sans-serif;display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+.pcard{background:var(--surface);border-radius:18px;box-shadow:var(--shadow);overflow:hidden}
+.pcard.me{background:var(--me-soft)}
+.pchead{display:flex;align-items:center;gap:12px;width:100%;min-height:68px;padding:10px 14px;border:0;background:transparent;color:var(--text);text-align:left;font:inherit;cursor:pointer}
+.pchead > .ic{color:var(--muted);transition:transform .2s}
+.pcbody{padding:0 14px 4px}
+.pcline{display:flex;align-items:center;gap:10px;min-height:54px;border-top:1px solid var(--line)}
+.pcline.done{border-top-style:dashed}
+.pcline.done .ttl{color:var(--muted);font-weight:600}
+.pcline.done .amt{color:var(--muted)}
+.dir{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex:none}
+.dir.neg{background:var(--neg-soft);color:var(--neg)}.dir.pos{background:var(--pos-soft);color:var(--pos)}.dir.zero{background:var(--zero-soft);color:var(--zero)}
+.ttl{font:700 14px/1.3 'Figtree',sans-serif}
+.linkbtn{min-height:40px;border:0;background:none;color:var(--accent);font:800 13px 'Figtree',sans-serif;cursor:pointer;padding:0 6px}
+.valin{animation:valin .4s cubic-bezier(.2,.7,.2,1)}
+@keyframes valin{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.valin{animation:none}}
+</style>
+</helmet>
+<div class="dk {{themeCls}}">
+  <header style="display: flex; align-items: center; gap: 12px; padding: 12px clamp(16px, 3vw, 32px); border-bottom: 1px solid var(--line); background: var(--surface); flex-wrap: wrap">
+    <span style="font: 800 22px 'Bricolage Grotesque', sans-serif; letter-spacing: -.02em; flex: 1; min-width: 180px">Quem Paga O Quê?</span>
+    <div style="display: flex; align-items: center; gap: 4px">
+      <button class="iconbtn" onClick="{{toggleTheme}}" aria-label="Alternar tema claro/escuro"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 13.2A8.5 8.5 0 1 1 10.8 3.5a6.6 6.6 0 0 0 9.7 9.7z"></path></svg></button>
+      <button class="iconbtn" aria-label="Notificações, 1 nova"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15z"></path><path d="M10 20a2 2 0 0 0 4 0"></path></svg><span class="bdg" aria-hidden="true">1</span></button>
+      <button class="iconbtn" aria-label="Sua conta" style="border-radius: 50%"><span class="av av-lucas" style="width: 40px; height: 40px">L</span></button>
+    </div>
+  </header>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 24px clamp(16px, 3vw, 32px) 48px; max-width: 1440px; margin: 0 auto; align-items: flex-start">
+
+    <aside style="flex: 1 1 260px; max-width: 320px; min-width: 0; display: flex; flex-direction: column; gap: 12px" aria-label="Meus splits">
+      <div style="padding: 0 4px">
+        <h2 style="margin: 0; font: 800 24px 'Bricolage Grotesque', sans-serif">Meus splits</h2>
+        <p class="cap" style="margin-top: 2px">No total, você deve <span class="amt neg" style="font-weight: 800">R$ 64,13</span></p>
+      </div>
+      <div class="seg" role="tablist" aria-label="Filtrar splits"><button class="on" role="tab" aria-selected="true">Em andamento 2</button><button role="tab" aria-selected="false">Finalizados 1</button></div>
+      <nav style="display: flex; flex-direction: column; gap: 4px">
+        <button class="navitem on" aria-current="page"><span class="cover cv1" aria-hidden="true">🎆</span><span style="flex: 1; min-width: 0"><span style="display: block; font-weight: 800">Ano Novo Amigubis</span><span class="cap">4 pessoas · Em andamento</span></span><span class="badge {{side.cls}}"><span class="amt">{{side.amt}}</span></span></button>
+        <button class="navitem"><span class="cover cv2" aria-hidden="true">🎁</span><span style="flex: 1; min-width: 0"><span style="display: block; font-weight: 800">Amigo Oculto 2026</span><span class="cap">4 pessoas · Em andamento</span></span><span class="badge b-pos"><svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 7L7 17M16 17H7V8"></path></svg><span class="amt">+R$ 28,00</span></span></button>
+        <button class="navitem"><span class="cover cv3" aria-hidden="true">⛰️</span><span style="flex: 1; min-width: 0"><span style="display: block; font-weight: 800">Viagem Ouro Preto</span><span class="cap">Finalizado em 21 jul</span></span><span class="badge b-zero"><svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Quitado</span></button>
+      </nav>
+      <button class="btn btn-p" style="width: 100%; min-height: 48px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Novo split</button>
+      <button class="btn btn-g" style="width: 100%">Entrar com código ou link</button>
+    </aside>
+
+    <main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 18px">
+      <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap">
+        <span class="cover lg cv1" aria-hidden="true">🎆</span>
+        <div style="flex: 1; min-width: 220px">
+          <h1 style="margin: 0; font: 800 34px/1.1 'Bricolage Grotesque', sans-serif; letter-spacing: -.02em">Ano Novo Amigubis</h1>
+          <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px"><span style="display: flex"><span class="av sm av-lucas">L</span><span class="av sm av-bia" style="margin-left: -6px">B</span><span class="av sm av-cat" style="margin-left: -6px">C</span><span class="av sm av-fel" style="margin-left: -6px">F</span></span><span class="cap">4 pessoas · Em andamento · você é admin</span></div>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap">
+          <button class="btn btn-s"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"></path><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></svg>Convidar</button>
+          <button class="btn btn-s"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4M5 4h12l-2 4 2 4H5"></path></svg>Finalizar</button>
+          <button class="btn btn-p"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Adicionar despesa</button>
+        </div>
+      </div>
+
+      <nav class="tabs" aria-label="Seções do split">
+        <button class="tab on" aria-current="page">Transações e saldo</button>
+        <button class="tab">Minha visão</button>
+        <button class="tab">Pessoas</button>
+      </nav>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(400px, 100%), 1fr)); gap: 24px; align-items: start">
+        <section aria-labelledby="dk-tx">
+          <h2 id="dk-tx" class="h4" style="padding: 0 4px 10px">Transações</h2>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center">
+            <label style="position: relative; flex: 1 1 220px"><span style="position: absolute; left: 12px; top: 12px; color: var(--muted)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg></span><input type="search" placeholder="Buscar despesa ou tag" aria-label="Buscar despesa ou tag" style="width: 100%; height: 44px; border: 0; border-radius: 12px; background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--line); padding: 0 12px 0 40px; font: 500 15px 'Figtree', sans-serif; color: var(--text)"></label>
+            <button class="chip" aria-haspopup="true"><svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6.5 6.5 0 0 1 3.5 6"></path></svg>Pessoas<svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></button>
+            <button class="chip" aria-haspopup="true"><svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h8l10 10-8 8L3 11z"></path><circle cx="7.5" cy="7.5" r="1.2"></circle></svg>Tags<svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></button>
+          </div>
+          <div class="day"><span>Hoje · Qui, 31 dez</span><span class="amt">R$ 206,50</span></div>
+          <div class="list"><div class="rows">
+            <div class="row"><span class="tagico" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M6 4h12l-1.6 15.2a2 2 0 0 1-2 1.8H9.6a2 2 0 0 1-2-1.8z"></path><path d="M6.6 9.5h10.8"></path></svg></span><div style="flex: 1; min-width: 0"><div style="font-weight: 800">Zé Delivery</div><p class="cap">Fellipe pagou</p></div><div style="text-align: right"><div class="amt" style="font-weight: 800">R$ 86,50</div><div class="amt neg" style="font: 700 12.5px 'Figtree', sans-serif">sua parte −R$ 21,63</div></div></div>
+            <div class="row"><span class="tagico" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M7 3v8M4.5 3v5a2.5 2.5 0 0 0 5 0V3M7 11v10M17 21V3c-2.2 0-3.5 2.5-3.5 6.5S15 14 17 14"></path></svg></span><div style="flex: 1; min-width: 0"><div style="font-weight: 800">Pizza</div><p class="cap">Você pagou · por frações</p></div><div style="text-align: right"><div class="amt" style="font-weight: 800">R$ 120,00</div><div class="amt pos" style="font: 700 12.5px 'Figtree', sans-serif">a receber +R$ 90,00</div></div></div>
+          </div></div>
+          <div class="day"><span>Ontem · Qua, 30 dez</span><span class="amt">R$ 42,00</span></div>
+          <div class="list"><div class="rows">
+            <div class="row"><span class="tagico" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M7 3v8M4.5 3v5a2.5 2.5 0 0 0 5 0V3M7 11v10M17 21V3c-2.2 0-3.5 2.5-3.5 6.5S15 14 17 14"></path></svg></span><div style="flex: 1; min-width: 0"><div style="font-weight: 800">Padaria</div><p class="cap">Catarina pagou</p></div><div style="text-align: right"><div class="amt" style="font-weight: 800">R$ 42,00</div><div class="amt neg" style="font: 700 12.5px 'Figtree', sans-serif">sua parte −R$ 10,50</div></div></div>
+          </div></div>
+          <div class="day"><span>Ter, 29 dez</span><span class="amt">R$ 200,00</span></div>
+          <div class="list"><div class="rows">
+            <div class="row"><span class="tagico" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M4 16v-4l2-5h12l2 5v4z"></path><path d="M4 12h16M6.5 16v2.5M17.5 16v2.5"></path></svg></span><div style="flex: 1; min-width: 0"><div style="font-weight: 800">Gasolina</div><p class="cap">Você pagou</p></div><div style="text-align: right"><div class="amt" style="font-weight: 800">R$ 200,00</div><div class="amt pos" style="font: 700 12.5px 'Figtree', sans-serif">a receber +R$ 150,00</div></div></div>
+          </div></div>
+          <div class="day"><span>Seg, 28 dez</span><span class="amt">R$ 1.200,00</span></div>
+          <div class="list"><div class="rows">
+            <div class="row"><span class="tagico" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M4 11l8-6.5 8 6.5V20H4z"></path><path d="M10 20v-5h4v5"></path></svg></span><div style="flex: 1; min-width: 0"><div style="font-weight: 800">Aluguel da casa</div><p class="cap">Beatriz pagou</p></div><div style="text-align: right"><div class="amt" style="font-weight: 800">R$ 1.200,00</div><div class="amt neg" style="font: 700 12.5px 'Figtree', sans-serif">sua parte −R$ 300,00</div></div></div>
+          </div></div>
+        </section>
+
+        <section style="display: flex; flex-direction: column; gap: 14px; min-width: 0" aria-labelledby="dk-sal">
+          <h2 id="dk-sal" class="h4" style="padding: 0 4px">Saldo</h2>
+          <div class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 6px" aria-live="polite">
+            <p class="cap" style="font-weight: 700">Seu saldo neste split</p>
+            <div style="display: flex; align-items: center; gap: 12px">
+              <span style="width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: var({{bal.soft}}); color: var({{bal.col}})" aria-hidden="true">
+                <sc-if value="{{bal.neg}}" hint-placeholder-val="{{true}}"><svg class="ic" viewBox="0 0 24 24"><path d="M7 17L17 7M8 7h9v9"></path></svg></sc-if>
+                <sc-if value="{{bal.pos}}" hint-placeholder-val="{{false}}"><svg class="ic" viewBox="0 0 24 24"><path d="M17 7L7 17M16 17H7V8"></path></svg></sc-if>
+              </span>
+              <div><div class="amt {{bal.anim}}" style="font: 800 40px/1.05 'Bricolage Grotesque', sans-serif; letter-spacing: -.02em; color: var({{bal.col}})">{{bal.amt}}</div><div class="cap" style="font-weight: 700">{{bal.cap}}</div></div>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 4px"><span class="h4">Por pessoa</span><button class="linkbtn" onClick="{{toggleAll}}">{{allLabel}}</button></div>
+          <sc-for list="{{cards}}" as="c" hint-placeholder-count="4">
+            <div class="pcard {{c.meCls}}">
+              <button class="pchead" onClick="{{c.toggle}}" aria-expanded="{{c.open}}">
+                <span class="av {{c.av}}" aria-hidden="true">{{c.i}}</span>
+                <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span class="ttl" style="font-size: 15.5px">{{c.name}}</span><span class="cap">{{c.sub}}</span></span>
+                <span style="display: flex; flex-direction: column; align-items: flex-end"><span class="amt {{c.cls}}" style="font-weight: 800">{{c.amt}}</span><span class="cap" style="font-weight: 700; font-size: 12px">{{c.cap}}</span></span>
+                <svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true" style="{{c.chev}}"><path d="M6 9l6 6 6-6"></path></svg>
+              </button>
+              <sc-if value="{{c.open}}" hint-placeholder-val="{{false}}">
+                <div class="pcbody">
+                  <sc-for list="{{c.lines}}" as="ln" hint-placeholder-count="2">
+                    <div class="pcline {{ln.rowCls}}">
+                      <span class="dir {{ln.cls}}" aria-hidden="true">
+                        <sc-if value="{{ln.isOwe}}" hint-placeholder-val="{{true}}"><svg class="ic sm" viewBox="0 0 24 24"><path d="M7 17L17 7M8 7h9v9"></path></svg></sc-if>
+                        <sc-if value="{{ln.isRecv}}" hint-placeholder-val="{{false}}"><svg class="ic sm" viewBox="0 0 24 24"><path d="M17 7L7 17M16 17H7V8"></path></svg></sc-if>
+                        <sc-if value="{{ln.isDone}}" hint-placeholder-val="{{false}}"><svg class="ic sm" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>
+                      </span>
+                      <span class="av sm {{ln.av}}" aria-hidden="true">{{ln.i}}</span>
+                      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span class="ttl">{{ln.text}}</span><sc-if value="{{ln.isDone}}" hint-placeholder-val="{{false}}"><span class="cap">Resolvido · agora</span></sc-if></span>
+                      <span class="amt {{ln.cls}}" style="font-weight: 800">{{ln.v}}</span>
+                      <sc-if value="{{ln.canMark}}" hint-placeholder-val="{{false}}"><button class="btn btn-sm {{ln.btnCls}}" onClick="{{ln.mark}}">{{ln.markLabel}}</button></sc-if>
+                      <sc-if value="{{ln.isDone}}" hint-placeholder-val="{{false}}"><button class="linkbtn" onClick="{{ln.mark}}">Desfazer</button></sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":1440,"height":1010}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const st = this.state || {};
+    const theme = st.theme || this.props.theme || 'light';
+    const paid = st.paid || {};
+    const open = Object.assign({ lucas: true }, st.open || {});
+    const fmt = (c) => 'R$ ' + (Math.abs(c) / 100).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    const sf = (c) => (c > 0 ? '+' : c < 0 ? '−' : '') + fmt(c);
+    // Acertos diretos entre pessoas (centavos). Marcar como pago move a linha para "resolvido".
+    const debts = [['lucas', 'bia', 23500], ['cat', 'lucas', 8450], ['fel', 'lucas', 5837], ['cat', 'bia', 28950], ['cat', 'fel', 1112], ['fel', 'bia', 27837]];
+    const names = { lucas: 'Você', bia: 'Beatriz', cat: 'Catarina', fel: 'Fellipe' };
+    const key = (d) => d[0] + '>' + d[1];
+    const net = { lucas: 0, bia: 0, cat: 0, fel: 0 };
+    debts.forEach((d) => { if (!paid[key(d)]) { net[d[0]] -= d[2]; net[d[1]] += d[2]; } });
+    const order = ['lucas', 'bia', 'cat', 'fel'];
+    const allOpen = order.every((id) => open[id]);
+    const cards = order.map((r) => {
+      const lines = [];
+      debts.forEach((d) => {
+        if (d[0] !== r && d[1] !== r) return;
+        const done = !!paid[key(d)]; const owe = d[0] === r; const other = owe ? d[1] : d[0]; const mine = d[0] === 'lucas' || d[1] === 'lucas';
+        const text = done ? (owe ? (r === 'lucas' ? 'Você pagou ' : 'Pagou ') + names[other] : (r === 'lucas' ? names[other] + ' te pagou' : 'Recebeu de ' + names[other])) : (owe ? (r === 'lucas' ? 'Você deve para ' : 'Deve para ') + names[other] : (r === 'lucas' ? names[other] + ' te deve' : 'Recebe de ' + names[other]));
+        lines.push({ done: done, isDone: done, isOwe: !done && owe, isRecv: !done && !owe, rowCls: done ? 'done' : '', cls: done ? 'zero' : (owe ? 'neg' : 'pos'), v: done ? fmt(d[2]) : (owe ? '−' : '+') + fmt(d[2]), av: 'av-' + other, i: names[other].charAt(0), text: text,
+          canMark: !done, btnCls: d[0] === 'lucas' ? 'btn-p' : 'btn-s', markLabel: d[1] === 'lucas' ? 'Recebi' : 'Marcar como pago',
+          mark: () => this.setState((s) => { const p = Object.assign({}, (s || {}).paid); p[key(d)] = !p[key(d)]; return { paid: p, bump: ((s || {}).bump || 0) + (mine ? 1 : 0) }; }) });
+      });
+      lines.sort((a, b) => (a.done ? 1 : 0) - (b.done ? 1 : 0));
+      const pend = lines.filter((l) => !l.done); const nOwe = pend.filter((l) => l.isOwe).length; const nRecv = pend.length - nOwe; const nDone = lines.length - pend.length;
+      const pp = (n) => n + (n === 1 ? ' pessoa' : ' pessoas');
+      const sub = (!pend.length ? 'Tudo certo' : [nOwe ? 'deve a ' + pp(nOwe) : '', nRecv ? 'recebe de ' + pp(nRecv) : ''].filter(Boolean).join(' · ')) + (nDone ? ' · ' + nDone + (nDone === 1 ? ' resolvido' : ' resolvidos') : '');
+      const c = net[r];
+      return { name: names[r], av: 'av-' + r, i: r === 'lucas' ? 'L' : names[r].charAt(0), meCls: r === 'lucas' ? 'me' : '', sub: sub, amt: c === 0 ? 'Quitado' : sf(c), cls: c > 0 ? 'pos' : c < 0 ? 'neg' : 'zero', cap: c > 0 ? 'recebe' : c < 0 ? 'deve' : '',
+        open: !!open[r], chev: open[r] ? 'transform: rotate(180deg)' : 'transform: none', lines: lines,
+        toggle: () => this.setState((s) => { const o = Object.assign({ lucas: true }, (s || {}).open); o[r] = !o[r]; return { open: o }; }) };
+    });
+    const me = net.lucas;
+    return {
+      themeCls: theme === 'dark' ? 'theme-dark' : 'theme-light',
+      toggleTheme: () => this.setState({ theme: theme === 'dark' ? 'light' : 'dark' }),
+      bal: { amt: me === 0 ? fmt(0) : sf(me), cap: me > 0 ? 'você tem a receber' : me < 0 ? 'você deve no total' : 'você está quitado', neg: me < 0, pos: me >= 0, col: me > 0 ? '--pos' : me < 0 ? '--neg' : '--zero', soft: me > 0 ? '--pos-soft' : me < 0 ? '--neg-soft' : '--zero-soft', anim: st.bump ? (st.bump % 2 ? 'valin' : '') : '' },
+      side: { amt: me === 0 ? 'Quitado' : sf(me), cls: me > 0 ? 'b-pos' : me < 0 ? 'b-neg' : 'b-zero' },
+      cards: cards, allLabel: allOpen ? 'Minimizar todos' : 'Expandir todos',
+      toggleAll: () => { const o = {}; order.forEach((id) => { o[id] = !allOpen; }); this.setState({ open: o }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

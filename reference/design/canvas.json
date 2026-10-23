@@ -1,0 +1,100 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Desktop.dc.html": {
+      "expand": "fill",
+      "h": 1010,
+      "is_interactive": true,
+      "title": "Versão desktop (responsiva)",
+      "w": 1440,
+      "x": 2350,
+      "y": 0
+    },
+    "Estilo.dc.html": {
+      "h": 2700,
+      "title": "Folha de estilo",
+      "w": 1440,
+      "x": 3870,
+      "y": 0
+    },
+    "Main.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Protótipo navegável (390 px)",
+      "w": 390,
+      "x": 0,
+      "y": 0
+    },
+    "Telas_1_Entrada.dc.html": {
+      "h": 1010,
+      "is_interactive": true,
+      "title": "Telas · Entrada, home, criar e entrar",
+      "w": 5304,
+      "x": 0,
+      "y": 2400
+    },
+    "Telas_2_Split.dc.html": {
+      "h": 1010,
+      "is_interactive": true,
+      "title": "Telas · Dentro do split",
+      "w": 4428,
+      "x": 0,
+      "y": 3530
+    },
+    "Telas_3_Despesa.dc.html": {
+      "h": 1010,
+      "is_interactive": true,
+      "title": "Telas · Lançar despesa, divisão e detalhe",
+      "w": 6618,
+      "x": 0,
+      "y": 4660
+    },
+    "Telas_4_Escuro.dc.html": {
+      "h": 1010,
+      "is_interactive": true,
+      "title": "Telas · Tema escuro",
+      "w": 3552,
+      "x": 0,
+      "y": 5790
+    },
+    "Telas_5_Pagamentos.dc.html": {
+      "h": 1010,
+      "is_interactive": true,
+      "title": "Telas · Pagamento, notificações e conta",
+      "w": 3552,
+      "x": 0,
+      "y": 6920
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-10-22T15:00:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "titulo": {
+      "kind": "title1",
+      "maxW": 5310,
+      "text": "Quem Paga O Quê? — protótipo v1",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Desktop.dc.html",
+    "Estilo.dc.html",
+    "Telas_1_Entrada.dc.html",
+    "Telas_2_Split.dc.html",
+    "Telas_3_Despesa.dc.html",
+    "Telas_4_Escuro.dc.html",
+    "Telas_5_Pagamentos.dc.html"
+  ],
+  "pages": [],
+  "title": "Quem Paga O Quê? — protótipo"
+}

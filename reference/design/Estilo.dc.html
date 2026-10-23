@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Folha de estilo</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&amp;family=Figtree:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+sc-for,sc-if{display:contents}
+.sg *{box-sizing:border-box}
+.theme-light{--me-soft:#F6F3FF;--bg:#F3F3F0;--surface:#FFFFFF;--surface2:#EAEAE6;--line:#DADAD4;--text:#18181B;--muted:#5D5E66;--accent:#5534E0;--accent-ink:#FFFFFF;--accent-soft:#ECE8FF;--pos:#0B7A43;--pos-soft:#DFF3E7;--neg:#B53A08;--neg-soft:#FCE9DE;--zero:#5F616B;--zero-soft:#EAEAE6;--shadow:0 1px 2px rgba(24,24,40,.05),0 6px 20px rgba(24,24,40,.06)}
+.theme-dark{--me-soft:#221D3A;--bg:#111114;--surface:#1C1C21;--surface2:#27272E;--line:#363640;--text:#F3F3F5;--muted:#A6A7B2;--accent:#A08CFF;--accent-ink:#140F2E;--accent-soft:#2B2452;--pos:#52D38E;--pos-soft:#14301F;--neg:#FF9257;--neg-soft:#3B2013;--zero:#A0A1AC;--zero-soft:#2A2A31;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.22)}
+.sec{font:800 13px 'Figtree',sans-serif;letter-spacing:.07em;text-transform:uppercase;color:#5D5E66;margin:0 0 14px}
+.h{font:800 26px 'Bricolage Grotesque',sans-serif;letter-spacing:-.02em;margin:0 0 18px}
+.panel{border-radius:28px;padding:28px;background:var(--bg);color:var(--text);font-family:'Figtree',sans-serif}
+.sw{border-radius:16px;overflow:hidden;background:var(--surface);box-shadow:var(--shadow)}
+.sw .c{height:60px}
+.sw .m{padding:10px 12px;display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--muted)}
+.sw .m b{font:800 13px 'Figtree',sans-serif;color:var(--text)}
+.lab{font:800 12px 'Figtree',sans-serif;color:var(--muted);margin:0 0 8px;letter-spacing:.02em}
+.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.sm{width:15px;height:15px;stroke-width:2.4}
+.btn{min-height:52px;border-radius:16px;border:0;font:700 16px 'Figtree',sans-serif;padding:0 20px;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn-p{background:var(--accent);color:var(--accent-ink)}.btn-s{background:var(--surface);color:var(--text);box-shadow:inset 0 0 0 1.5px var(--line)}.btn-g{background:transparent;color:var(--accent)}.btn-d{background:var(--neg-soft);color:var(--neg)}
+.btn:disabled{opacity:.38}
+.btn-sm{min-height:44px;padding:0 14px;font-size:14px;border-radius:12px}
+.input{height:52px;width:100%;border-radius:14px;border:0;background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--line);padding:0 14px;font:500 16px 'Figtree',sans-serif;color:var(--text)}
+.input.f{box-shadow:inset 0 0 0 2px var(--accent)}.input.e{box-shadow:inset 0 0 0 2px var(--neg)}
+.chip{height:44px;padding:0 14px;border-radius:999px;border:0;background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--line);color:var(--text);font:700 15px 'Figtree',sans-serif;display:inline-flex;align-items:center;gap:8px}
+.chip.on{background:var(--accent-soft);box-shadow:inset 0 0 0 2px var(--accent)}
+.chip.av-chip{padding-left:6px}
+.av{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font:800 11px 'Figtree',sans-serif;flex:none}
+.av.lg{width:40px;height:40px;font-size:15px}
+.av-lucas{background:#E4DEFF;color:#3A23A8}.av-bia{background:#FFDDEA;color:#981A4C}.av-cat{background:#D3F1EA;color:#0A5C52}.av-fel{background:#FFE9C2;color:#734400}
+.theme-dark .av-lucas{background:#3B3080;color:#E9E4FF}.theme-dark .av-bia{background:#6A2343;color:#FFE1EC}.theme-dark .av-cat{background:#134D45;color:#D5F5EE}.theme-dark .av-fel{background:#5E3D0A;color:#FFEBC8}
+.badge{display:inline-flex;align-items:center;gap:4px;min-height:26px;padding:0 9px;border-radius:999px;font:800 12.5px 'Figtree',sans-serif;white-space:nowrap}
+.b-pos{background:var(--pos-soft);color:var(--pos)}.b-neg{background:var(--neg-soft);color:var(--neg)}.b-zero{background:var(--zero-soft);color:var(--zero)}.b-acc{background:var(--accent-soft);color:var(--accent)}
+.stepper{display:inline-flex;align-items:center;background:var(--surface2);border-radius:14px}
+.stepper button{width:44px;height:44px;border:0;background:none;color:var(--text);display:flex;align-items:center;justify-content:center}
+.stepper .v{min-width:24px;text-align:center;font:800 17px 'Figtree',sans-serif}
+.seg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;background:var(--surface2);border-radius:14px;padding:4px}
+.seg button{min-height:44px;border:0;border-radius:10px;background:transparent;font:800 13px 'Figtree',sans-serif;color:var(--muted)}
+.seg button.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+.theme-dark .seg button.on{background:var(--line)}
+.card{background:var(--surface);border-radius:22px;box-shadow:var(--shadow)}
+.cover{width:56px;height:56px;border-radius:18px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;flex:none;background:#E9E4FF}
+.theme-dark .cover{background:#2E2753}
+.tagico{width:42px;height:42px;border-radius:13px;background:var(--surface2);display:inline-flex;align-items:center;justify-content:center;flex:none}
+.amt{font-variant-numeric:tabular-nums;white-space:nowrap}
+.cap{font-size:13px;color:var(--muted)}
+.toast{width:fit-content;background:var(--surface);color:var(--text);border-radius:999px;min-height:44px;padding:0 4px 0 12px;display:flex;align-items:center;gap:8px;font:600 14px 'Figtree',sans-serif;box-shadow:0 0 0 1px var(--line),0 6px 18px rgba(20,20,40,.08)}
+.toastck{width:20px;height:20px;border-radius:50%;background:var(--pos);color:var(--surface);display:flex;align-items:center;justify-content:center;flex:none}
+.toastck .ic{width:12px;height:12px;stroke-width:3.2}
+.prow{display:flex;align-items:center;gap:12px;width:100%;min-height:60px;padding:8px 14px;border:0;border-top:1px solid var(--line);background:transparent;color:var(--text);text-align:left;font:inherit}
+.prow:first-child{border-top:0}
+.prow.me{background:var(--me-soft)}
+.avsel{position:relative;flex:none;display:inline-flex}
+.avsel .av{width:36px;height:36px;font-size:13px}
+.prow.on .avsel .av,.avt.on .av{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--accent)}
+.prow.off .avsel .av,.avt.off .av{opacity:.35;filter:grayscale(1)}
+.avck{position:absolute;right:-5px;bottom:-5px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px var(--surface)}
+.avck .ic{width:11px;height:11px;stroke-width:3.4}
+.prow.off .avck{display:none}
+.prow.off .ttl{color:var(--muted)}
+.avt{width:54px;min-height:58px;border:0;background:none;padding:2px 0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+.avt .av{width:32px;height:32px;font-size:12px}
+.avn{font:700 11px 'Figtree',sans-serif;color:var(--muted)}
+.avn.me{font-weight:900;color:var(--text)}
+.tgl{display:block;width:50px;height:30px;border-radius:999px;background:var(--line);position:relative;flex:none}
+.tgl.on{background:var(--accent)}
+.tgl .knob{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.tgl.on .knob{transform:translateX(20px)}
+.ttl{font:700 15px 'Figtree',sans-serif}
+</style>
+</helmet>
+<div class="sg" style="width: 1440px; min-height: 2140px; box-sizing: border-box; padding: 56px 64px 64px; background: #FAFAF7; color: #18181B; font-family: 'Figtree', system-ui, sans-serif; display: flex; flex-direction: column; gap: 56px">
+
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 40px">
+    <div>
+      <p class="sec">Quem Paga O Quê? · v1</p>
+      <h1 style="margin: 0; font: 800 64px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -.035em">Folha de estilo</h1>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; max-width: 760px">
+      <div style="padding: 14px 16px; border-radius: 16px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(24,24,40,.05); font-size: 14px"><b style="display: block; margin-bottom: 4px">Rápido</b>Lançar despesa em 3 toques: nome, valor, salvar.</div>
+      <div style="padding: 14px 16px; border-radius: 16px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(24,24,40,.05); font-size: 14px"><b style="display: block; margin-bottom: 4px">Claro</b>Todo valor diz quem deve a quem, com sinal e ícone.</div>
+      <div style="padding: 14px 16px; border-radius: 16px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(24,24,40,.05); font-size: 14px"><b style="display: block; margin-bottom: 4px">Leve</b>Cartões soltos, cores de festa, nada de extrato.</div>
+    </div>
+  </div>
+
+  <!-- Paleta -->
+  <section>
+    <p class="sec">01 · Paleta</p>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px">
+      <div class="panel theme-light">
+        <h2 class="h">Claro</h2>
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px">
+          <div class="sw"><div class="c" style="background: #F3F3F0; box-shadow: inset 0 -1px 0 #DADAD4"></div><div class="m"><b>bg</b>#F3F3F0 · fundo</div></div>
+          <div class="sw"><div class="c" style="background: #FFFFFF; box-shadow: inset 0 -1px 0 #DADAD4"></div><div class="m"><b>surface</b>#FFFFFF · cards</div></div>
+          <div class="sw"><div class="c" style="background: #EAEAE6"></div><div class="m"><b>surface-2</b>#EAEAE6 · campos</div></div>
+          <div class="sw"><div class="c" style="background: #DADAD4"></div><div class="m"><b>line</b>#DADAD4 · bordas</div></div>
+          <div class="sw"><div class="c" style="background: #18181B"></div><div class="m"><b>text</b>#18181B · 17,6:1</div></div>
+          <div class="sw"><div class="c" style="background: #5D5E66"></div><div class="m"><b>muted</b>#5D5E66 · 6,4:1</div></div>
+          <div class="sw"><div class="c" style="background: #5534E0"></div><div class="m"><b>accent</b>#5534E0 · 6,9:1</div></div>
+          <div class="sw"><div class="c" style="background: #ECE8FF"></div><div class="m"><b>accent-soft</b>#ECE8FF</div></div>
+          <div class="sw"><div class="c" style="background: #0B7A43"></div><div class="m"><b>a receber</b>#0B7A43 · 5,5:1</div></div>
+          <div class="sw"><div class="c" style="background: #DFF3E7"></div><div class="m"><b>a receber soft</b>#DFF3E7</div></div>
+          <div class="sw"><div class="c" style="background: #B53A08"></div><div class="m"><b>deve</b>#B53A08 · 5,6:1</div></div>
+          <div class="sw"><div class="c" style="background: #FCE9DE"></div><div class="m"><b>deve soft</b>#FCE9DE</div></div>
+          <div class="sw"><div class="c" style="background: #5F616B"></div><div class="m"><b>quitado</b>#5F616B · 6,2:1</div></div>
+          <div class="sw"><div class="c" style="background: #FFCF3F"></div><div class="m"><b>sol</b>#FFCF3F · ilustração</div></div>
+        </div>
+      </div>
+      <div class="panel theme-dark">
+        <h2 class="h">Escuro</h2>
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px">
+          <div class="sw"><div class="c" style="background: #111114; box-shadow: inset 0 -1px 0 #363640"></div><div class="m"><b>bg</b>#111114 · fundo</div></div>
+          <div class="sw"><div class="c" style="background: #1C1C21; box-shadow: inset 0 -1px 0 #363640"></div><div class="m"><b>surface</b>#1C1C21 · cards</div></div>
+          <div class="sw"><div class="c" style="background: #27272E"></div><div class="m"><b>surface-2</b>#27272E · campos</div></div>
+          <div class="sw"><div class="c" style="background: #363640"></div><div class="m"><b>line</b>#363640 · bordas</div></div>
+          <div class="sw"><div class="c" style="background: #F3F3F5"></div><div class="m"><b>text</b>#F3F3F5 · 16,1:1</div></div>
+          <div class="sw"><div class="c" style="background: #A6A7B2"></div><div class="m"><b>muted</b>#A6A7B2 · 7,4:1</div></div>
+          <div class="sw"><div class="c" style="background: #A08CFF"></div><div class="m"><b>accent</b>#A08CFF · 6,3:1</div></div>
+          <div class="sw"><div class="c" style="background: #2B2452"></div><div class="m"><b>accent-soft</b>#2B2452</div></div>
+          <div class="sw"><div class="c" style="background: #52D38E"></div><div class="m"><b>a receber</b>#52D38E · 9,4:1</div></div>
+          <div class="sw"><div class="c" style="background: #14301F"></div><div class="m"><b>a receber soft</b>#14301F</div></div>
+          <div class="sw"><div class="c" style="background: #FF9257"></div><div class="m"><b>deve</b>#FF9257 · 7,9:1</div></div>
+          <div class="sw"><div class="c" style="background: #3B2013"></div><div class="m"><b>deve soft</b>#3B2013</div></div>
+          <div class="sw"><div class="c" style="background: #A0A1AC"></div><div class="m"><b>quitado</b>#A0A1AC · 7,0:1</div></div>
+          <div class="sw"><div class="c" style="background: #FFD25A"></div><div class="m"><b>sol</b>#FFD25A · ilustração</div></div>
+        </div>
+      </div>
+    </div>
+    <div style="display: flex; gap: 24px; margin-top: 18px; align-items: center; flex-wrap: wrap; font-size: 14px; color: #3A3B42">
+      <span><b>Estados nunca só por cor:</b></span>
+      <span class="theme-light" style="display: inline-flex"><span class="badge b-pos"><svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 7L7 17M16 17H7V8"></path></svg>+R$ 120,00 · a receber</span></span>
+      <span class="theme-light" style="display: inline-flex"><span class="badge b-neg"><svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"></path></svg>−R$ 92,13 · você deve</span></span>
+      <span class="theme-light" style="display: inline-flex"><span class="badge b-zero"><svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Quitado</span></span>
+      <span style="color: #5D5E66">Seta entrando + sinal “+” · seta saindo + sinal “−” · check. Contrastes medidos sobre surface.</span>
+    </div>
+  </section>
+
+  <!-- Tipografia + espaçamento -->
+  <section style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px">
+    <div style="background: #FFFFFF; border-radius: 28px; padding: 28px; box-shadow: 0 1px 2px rgba(24,24,40,.05)">
+      <p class="sec">02 · Tipografia</p>
+      <div style="display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; align-items: baseline; gap: 20px"><span style="width: 150px; font-size: 12px; color: #5D5E66">Display · 46/0.98 · 800</span><span style="font: 800 46px/.98 'Bricolage Grotesque', sans-serif; letter-spacing: -.035em">Quem Paga O Quê?</span></div>
+        <div style="display: flex; align-items: baseline; gap: 20px"><span style="width: 150px; font-size: 12px; color: #5D5E66">Título · 30 · 800</span><span style="font: 800 30px 'Bricolage Grotesque', sans-serif; letter-spacing: -.025em">Meus splits</span></div>
+        <div style="display: flex; align-items: baseline; gap: 20px"><span style="width: 150px; font-size: 12px; color: #5D5E66">Saldo · 36 · 800 tabular</span><span style="font: 800 36px 'Bricolage Grotesque', sans-serif; letter-spacing: -.02em; color: #B53A08; font-variant-numeric: tabular-nums">−R$ 92,13</span></div>
+        <div style="display: flex; align-items: baseline; gap: 20px"><span style="width: 150px; font-size: 12px; color: #5D5E66">Seção · 18 · 700</span><span style="font: 700 18px 'Figtree', sans-serif">Ano Novo Amigubis</span></div>
+        <div style="display: flex; align-items: baseline; gap: 20px"><span style="width: 150px; font-size: 12px; color: #5D5E66">Corpo / input · 16 · 500</span><span style="font: 500 16px 'Figtree', sans-serif">Beatriz pagou R$ 1.200,00 pelo aluguel da casa</span></div>
+        <div style="display: flex; align-items: baseline; gap: 20px"><span style="width: 150px; font-size: 12px; color: #5D5E66">Legenda · 13 · 500</span><span style="font: 500 13px 'Figtree', sans-serif; color: #5D5E66">4 pessoas · Em andamento</span></div>
+        <div style="display: flex; align-items: baseline; gap: 20px"><span style="width: 150px; font-size: 12px; color: #5D5E66">Aba · 11 · 800</span><span style="font: 800 11px 'Figtree', sans-serif; color: #5534E0">Transações</span></div>
+      </div>
+      <p style="margin: 18px 0 0; font-size: 14px; color: #3A3B42">Bricolage Grotesque para títulos e valores grandes (tom descontraído); Figtree para interface. Inputs com 16 px para o iPhone não dar zoom. Valores sempre com <span style="font-variant-numeric: tabular-nums">números tabulares</span>.</p>
+    </div>
+    <div style="background: #FFFFFF; border-radius: 28px; padding: 28px; box-shadow: 0 1px 2px rgba(24,24,40,.05); display: flex; flex-direction: column; gap: 20px">
+      <div>
+        <p class="sec">03 · Espaçamento</p>
+        <div style="display: flex; align-items: flex-end; gap: 14px">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; color: #5D5E66"><span style="width: 4px; height: 4px; background: #5534E0; border-radius: 2px"></span>4</div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; color: #5D5E66"><span style="width: 8px; height: 8px; background: #5534E0; border-radius: 2px"></span>8</div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; color: #5D5E66"><span style="width: 12px; height: 12px; background: #5534E0; border-radius: 3px"></span>12</div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; color: #5D5E66"><span style="width: 16px; height: 16px; background: #5534E0; border-radius: 3px"></span>16</div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; color: #5D5E66"><span style="width: 24px; height: 24px; background: #5534E0; border-radius: 4px"></span>24</div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; color: #5D5E66"><span style="width: 32px; height: 32px; background: #5534E0; border-radius: 5px"></span>32</div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; color: #5D5E66"><span style="width: 44px; height: 44px; border: 2px dashed #5534E0; border-radius: 8px"></span>44 alvo</div>
+        </div>
+        <p style="margin: 12px 0 0; font-size: 14px; color: #3A3B42">Margem lateral 16 px · entre seções 18–24 px · alvo de toque mínimo 44 × 44 px.</p>
+      </div>
+      <div>
+        <p class="sec">04 · Raios e elevação</p>
+        <div style="display: flex; gap: 14px; flex-wrap: wrap">
+          <div style="width: 72px; height: 56px; border-radius: 12px; background: #ECE8FF; display: flex; align-items: flex-end; padding: 6px; font-size: 11px; font-weight: 800">12 btn-sm</div>
+          <div style="width: 72px; height: 56px; border-radius: 14px; background: #ECE8FF; display: flex; align-items: flex-end; padding: 6px; font-size: 11px; font-weight: 800">14 input</div>
+          <div style="width: 72px; height: 56px; border-radius: 16px; background: #ECE8FF; display: flex; align-items: flex-end; padding: 6px; font-size: 11px; font-weight: 800">16 botão</div>
+          <div style="width: 72px; height: 56px; border-radius: 22px; background: #ECE8FF; display: flex; align-items: flex-end; padding: 8px; font-size: 11px; font-weight: 800">22 card</div>
+          <div style="width: 72px; height: 56px; border-radius: 999px; background: #ECE8FF; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800">pílula</div>
+        </div>
+        <p style="margin: 12px 0 0; font-size: 14px; color: #3A3B42">Uma única sombra suave para cards; sem bordas coloridas laterais.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Componentes -->
+  <section>
+    <p class="sec">05 · Componentes</p>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px">
+      <sc-for list="{{themes}}" as="th" hint-placeholder-count="2">
+        <div class="panel {{th.cls}}" style="display: flex; flex-direction: column; gap: 22px">
+          <h2 class="h" style="margin: 0">{{th.name}}</h2>
+          <div><p class="lab">Botões</p>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center">
+              <button class="btn btn-p"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Novo split</button>
+              <button class="btn btn-s">Secundário</button>
+              <button class="btn btn-g">Ghost</button>
+              <button class="btn btn-d">Excluir</button>
+              <button class="btn btn-p" disabled="{{true}}">Desabilitado</button>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+            <div><p class="lab">Input</p><input class="input" placeholder="Ex.: Pizza" aria-label="Exemplo de input"></div>
+            <div><p class="lab">Foco</p><input class="input f" value="Gasolina" aria-label="Exemplo de input com foco"></div>
+            <div><p class="lab">Erro</p><input class="input e" aria-label="Exemplo de input com erro"><p style="margin: 6px 0 0; color: var(--neg); font: 700 12.5px 'Figtree', sans-serif">Dê um nome para a despesa</p></div>
+          </div>
+          <div><p class="lab">Chips · escolha única (Pago por) e tags</p>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap">
+              <button class="chip av-chip on" aria-pressed="true"><span class="av av-lucas">L</span>Você</button>
+              <button class="chip av-chip" aria-pressed="false"><span class="av av-bia">B</span>Beatriz</button>
+              <button class="chip on" aria-pressed="true">#Comida</button>
+              <button class="chip" aria-pressed="false">#Bebidas</button>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 14px; align-items: start">
+            <div><p class="lab">Seleção de pessoas · sem checkbox (Dividir com)</p>
+              <div class="card" style="border-radius: 18px; overflow: hidden">
+                <button class="prow on me" aria-pressed="true"><span class="avsel"><span class="av av-lucas">L</span><span class="avck" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span></span><span style="flex: 1" class="ttl">Você</span><span class="amt" style="font-weight: 800">R$ 30,00</span></button>
+                <button class="prow off" aria-pressed="false"><span class="avsel"><span class="av av-fel">F</span><span class="avck" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span></span><span style="flex: 1; display: flex; flex-direction: column"><span class="ttl">Fellipe</span><span class="cap">Fora desta despesa</span></span><span class="amt cap" style="font-weight: 600">—</span></button>
+              </div>
+            </div>
+            <div><p class="lab">Avatares por item · seu nome em negrito</p>
+              <div style="display: flex; align-items: center">
+                <button class="avt on" aria-pressed="true"><span class="av" style="background: var(--surface2); color: var(--text)"><svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6.5 6.5 0 0 1 3.5 6"></path></svg></span><span class="avn">Todos</span></button>
+                <button class="avt on" aria-pressed="true"><span class="av av-lucas">L</span><span class="avn me">Você</span></button>
+                <button class="avt on" aria-pressed="true"><span class="av av-bia">B</span><span class="avn">Beatriz</span></button>
+                <button class="avt off" aria-pressed="false"><span class="av av-fel">F</span><span class="avn">Fellipe</span></button>
+              </div>
+              <p class="lab" style="margin-top: 14px">Interruptor</p>
+              <div style="display: flex; gap: 12px"><span class="tgl on" role="img" aria-label="Ligado"><span class="knob"></span></span><span class="tgl" role="img" aria-label="Desligado"><span class="knob"></span></span></div>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1.6fr 1fr; gap: 14px; align-items: end">
+            <div><p class="lab">Seletor de divisão</p><div class="seg"><button>Igualmente</button><button class="on">Frações</button><button>Porcent.</button><button>Valor exato</button></div></div>
+            <div><p class="lab">Stepper</p><div class="stepper"><button aria-label="Menos uma parte"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"></path></svg></button><span class="v">3</span><button aria-label="Mais uma parte"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div></div>
+          </div>
+          <div><p class="lab">Status</p>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap">
+              <span class="badge b-pos"><svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 7L7 17M16 17H7V8"></path></svg>+R$ 120,00</span>
+              <span class="badge b-neg"><svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"></path></svg>−R$ 92,13</span>
+              <span class="badge b-zero"><svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Quitado</span>
+              <span class="badge b-neg"><svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5V12l3 2"></path></svg>Pendente</span>
+              <span class="badge b-zero"><svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Pago</span>
+              <span class="badge b-acc">Admin</span>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px">
+            <div><p class="lab">Card de split</p>
+              <div class="card" style="display: flex; align-items: center; gap: 12px; padding: 14px">
+                <span class="cover" aria-hidden="true">🎆</span>
+                <span style="flex: 1; min-width: 0"><span style="display: block; font: 800 16px 'Figtree', sans-serif">Ano Novo Amigubis</span><span class="cap">4 pessoas · Em andamento</span></span>
+                <span class="badge b-neg"><svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"></path></svg>−R$ 92,13</span>
+              </div>
+            </div>
+            <div><p class="lab">Item de lista</p>
+              <div class="card" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 18px">
+                <span class="tagico" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M7 3v8M4.5 3v5a2.5 2.5 0 0 0 5 0V3M7 11v10M17 21V3c-2.2 0-3.5 2.5-3.5 6.5S15 14 17 14"></path></svg></span>
+                <span style="flex: 1; min-width: 0"><span style="display: block; font: 700 15.5px 'Figtree', sans-serif">Padaria</span><span class="cap">Catarina pagou</span></span>
+                <span style="display: flex; flex-direction: column; align-items: flex-end"><span class="amt" style="font-weight: 800">R$ 42,00</span><span class="amt" style="color: var(--neg); font: 700 12.5px 'Figtree', sans-serif">sua parte −R$ 10,50</span></span>
+              </div>
+            </div>
+          </div>
+          <div><p class="lab">Toast de sucesso</p>
+            <div class="toast" role="status"><span class="toastck" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span><span>Despesa adicionada</span><button style="min-height: 44px; border: 0; background: none; color: var(--accent); font: 800 14px 'Figtree', sans-serif; padding: 0 10px; border-radius: 999px">Desfazer</button></div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2140}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { themes: [{ name: 'Claro', cls: 'theme-light' }, { name: 'Escuro', cls: 'theme-dark' }] };
+  }
+}
+</script>
+</body>
+</html>
