@@ -22,9 +22,13 @@ import {
 const REGION = 'us-east1';
 const MAX_PEOPLE = 50;
 
+let firestore: ReturnType<typeof getFirestore> | undefined;
+
 function db() {
-  if (getApps().length === 0) initializeApp();
-  return getFirestore();
+  // Passa o app explicitamente: no pacote publicado o firebase-admin é carregado por
+  // ESM e CJS, que têm registros de app separados (o padrão do getFirestore() não acha o app).
+  firestore ??= getFirestore(getApps()[0] ?? initializeApp());
+  return firestore;
 }
 
 interface Member {
