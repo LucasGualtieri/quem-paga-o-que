@@ -10,8 +10,8 @@ Os pontos de partida são sugestões para a conversa, não decisões tomadas. Ao
 | 2 | Valor editado em despesa com partes pagas | Fase 1 | Guardar o valor pago, não só "pago"; a diferença volta a pendente | **Decidido** |
 | 3 | Duas pessoas escolhem o mesmo nome em "Quem é você?" | Fase 3 | O nome trava para a primeira pessoa; um admin pode liberar | **Decidido** |
 | 4 | Último admin sair ou deixar de ser admin | Fase 3 | Sempre ao menos um admin, como a spec sugere | **Decidido** |
-| 5 | Convidado salva com conta Google que já existe no app (fora da spec) | Fase 4 | Entra na conta existente e oferece trazer os splits do aparelho | Em aberto |
-| 6 | Validade dos links de convite e de recuperação; como revogar | Fase 4 | Sem prazo; admin gera novo código, e o dono revoga o link de recuperação em Sua conta | Em aberto |
+| 5 | Convidado salva com conta Google que já existe no app (fora da spec) | Fase 4 | Entra na conta existente e oferece trazer os splits do aparelho | **Decidido** |
+| 6 | Validade dos links de convite e de recuperação; como revogar | Fase 4 | Sem prazo; admin gera novo código, e o dono revoga o link de recuperação em Sua conta | **Decidido** |
 | 7 | Excluir despesa com partes pagas ou pendência de confirmação; o que acontece com as notificações | Fase 5 | Bloquear até desmarcar os pagamentos, como em remover participante; nenhuma notificação fica órfã | Em aberto |
 | 8 | Duas pessoas editando a mesma despesa ao mesmo tempo | Fase 5 | Aviso de conflito por número de versão, em vez de "última gravação vence" | Em aberto |
 | 9 | Comprovantes: onde ficam, por quanto tempo e quem vê (LGPD) | Fase 6 | Só as duas pessoas do pagamento e os admins veem; retenção a definir com quem cuida de privacidade | Em aberto |
@@ -57,3 +57,22 @@ Na tela Novo split, a sua linha da lista de participantes é um campo "Seu nome"
 ### 12. Promover quem ainda não entrou — decidido em 23/10/2026
 
 "Tornar admin" só aparece para quem já escolheu o nome no split. Evita que alguém com o link escolha um nome que já é admin. Spec atualizada: `04-splits-papeis-permissoes.md`.
+
+### 5. Convidado salva com uma conta que já existe — decidido em 23/10/2026
+
+Vale para Google e para e-mail.
+- **Entra na conta existente e traz os splits do convidado.** Cada nome que o convidado tinha escolhido passa para a conta. Nada se perde.
+- **Mesmo split dos dois lados** (a conta e o convidado com nomes diferentes no mesmo split): o app mostra os dois nomes daquele split e pergunta qual manter. O outro volta a ficar livre, com despesas e histórico intactos (como em "Liberar nome").
+- **Admin:** se qualquer um dos dois nomes era admin, o nome que fica continua admin. A fusão nunca deixa um split sem admin.
+- **Preferências:** valem as da conta; as do convidado neste aparelho são descartadas.
+- Depois da fusão, a identidade de convidado deixa de existir e o link de recuperação dela para de valer.
+
+Spec atualizada: `03-contas-e-convidados.md`.
+
+### 6. Validade dos links de convite e de recuperação — decidido em 23/10/2026
+
+- **Convite (link e código):** sem prazo. Em Pessoas, um admin toca "Gerar novo código"; uma folha confirma ("O link e o código atuais param de funcionar. Quem já entrou continua no split.") e o código antigo para na hora.
+- **Link de recuperação:** sem prazo e pode ser usado mais de uma vez, até ser revogado. Em Sua conta dá para revogar; gerar um novo revoga o anterior.
+- **Ao salvar a conta** (Google ou e-mail), o link de recuperação é revogado e a opção some de Sua conta: com login de verdade, um link sem senha vira só risco.
+
+Spec atualizada: `03-contas-e-convidados.md` e `04-splits-papeis-permissoes.md`.

@@ -44,7 +44,8 @@ Decisões que moldam o plano:
 - `splits/{id}/expenses/{expId}/history/{hId}`: `{kind, by, at, from?, to?, memberId?}`. Só Functions escrevem aqui.
 - `splits/{id}/payments/{pid}`: `from, to, amount, when, proofPath?, by`.
 - `inviteCodes/{code}` → `{splitId}`. Só Functions leem.
-- `recoveryTokens/{sha256(token)}` → `{uid, createdAt, revokedAt?}`. Só Functions acessam.
+- `recoveryTokens/{sha256(token)}` → `{uid, createdAt, revokedAt?}`. Só Functions acessam. Um token ativo por pessoa (gerar outro revoga o anterior); revogado ao salvar a conta (decisão 6).
+- `mergeTokens/{sha256(token)}` → `{guestUid, expiresAt}`: prova curta (10 min) de que quem pede a fusão era o convidado. Só Functions acessam (decisão 5).
 - `users/{uid}/notifications/{nid}`: `kind, splitId, expId?, paymentId?, fromMember, amount, hasProof, when, read, status: new|confirmed|disputed`. Só Functions criam.
 
 ### Sempre calculado, nunca guardado
@@ -77,7 +78,9 @@ A parte quitada é `min(paid[x], share[x])`. Se `paid[x] < share[x]`, a diferen�
 | Entrar por convite / "Quem é você?" | **Function** `joinByCode` + `claimMember` (transação; nome travado se já tem uid) e "Não estou na lista" com `nameKey` único | Dois claims no mesmo nome: o segundo falha; nome repetido falha |
 | Finalizar / reabrir | Rules: só admin muda `status`/`doneAt` | Membro nega |
 | Notificações | **Function** triggers em `expenses`/`payments` | Marcar pago gera 1 notificação para o payer |
-| Link de recuperação | **Function** `createRecoveryLink` / `redeemRecovery` → `createCustomToken` | Token revogado falha |
+| Link de recuperação | **Function** `createRecoveryLink` / `redeemRecovery` → `createCustomToken`; `revokeRecovery` | Token revogado falha; gerar outro revoga o anterior; salvar a conta revoga |
+| Gerar novo código de convite | **Function** `regenerateCode` (só admin): apaga o código antigo e cria outro na mesma transação | Membro nega; código antigo dá `invalid-code` |
+| Fusão convidado → conta existente | **Functions** `prepareMerge` (como convidado: devolve token curto) → `previewMerge` / `mergeGuest` (já na conta: move os nomes, resolve conflitos pela escolha da pessoa, herda admin, apaga o usuário anônimo e revoga o link dele) | Token de outro usuário ou vencido falha; conflito sem escolha falha; nenhum split fica sem admin |
 
 ## 4. Fases
 
@@ -154,13 +157,15 @@ Decisões: 3 ✅, 4 ✅.
   - Textos novos que não estão no protótipo (revisar): "chegou pelo convite", "ainda não entrou", "Liberar nome", "Deixar de ser admin", "Sair do split" (folha e avisos), mensagens de convite inválido e de nome já escolhido.
 
 ### Fase 4 — Contas
-Decisões: 5, 6.
+Decisões: 5 ✅, 6 ✅.
 - Tela de entrada (ilustração neutra), Google por popup, e-mail/senha.
-- `linkWithPopup`/`linkWithCredential` preservando o UID; tratamento de `credential-already-in-use` conforme a decisão 5.
+- `linkWithPopup`/`linkWithCredential` preservando o UID.
+- Conta já existe (`credential-already-in-use` / e-mail em uso): `prepareMerge` ainda como convidado → entrar na conta → `previewMerge` → se houver split com os dois nomes, folha "qual nome manter" por split → `mergeGuest`. Preferências da conta valem.
 - Lembrete "Salve sua conta…" (uma vez por sessão).
-- Link de recuperação: criar, resgatar, revogar em Sua conta.
+- Link de recuperação: criar (gerar outro revoga o anterior), resgatar, revogar em Sua conta; revogado ao salvar a conta.
+- "Gerar novo código" em Pessoas (admin), com folha de confirmação.
 - Sua conta: perfil, `selfName`, preferências, sair, troca de senha.
-- **Pronto:** e2e "convidado cria split → salva com e-mail → splits continuam" e "link de recuperação restaura a identidade em outro contexto; link revogado falha".
+- **Pronto:** e2e "convidado cria split → salva com e-mail → splits continuam", "convidado salva com e-mail que já existe → splits vêm junto; mesmo split pergunta qual nome", "link de recuperação restaura a identidade em outro contexto; link revogado falha" e "código novo: o antigo para de funcionar".
 
 ### Fase 5 — Despesas
 Decisões: 7, 8.
