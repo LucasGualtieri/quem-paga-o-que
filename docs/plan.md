@@ -78,7 +78,7 @@ A parte quitada é `min(paid[x], share[x])`. Se `paid[x] < share[x]`, a diferen�
 Uma fase por sessão, sempre começando com `/clear` e terminando com testes passando e commit. As decisões listadas em cada fase precisam estar fechadas em `docs/spec/pontos-em-aberto.md` antes de ela começar.
 
 ### Fase 1 — Motor de cálculo (`packages/calc`, sem tela)
-Decisões: 1 ✅, 2 ✅.
+Decisões: 1 ✅, 2 ✅. **Status: concluída.**
 - Workspace raiz (`package.json`, `tsconfig.base.json`, Vitest), scripts `typecheck` e `test`.
 - **Testes primeiro**:
   - pizza 2/1/3/2 sobre R$ 80,00

@@ -1,0 +1,14 @@
+{
+  "name": "@qpq/calc",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Motor de cálculo de partes e saldos. TypeScript puro, sem I/O; usado pelo app e pelas Cloud Functions.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --coverage"
+  }
+}

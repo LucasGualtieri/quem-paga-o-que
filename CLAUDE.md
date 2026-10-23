@@ -10,10 +10,17 @@ Web app de divisão de despesas em grupo. Front estático no GitHub Pages, back-
 - Decisões pendentes: docs/spec/pontos-em-aberto.md
 
 ## Comandos
-<!-- preencher na Fase 1, quando os scripts existirem -->
-- dev:
-- testes:
-- emuladores:
+- instalar: npm install
+- typecheck: npm run typecheck
+- testes: npm test (Vitest com cobertura; packages/calc exige 100%)
+- dev: <!-- Fase 2 -->
+- emuladores: <!-- Fase 2 -->
+- Hook (.claude/settings.json) já roda typecheck e testes depois de cada
+  edição de código; se ele acusar falha, corrija antes de seguir.
+
+## Código
+- packages/calc: motor de partes e saldos, TypeScript puro, sem I/O.
+  Toda conta de dinheiro passa por ele (app e Cloud Functions).
 
 ## Regras inegociáveis
 - Valores sempre em centavos inteiros; só a tela formata em R$.
