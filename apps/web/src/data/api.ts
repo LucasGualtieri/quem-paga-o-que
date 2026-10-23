@@ -1,9 +1,12 @@
 import { httpsCallable } from 'firebase/functions';
 import type {
+  CreateExpenseRequest,
   CreateRecoveryResponse,
   CreateSplitRequest,
   CreateSplitResponse,
   ErrorDetails,
+  ExpenseRef,
+  ExpenseWriteResponse,
   JoinSplitRequest,
   JoinSplitResponse,
   MemberRequest,
@@ -18,6 +21,7 @@ import type {
   PreviewInviteResponse,
   SetAdminRequest,
   SplitRequest,
+  UpdateExpenseRequest,
 } from '@qpq/shared';
 import { firebase } from '../firebase.ts';
 
@@ -35,6 +39,11 @@ export const api = {
   removeMember: callable<MemberRequest, unknown>('removeMember'),
   leaveSplit: callable<SplitRequest, unknown>('leaveSplit'),
   regenerateCode: callable<SplitRequest, RegenerateCodeResponse>('regenerateCode'),
+  // Despesas (Fase 5): só as Functions escrevem.
+  createExpense: callable<CreateExpenseRequest, ExpenseWriteResponse>('createExpense'),
+  updateExpense: callable<UpdateExpenseRequest, ExpenseWriteResponse>('updateExpense'),
+  deleteExpense: callable<ExpenseRef, ExpenseWriteResponse>('deleteExpense'),
+  restoreExpense: callable<ExpenseRef, ExpenseWriteResponse>('restoreExpense'),
   // Contas (decisões 5 e 6).
   createRecoveryLink: callable<Record<string, never>, CreateRecoveryResponse>('createRecoveryLink'),
   revokeRecovery: callable<Record<string, never>, unknown>('revokeRecovery'),

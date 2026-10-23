@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, Navigate, useNavigate, useParams } from 'react-router';
+import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router';
 import { coverColor, inviteLink } from '@qpq/shared';
 import { Button, Cover, Icon, Sheet, SkeletonCard, useToast, type IconName } from '../components/index.ts';
 import { api, detailsOf } from '../data/api.ts';
@@ -12,6 +12,7 @@ import { useOptimisticAction } from '../lib/optimistic.ts';
 import { setTheme, useTheme } from '../theme/theme.ts';
 import { appBase, copyText, EmptyArt } from './common.tsx';
 import { PeopleTab, type PeopleAction } from './PeopleTab.tsx';
+import { TxTab } from './TxTab.tsx';
 import { useReasonText } from './reasons.ts';
 
 const TABS: Array<{ key: string; path: string; icon: IconName; label: string }> = [
@@ -80,6 +81,7 @@ export default function Split() {
   const result = useSplit(id, pending ? null : uid);
   const [view, act] = usePatches(result.status === 'ready' ? result.data : null);
   const money = useMoney(id, result.status === 'ready');
+  const added = (useLocation().state as { added?: string } | null)?.added ?? null;
   const [menu, setMenu] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const run = useOptimisticAction();
@@ -185,6 +187,8 @@ export default function Split() {
         <SplitSkeleton />
       ) : current.key === 'pessoas' ? (
         <PeopleTab split={view} money={money} me={me} act={act} />
+      ) : current.key === 'tx' ? (
+        <TxTab split={view} me={me} expenses={money.expenses} loaded={money.loaded} canAdd={view.status === 'open'} onAdd={() => void navigate(`/s/${id}/despesa/nova`)} lastAdded={added} />
       ) : (
         <div className="content with-tabs">
           <div className="empty" style={{ paddingTop: 50 }}>
@@ -192,6 +196,12 @@ export default function Split() {
             <h2 className="h2">{t('split.txEmpty')}</h2>
           </div>
         </div>
+      )}
+
+      {view && me && current.key === 'tx' && view.status === 'open' && money.expenses.length > 0 && (
+        <Link to={`/s/${id}/despesa/nova`} className="fab" aria-label={t('expense.tx.add')}>
+          <Icon name="plus" size="lg" />
+        </Link>
       )}
 
       <nav className="tabbar" aria-label={t('split.tabs.nav')}>

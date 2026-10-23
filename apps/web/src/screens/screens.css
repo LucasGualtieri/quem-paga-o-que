@@ -858,3 +858,9 @@ input[type='radio'] {
 .banner .btn-sm {
   flex: none;
 }
+
+/* O toast sobe acima da barra de abas e do botão de salvar. */
+body:has(.tabbar) .toast-region,
+body:has(.bottombar) .toast-region {
+  bottom: calc(100px + env(safe-area-inset-bottom));
+}

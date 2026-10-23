@@ -17,9 +17,15 @@ service cloud.firestore {
       allow read: if signedIn() && request.auth.uid in resource.data.uids;
       allow write: if false;
 
+      // Despesas só mudam por Functions (validadas com o @qpq/calc; decisões 7 e 8).
       match /expenses/{expenseId} {
         allow read: if inSplit(splitId);
         allow write: if false;
+
+        match /history/{historyId} {
+          allow read: if inSplit(splitId);
+          allow write: if false;
+        }
       }
 
       match /payments/{paymentId} {

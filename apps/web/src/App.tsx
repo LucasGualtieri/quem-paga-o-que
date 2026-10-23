@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router';
 import { useSession } from './data/session.ts';
 import { hasBackend } from './firebase.ts';
+import { ConflictSheet } from './screens/ConflictSheet.tsx';
 import { PrefsSync } from './screens/PrefsSync.tsx';
 
 /**
@@ -26,6 +27,8 @@ const Account = lazy(() => import('./screens/Account.tsx'));
 const Recovery = lazy(() => import('./screens/Recovery.tsx'));
 const Redeem = lazy(() => import('./screens/Recovery.tsx').then((m) => ({ default: m.Redeem })));
 const Merge = lazy(() => import('./screens/Merge.tsx'));
+const ExpenseForm = lazy(() => import('./screens/ExpenseForm.tsx'));
+const ExpenseDetail = lazy(() => import('./screens/ExpenseDetail.tsx'));
 
 /** Rotas que funcionam sem login: convite (vira convidado sozinho), link de recuperação e e-mail. */
 const OPEN = [/^\/convite\//, /^\/r\//, /^\/email$/];
@@ -44,6 +47,7 @@ export function App() {
   return (
     <HashRouter>
       {hasBackend && <PrefsSync />}
+      {hasBackend && <ConflictSheet />}
       <Suspense>
         <Routes>
           {DevIndex && <Route path="/dev" element={<DevIndex />} />}
@@ -56,6 +60,9 @@ export function App() {
               <Route path="/entrar" element={<Gate><Join /></Gate>} />
               <Route path="/convite/:code" element={<Gate><WhoAreYou /></Gate>} />
               <Route path="/s/:id/pronto" element={<Gate><Created /></Gate>} />
+              <Route path="/s/:id/despesa/nova" element={<Gate><ExpenseForm /></Gate>} />
+              <Route path="/s/:id/despesa/:expId" element={<Gate><ExpenseDetail /></Gate>} />
+              <Route path="/s/:id/despesa/:expId/editar" element={<Gate><ExpenseForm /></Gate>} />
               <Route path="/s/:id/:tab?" element={<Gate><Split /></Gate>} />
               <Route path="/conta" element={<Gate><Account /></Gate>} />
               <Route path="/salvar" element={<Gate><Recovery /></Gate>} />

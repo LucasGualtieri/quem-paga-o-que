@@ -1,4 +1,4 @@
-import { ledger, type Cents, type Expense, type JoinOrder, type MemberId, type Payment } from '@qpq/calc';
+import { shares as calcShares, ledger, type Cents, type Expense, type ExpenseMode, type JoinOrder, type MemberId, type Payment, type SplitMode, type Weights } from '@qpq/calc';
 import type { ErrorReason } from '@qpq/shared';
 
 /** Participante como está no Firestore (splits/{id}.members). */
@@ -39,6 +39,16 @@ export function membersInOrder(split: SplitDoc): Member[] {
   return Object.entries(split.members)
     .map(([id, m]) => ({ ...m, id }))
     .sort((a, b) => a.joinOrder - b.joinOrder);
+}
+
+/** Ordem de entrada de cada participante; decide os centavos que sobram. */
+export function orderOf(split: SplitDoc): JoinOrder {
+  return Object.fromEntries(Object.entries(split.members).map(([id, m]) => [id, m.joinOrder]));
+}
+
+/** Parte de cada um numa despesa. */
+export function sharesOf(e: ExpenseDoc, split: SplitDoc): Record<MemberId, Cents> {
+  return calcShares(e, orderOf(split));
 }
 
 export function myMember(split: SplitDoc, uid: string): Member | null {
@@ -111,4 +121,40 @@ export function applyPatches(split: SplitDoc, patches: readonly MemberPatch[]): 
     else members[memberId] = { ...current, ...change };
   }
   return { ...split, members };
+}
+
+/** Despesa como está no Firestore (splits/{id}/expenses/{id}); o saldo sai dela e dos acertos. */
+export interface ExpenseDoc {
+  id: string;
+  name: string;
+  amount: number;
+  payer: MemberId;
+  members: MemberId[];
+  mode: ExpenseMode;
+  w?: Weights;
+  items?: Array<{ name?: string; amount: Cents; members: MemberId[]; mode?: SplitMode; w?: Weights }>;
+  rest?: MemberId[];
+  restMode?: SplitMode;
+  restW?: Weights;
+  date: string;
+  tags: string[];
+  note: string;
+  longDesc: string;
+  author: MemberId;
+  version: number;
+  updatedBy: MemberId;
+  /** Exclusão marcada (decisão 7): some das listas e do saldo; Desfazer limpa. */
+  deletedAt: Date | null;
+  createdAt?: Date | null;
+  updatedAt?: Date | null;
+  /** Centavos pagos de cada parte (decisão 2). */
+  paid: Record<MemberId, Cents>;
+  /** Pagamento marcado que quem recebeu ainda não confirmou. */
+  pendConf: Record<MemberId, boolean>;
+  proof: Record<MemberId, string>;
+}
+
+/** Despesas que contam (as excluídas ficam de fora). */
+export function activeExpenses(expenses: readonly ExpenseDoc[]): ExpenseDoc[] {
+  return expenses.filter((e) => !e.deletedAt);
 }

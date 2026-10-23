@@ -3,10 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { coverColor } from '@qpq/shared';
-import type { Expense, Payment } from '@qpq/calc';
+import type { Payment } from '@qpq/calc';
 import { Avatar, Badge, Cover, Icon, Segmented, SkeletonCard, ThemeToggle } from '../components/index.ts';
 import { firebase } from '../firebase.ts';
-import { useMySplits, useProfileName } from '../data/hooks.ts';
+import { toExpenseDoc, useMySplits, useProfileName } from '../data/hooks.ts';
 import { hiddenSplits } from '../data/local.ts';
 import { balances, myMember, type Money, type SplitDoc } from '../data/model.ts';
 import { useSession } from '../data/session.ts';
@@ -22,7 +22,7 @@ function useMyNets(splits: SplitDoc[], uid: string | null): Record<string, numbe
     if (!ids) return;
     const { db } = firebase();
     const offs = ids.split(',').flatMap((id) => [
-      onSnapshot(collection(db, 'splits', id, 'expenses'), (s) => setMoney((m) => ({ ...m, [id]: { payments: [], ...m[id], expenses: s.docs.map((d) => d.data() as Expense) } })), () => {}),
+      onSnapshot(collection(db, 'splits', id, 'expenses'), (s) => setMoney((m) => ({ ...m, [id]: { payments: [], ...m[id], expenses: s.docs.map((d) => toExpenseDoc(d.id, d.data())).filter((e) => !e.deletedAt) } })), () => {}),
       onSnapshot(collection(db, 'splits', id, 'payments'), (s) => setMoney((m) => ({ ...m, [id]: { expenses: [], ...m[id], payments: s.docs.map((d) => d.data() as Payment) } })), () => {}),
     ]);
     return () => offs.forEach((off) => off());

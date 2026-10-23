@@ -31,8 +31,8 @@ Web app de divisão de despesas em grupo. Front estático no GitHub Pages, back-
 - packages/calc: motor de partes e saldos, TypeScript puro, sem I/O.
   Toda conta de dinheiro passa por ele (app e Cloud Functions).
 - packages/shared: nomes (nameKey), convite e o contrato das Functions.
-- functions: Cloud Functions chamáveis; participantes e papéis só mudam
-  por elas (as regras negam escrita direta em splits).
+- functions: Cloud Functions chamáveis; participantes, papéis e despesas só
+  mudam por elas (as regras negam escrita direta em splits e despesas).
 - apps/web: SPA (React + Vite + HashRouter). Componentes da Folha de
   estilo em src/components; valores em R$ só por lib/money.ts;
   ações otimistas só por lib/optimistic.ts (useOptimisticValue /

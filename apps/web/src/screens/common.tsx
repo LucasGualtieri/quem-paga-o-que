@@ -2,7 +2,11 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { Icon, type IconName } from '../components/index.ts';
-import { useLang } from '../i18n/index.ts';
+import { useProfile } from '../data/hooks.ts';
+import type { Member, SplitDoc } from '../data/model.ts';
+import { useSession } from '../data/session.ts';
+import { useLang, type Lang } from '../i18n/index.ts';
+import { dateOf, shortDay } from '../lib/dates.ts';
 import { formatCents } from '../lib/money.ts';
 
 /** Ilustração dos estados vazios; o "+" amarelo só aparece quando há ação. */
@@ -66,4 +70,40 @@ export async function copyText(text: string): Promise<boolean> {
 
 export function appBase(): string {
   return location.origin + location.pathname;
+}
+
+const TAG_ICON = { food: 'food', drinks: 'drink', transport: 'car', stay: 'home' } as const;
+
+/** Ícone da despesa: o da primeira tag (diversão e outros usam o recibo). */
+export function TagIcon({ tags, size }: { tags: readonly string[]; size?: 'lg' }) {
+  const first = tags[0] ?? 'other';
+  const name = (TAG_ICON as Record<string, IconName>)[first] ?? 'receipt';
+  return (
+    <span className={size ? 'tagico lg' : 'tagico'} aria-hidden="true">
+      <Icon name={name} />
+    </span>
+  );
+}
+
+/** Como o nome de alguém aparece nas listas: "Você" ou o nome (preferência de Sua conta). */
+export function useWho(split: SplitDoc, me: Member) {
+  const { t } = useTranslation();
+  const session = useSession();
+  const profile = useProfile(session.status === 'ready' ? session.uid : null);
+  const selfName = profile.status === 'ready' && !!profile.data.prefs.selfName;
+  return (id: string): string => (id === me.id && !selfName ? t('common.you') : (split.members[id]?.name ?? '?'));
+}
+
+/** "Hoje · Qui, 31 dez" / "Qui, 31 dez": rótulo do dia nas listas. */
+export function dayLabel(date: string, today: string, lang: Lang, t: (k: string) => string): string {
+  const d = dateOf(date);
+  const base = shortDay(d, lang);
+  const diff = Math.round((dateOf(today).getTime() - d.getTime()) / 86400000);
+  return diff === 0 ? `${t('expense.tx.today')} · ${base}` : diff === 1 ? `${t('expense.tx.yesterday')} · ${base}` : base;
+}
+
+/** AAAA-MM-DD de hoje, no fuso do aparelho. */
+export function todayStr(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }

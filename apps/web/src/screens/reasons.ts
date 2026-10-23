@@ -30,6 +30,12 @@ export function useReasonText() {
       case 'invalid-recovery':
       case 'invalid-merge':
       case 'merge-choice':
+      case 'split-done':
+      case 'expense-invalid':
+      case 'expense-exists':
+      case 'expense-missing':
+      case 'version-conflict':
+      case 'has-payments':
         return t(`reasons.${details.reason}`, { name });
       default:
         return t('errors.saveFailed');

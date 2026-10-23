@@ -16,3 +16,34 @@ export function formatCents(cents: number, lang: Lang, opts: { signed?: boolean 
   const sign = cents < 0 ? MINUS : opts.signed && cents > 0 ? '+' : '';
   return sign + body;
 }
+
+/**
+ * Texto do campo de valor → centavos inteiros. Aceita "12", "12,5", "1.200,50" e
+ * "1,200.50": o último separador seguido de 1 ou 2 dígitos é o decimal; os outros são milhar.
+ */
+export function parseCents(input: string): number | null {
+  let s = input.replace(/R\$|\s/g, '');
+  if (s === '') return null;
+  if (/^[.,]/.test(s)) s = `0${s}`;
+  if (!/^\d[\d.,]*$/.test(s)) return null;
+  const last = Math.max(s.lastIndexOf(','), s.lastIndexOf('.'));
+  let whole = s;
+  let cents = '00';
+  if (last >= 0) {
+    const after = s.length - last - 1;
+    if (after === 0) whole = s.slice(0, last);
+    else if (after <= 2) {
+      whole = s.slice(0, last);
+      cents = s.slice(last + 1).padEnd(2, '0');
+    } else if (after !== 3) return null;
+  }
+  const digits = whole.replace(/[.,]/g, '');
+  if (digits.length > 9) return null;
+  return Number(digits) * 100 + Number(cents);
+}
+
+/** Centavos → texto para editar no campo (sem milhar, duas casas). */
+export function formatInputCents(cents: number, lang: Lang): string {
+  const body = `${Math.floor(cents / 100)}${lang === 'en' ? '.' : ','}${String(cents % 100).padStart(2, '0')}`;
+  return body;
+}

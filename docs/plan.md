@@ -62,7 +62,7 @@ A parte quitada é `min(paid[x], share[x])`. Se `paid[x] < share[x]`, a diferen�
 | --- | --- | --- |
 | Ler split e subcoleções | Rules: `auth.uid in split.uids` | Membro lê, estranho não |
 | Lançar despesa | Rules: membro, split `open`, `author` = meu memberId, validação de forma (inteiros ≥ 0, `version == 1`) | Lança com e sem permissão; split finalizado bloqueia |
-| Editar/excluir despesa | Rules: `author` ou admin, `open`, `version` incrementa em 1 (o app compara antes e oferece "Ver a versão nova" / "Salvar a minha por cima"; por cima = regravar com a versão atual + 1). Excluir = marcar `deletedAt` (Desfazer limpa), só sem `paid` nem `pendConf`. Histórico por trigger | Não-autor nega; versão errada nega; excluir com parte paga nega (decisões 7 e 8) |
+| Lançar / editar / excluir / desfazer despesa | **Functions** `createExpense`, `updateExpense`, `deleteExpense`, `restoreExpense` (as regras negam escrita direta): membro lança; autor ou admin edita/exclui; split `open`; valida com `@qpq/calc` (`validateExpense`); `version` +1 a cada mudança; edição com versão atrasada recusa com `version-conflict` (nome de quem alterou) a menos que `force` ("Salvar a minha por cima"); excluir = marcar `deletedAt` e só sem `paid` nem `pendConf` (`has-payments`); histórico em `history/` só por Function | Não-membro, não-autor e split finalizado negam; dados que o motor recusa negam; versão errada avisa; excluir com parte paga nega; desfazer exige as pessoas ainda no split |
 | Marcar parte paga | Rules: `diff().affectedKeys()` ⊆ `{paid, proof, pendConf}` e só na chave `x` onde caller = x, payer ou admin; o payer nunca tem chave | Matriz de quem pode marcar a parte de quem |
 | Confirmar / "Não recebi" | Rules: só payer ou admin mexe em `pendConf`; "Não recebi" apaga `paid[x]` + `proof[x]` | Membro comum não confirma pelo outro |
 | Registrar acerto | Rules: `from` ou `to` = caller, ou admin; `open` | Terceiro não-admin nega |
@@ -188,6 +188,13 @@ Decisões: 7 ✅, 8 ✅.
 - Detalhe da despesa com histórico, editar/excluir com `version`, Desfazer (~4 s) como ação inversa.
 - Excluir: bloqueado com parte paga ou pendência (decisão 7); é exclusão marcada (`deletedAt`), que some de listas, saldos (o `@qpq/calc` recebe só as não excluídas) e notificações; Desfazer limpa a marca.
 - Conflito de edição por `version` (decisão 8): aviso com "Ver a versão nova" ou "Salvar a minha por cima"; marcar pago/confirmar/comprovante não mexem em `version`.
+- **Status: concluída.** Notas da implementação:
+  - Escrita de despesas só por Functions (não por regras): o motor de cálculo valida tudo e uma despesa inválida nunca chega ao banco (senão `ledger` quebraria para o split inteiro). As regras só deixam ler despesas e histórico.
+  - O app gera o id da despesa e a mostra na hora (`expenseStore`); as chamadas de uma mesma despesa saem em fila (Desfazer logo após lançar espera a criação). Conflito de edição: a edição não salva volta e abre "Beatriz alterou esta despesa enquanto você editava." com "Ver a versão nova" / "Salvar a minha por cima".
+  - Saldo e `removeMember`/`leaveSplit` ignoram despesas excluídas; desfazer a exclusão confere se todos ainda estão no split.
+  - Itens ganharam nome (aparece no detalhe). **Comprovante** do formulário e do detalhe fica para a Fase 6 (Storage); as ações de pagamento do detalhe também (hoje só leitura: Pendente/Pago).
+  - Saldo e Minha visão seguem vazios até a Fase 6; a aba Transações mostra "sua parte" / "a receber" já descontando o que foi pago.
+  - Textos novos fora do protótipo (revisar): aviso de conflito, bloqueio de exclusão, "Limpar" do Dividir com, mensagens de erro dos itens.
 - **Pronto:** testes de componente para cada regra de "não salva"; testes de regras para versão e exclusão bloqueada; e2e lançando uma despesa por modo, excluindo com Desfazer e editando em dois navegadores ao mesmo tempo (aviso de conflito); screenshots × `Telas_3_Despesa`.
 
 ### Fase 6 — Saldo, Minha visão, pagamentos e comprovantes

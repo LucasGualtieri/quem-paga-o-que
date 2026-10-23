@@ -114,3 +114,20 @@ describe('perfil e preferências (Fase 4)', () => {
     await assertFails(setDoc(doc(as('ana'), 'mergeTokens/x'), { guestUid: 'ana' }));
   });
 });
+
+describe('histórico de despesas (Fase 5)', () => {
+  it('quem está no split lê; ninguém escreve', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'splits/s1/expenses/e1/history/h1'), { kind: 'created' });
+    });
+    await assertSucceeds(getDocs(collection(as('bia'), 'splits/s1/expenses/e1/history')));
+    await assertFails(getDocs(collection(as('zé'), 'splits/s1/expenses/e1/history')));
+    await assertFails(setDoc(doc(as('ana'), 'splits/s1/expenses/e1/history/h2'), { kind: 'x' }));
+  });
+
+  it('despesas continuam sem escrita direta, mesmo do autor ou do admin', async () => {
+    await assertFails(updateDoc(doc(as('ana'), 'splits/s1/expenses/e1'), { name: 'x' }));
+    await assertFails(setDoc(doc(as('bia'), 'splits/s1/expenses/e9'), { name: 'x', amount: 1 }));
+    await assertFails(deleteDoc(doc(as('ana'), 'splits/s1/expenses/e1')));
+  });
+});

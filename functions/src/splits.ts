@@ -40,7 +40,8 @@ const MAX_PEOPLE = 50;
 async function readMoney(tx: Transaction, ref: DocumentReference) {
   const [expenses, payments] = await Promise.all([tx.get(ref.collection('expenses')), tx.get(ref.collection('payments'))]);
   return {
-    expenses: expenses.docs.map((d) => d.data() as Expense),
+    // Despesas excluídas (exclusão marcada, decisão 7) não entram em saldo nenhum.
+    expenses: expenses.docs.filter((d) => !d.get('deletedAt')).map((d) => d.data() as Expense),
     payments: payments.docs.map((d) => d.data() as Payment),
   };
 }

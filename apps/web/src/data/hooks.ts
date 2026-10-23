@@ -1,8 +1,9 @@
 import { collection, doc, onSnapshot, query, setDoc, where } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
-import type { Expense, Payment } from '@qpq/calc';
+import { useEffect, useMemo, useState } from 'react';
+import type { Payment } from '@qpq/calc';
 import { firebase } from '../firebase.ts';
-import type { Money, SplitDoc } from './model.ts';
+import { pruneOps, mergeOps, useOps } from './expenseStore.ts';
+import { activeExpenses, type ExpenseDoc, type Money, type SplitDoc } from './model.ts';
 
 export type Loadable<T> = { status: 'loading' } | { status: 'ready'; data: T } | { status: 'denied' };
 
@@ -35,22 +36,88 @@ export function useSplit(splitId: string, uid: string | null): Loadable<SplitDoc
   return state;
 }
 
-const EMPTY: Money = { expenses: [], payments: [] };
+const stamp = (v: unknown): Date | null => (v && typeof (v as { toDate?: unknown }).toDate === 'function' ? (v as { toDate(): Date }).toDate() : null);
 
-/** Despesas e acertos do split; saldo nunca é guardado, sempre calculado deles. */
-export function useMoney(splitId: string, enabled: boolean): Money {
-  const [money, setMoney] = useState<Money>(EMPTY);
+/** Documento do Firestore → despesa (datas viram Date; campos que faltam, vazios). */
+export function toExpenseDoc(id: string, d: Record<string, unknown>): ExpenseDoc {
+  return {
+    ...(d as unknown as ExpenseDoc),
+    id,
+    note: (d.note as string | undefined) ?? '',
+    longDesc: (d.longDesc as string | undefined) ?? '',
+    tags: (d.tags as string[] | undefined) ?? ['other'],
+    paid: (d.paid as ExpenseDoc['paid'] | undefined) ?? {},
+    pendConf: (d.pendConf as ExpenseDoc['pendConf'] | undefined) ?? {},
+    proof: (d.proof as ExpenseDoc['proof'] | undefined) ?? {},
+    deletedAt: stamp(d.deletedAt),
+    createdAt: stamp(d.createdAt),
+    updatedAt: stamp(d.updatedAt),
+  };
+}
+
+/**
+ * Todas as despesas do split (inclusive as excluídas) em tempo real, já com as
+ * mudanças que o aparelho mostra antes do servidor responder.
+ */
+export function useExpenses(splitId: string, enabled: boolean): { expenses: ExpenseDoc[]; loaded: boolean } {
+  const [server, setServer] = useState<ExpenseDoc[] | null>(null);
+  const ops = useOps();
   useEffect(() => {
     if (!enabled) return;
-    const { db } = firebase();
-    const offE = onSnapshot(collection(db, 'splits', splitId, 'expenses'), (s) => setMoney((m) => ({ ...m, expenses: s.docs.map((d) => d.data() as Expense) })), () => {});
-    const offP = onSnapshot(collection(db, 'splits', splitId, 'payments'), (s) => setMoney((m) => ({ ...m, payments: s.docs.map((d) => d.data() as Payment) })), () => {});
-    return () => {
-      offE();
-      offP();
-    };
+    return onSnapshot(
+      collection(firebase().db, 'splits', splitId, 'expenses'),
+      (s) => {
+        const docs = s.docs.map((d) => toExpenseDoc(d.id, d.data()));
+        setServer(docs);
+        pruneOps(splitId, docs);
+      },
+      () => setServer([]),
+    );
   }, [splitId, enabled]);
-  return money;
+  const expenses = useMemo(() => mergeOps(splitId, server ?? [], ops), [splitId, server, ops]);
+  return { expenses, loaded: server !== null };
+}
+
+export interface HistoryEntry {
+  id: string;
+  seq: number;
+  kind: 'created' | 'edited' | 'deleted' | 'restored' | string;
+  by: string;
+  at: Date | null;
+  from?: number;
+  to?: number;
+}
+
+export function useHistory(splitId: string, expenseId: string): HistoryEntry[] {
+  const [entries, setEntries] = useState<HistoryEntry[]>([]);
+  useEffect(
+    () =>
+      onSnapshot(
+        collection(firebase().db, 'splits', splitId, 'expenses', expenseId, 'history'),
+        (s) =>
+          setEntries(
+            s.docs
+              .map((d) => ({ ...(d.data() as Omit<HistoryEntry, 'id' | 'at'>), id: d.id, at: stamp(d.data().at) }))
+              .sort((a, b) => a.seq - b.seq),
+          ),
+        () => setEntries([]),
+      ),
+    [splitId, expenseId],
+  );
+  return entries;
+}
+
+const NO_PAYMENTS: readonly Payment[] = [];
+
+/** Despesas e acertos do split; o saldo nunca é guardado, sempre calculado deles (e sem as excluídas). */
+export function useMoney(splitId: string, enabled: boolean): { expenses: ExpenseDoc[]; payments: readonly Payment[]; loaded: boolean } {
+  const { expenses, loaded } = useExpenses(splitId, enabled);
+  const [payments, setPayments] = useState<readonly Payment[]>(NO_PAYMENTS);
+  useEffect(() => {
+    if (!enabled) return;
+    return onSnapshot(collection(firebase().db, 'splits', splitId, 'payments'), (s) => setPayments(s.docs.map((d) => d.data() as Payment)), () => {});
+  }, [splitId, enabled]);
+  return useMemo(() => ({ expenses: activeExpenses(expenses), payments, loaded }), [expenses, payments, loaded]);
 }
 
 export interface Prefs {

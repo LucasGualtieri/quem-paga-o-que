@@ -26,3 +26,19 @@ export async function createSplit(page: Page, people: string[]): Promise<string>
   return (await codeText.textContent())!;
 }
 
+
+/** Outro convidado entra no split pelo código escolhendo o próprio nome (e abre o split). */
+export async function joinAs(browser: Browser, code: string, name: string): Promise<Page> {
+  const page = await guest(browser);
+  await page.goto(`./#/convite/${code}`);
+  await page.getByRole('radio', { name: new RegExp(name) }).check();
+  await page.getByRole('button', { name: `Entrar como ${name}` }).click();
+  await expect(page.locator('.toast-region')).toContainText('Você entrou');
+  return page;
+}
+
+/** Abre o split recém-criado (o do Lucas, na tela "está pronto"). */
+export async function openCreated(page: Page): Promise<void> {
+  await page.getByRole('link', { name: 'Ir para o split' }).click();
+  await expect(page.getByRole('heading', { name: 'Churras de sábado' })).toBeVisible();
+}

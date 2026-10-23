@@ -1,3 +1,5 @@
+import type { ExpenseMode, MemberId, SplitMode, Weights } from '@qpq/calc';
+
 /**
  * Contrato das Cloud Functions chamáveis (região us-east1).
  * Participantes e papéis só mudam por elas (decisões 3 e 4; docs/plan.md seção 3).
@@ -19,7 +21,13 @@ export type ErrorReason =
   | 'not-guest'
   | 'invalid-recovery'
   | 'invalid-merge'
-  | 'merge-choice';
+  | 'merge-choice'
+  | 'split-done'
+  | 'expense-invalid'
+  | 'expense-exists'
+  | 'expense-missing'
+  | 'version-conflict'
+  | 'has-payments';
 
 export interface ErrorDetails {
   reason: ErrorReason;
@@ -127,4 +135,61 @@ export interface MergeGuestRequest {
   token: string;
   /** splitId → id do nome que fica, para cada conflito. */
   keep: Record<string, string>;
+}
+
+/**
+ * Despesas (Fase 5). Só as Functions escrevem: validam com o @qpq/calc, conferem
+ * quem pode editar, a versão (decisão 8) e os pagamentos (decisão 7).
+ */
+
+export interface ExpenseItemInput {
+  /** Nome do item (opcional); aparece no detalhe da despesa. */
+  name?: string;
+  amount: number;
+  members: MemberId[];
+  mode?: SplitMode;
+  w?: Weights;
+}
+
+/** O que a pessoa edita numa despesa. Pagamentos (`paid`, `proof`, `pendConf`) ficam de fora. */
+export interface ExpenseInput {
+  name: string;
+  /** `null` só no modo items: o total passa a ser a soma dos itens. */
+  amount: number | null;
+  payer: MemberId;
+  members: MemberId[];
+  mode: ExpenseMode;
+  w?: Weights;
+  items?: ExpenseItemInput[];
+  rest?: MemberId[];
+  restMode?: SplitMode;
+  restW?: Weights;
+  /** AAAA-MM-DD. */
+  date: string;
+  tags: string[];
+  note?: string;
+  longDesc?: string;
+}
+
+export interface CreateExpenseRequest {
+  splitId: string;
+  /** Id gerado no aparelho: a despesa já aparece na tela com ele (UX otimista). */
+  id: string;
+  expense: ExpenseInput;
+}
+export interface UpdateExpenseRequest {
+  splitId: string;
+  expenseId: string;
+  /** Versão que a pessoa estava editando (decisão 8). */
+  expectedVersion: number;
+  /** "Salvar a minha por cima": ignora a diferença de versão. */
+  force?: boolean;
+  expense: ExpenseInput;
+}
+export interface ExpenseRef {
+  splitId: string;
+  expenseId: string;
+}
+export interface ExpenseWriteResponse {
+  version: number;
 }
