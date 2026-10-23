@@ -158,7 +158,8 @@ async function splitByCode(tx: Transaction, raw: unknown) {
   return { ref, split: snap.data() as SplitData };
 }
 
-const opts = { region: REGION, maxInstances: 10 };
+// invoker público: o navegador chama direto; quem decide é a autenticação e as checagens de cada função.
+const opts = { region: REGION, maxInstances: 10, invoker: 'public' as const };
 
 export const createSplit = onCall(opts, async (req): Promise<CreateSplitResponse> => {
   const uid = uidOf(req);
