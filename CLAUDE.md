@@ -21,7 +21,9 @@ Web app de divisão de despesas em grupo. Front estático no GitHub Pages, back-
 - protótipo: node scripts/serve-reference.mjs (http://localhost:8000)
 - deploy no staging: npm run deploy:staging (regras + Functions em
   qpq-staging); o Pages publica o app sozinho a cada push na main.
-  Nunca publique em produção.
+  Function nova: rode o deploy duas vezes (na criação o Cloud Run não
+  recebe o invoker público; na atualização recebe). Nunca publique em
+  produção.
 - Hook (.claude/settings.json) já roda typecheck e testes depois de cada
   edição de código; se ele acusar falha, corrija antes de seguir.
 
