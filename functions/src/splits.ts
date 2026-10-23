@@ -1,7 +1,7 @@
 import { randomInt } from 'node:crypto';
-import { FieldValue, type DocumentReference, type Transaction } from 'firebase-admin/firestore';
+import { FieldValue, type Transaction } from 'firebase-admin/firestore';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
-import { ledger, type Expense, type JoinOrder, type Payment } from '@qpq/calc';
+import type { Expense, Payment } from '@qpq/calc';
 import {
   cleanName,
   findDuplicate,
@@ -20,12 +20,14 @@ import {
   db,
   fail,
   input,
+  ledgerOf,
   loadSplit,
   memberOf,
   mirrors,
   newId,
   opts,
   otherLinkedAdmins,
+  readMoney,
   requireAdmin,
   requireMember,
   target,
@@ -37,19 +39,9 @@ import {
 
 const MAX_PEOPLE = 50;
 
-async function readMoney(tx: Transaction, ref: DocumentReference) {
-  const [expenses, payments] = await Promise.all([tx.get(ref.collection('expenses')), tx.get(ref.collection('payments'))]);
-  return {
-    // Despesas excluídas (exclusão marcada, decisão 7) não entram em saldo nenhum.
-    expenses: expenses.docs.filter((d) => !d.get('deletedAt')).map((d) => d.data() as Expense),
-    payments: payments.docs.map((d) => d.data() as Payment),
-  };
-}
-
 /** Saldo de cada participante, sempre pelo motor compartilhado (@qpq/calc). */
 function netOf(split: SplitData, money: { expenses: Expense[]; payments: Payment[] }) {
-  const order: JoinOrder = Object.fromEntries(Object.entries(split.members).map(([id, m]) => [id, m.joinOrder]));
-  return ledger({ order, ...money }).net;
+  return ledgerOf(split, money).net;
 }
 
 function appearsIn(expenses: readonly Expense[], memberId: string): boolean {
@@ -112,6 +104,8 @@ export const createSplit = onCall(opts, async (req): Promise<CreateSplitResponse
       status: 'open',
       doneAt: null,
       code,
+      photo: null,
+      proofVisibility: 'all',
       createdAt: now,
       createdBy: selfId,
       nextJoinOrder: people.length + 1,

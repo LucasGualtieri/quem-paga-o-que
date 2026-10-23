@@ -15,10 +15,10 @@
     "build": "npm run build -w @qpq/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm test --workspaces --if-present",
-    "e2e": "npm run bundle -w @qpq/functions && firebase emulators:exec --only auth,firestore,functions --project demo-qpq \"npm run e2e -w @qpq/web\"",
+    "e2e": "npm run bundle -w @qpq/functions && firebase emulators:exec --only auth,firestore,functions,storage --project demo-qpq \"npm run e2e -w @qpq/web\"",
     "emulators": "npm run bundle -w @qpq/functions && firebase emulators:start --project demo-qpq",
-    "test:emulators": "npm run bundle -w @qpq/functions && firebase emulators:exec --only auth,firestore,functions --project demo-qpq \"npm run test:integration -w @qpq/functions\"",
-    "deploy:staging": "firebase deploy --only firestore:rules,functions --project staging"
+    "test:emulators": "npm run bundle -w @qpq/functions && firebase emulators:exec --only auth,firestore,functions,storage --project demo-qpq \"npm run test:integration -w @qpq/functions\"",
+    "deploy:staging": "firebase deploy --only firestore:rules,storage,functions --project staging"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "6.0.0",

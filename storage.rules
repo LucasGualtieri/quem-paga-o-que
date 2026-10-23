@@ -1,10 +1,67 @@
 rules_version = '2';
 
-// Tudo fechado até a Fase 6 (comprovantes) escrever as regras de verdade.
+// Regras do Storage (decisão 9). Testes em functions/test/storage.rules.test.ts.
+// Quem é do split vem do Firestore (regras entre serviços). Só imagem, até 2 MB.
+// Trocar ou apagar comprovantes, notas e capas só pelas Functions (Admin SDK).
 service firebase.storage {
   match /b/{bucket}/o {
-    match /{allPaths=**} {
-      allow read, write: if false;
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function splitOf(splitId) {
+      return firestore.get(/databases/(default)/documents/splits/$(splitId)).data;
+    }
+
+    function inSplit(s) {
+      return signedIn() && request.auth.uid in s.uids;
+    }
+
+    function isAdmin(s) {
+      return signedIn() && request.auth.uid in s.adminUids;
+    }
+
+    function isMember(s, memberId) {
+      return s.members[memberId].uid == request.auth.uid;
+    }
+
+    function image() {
+      return request.resource.contentType.matches('image/.*') && request.resource.size <= 2 * 1024 * 1024;
+    }
+
+    // Comprovante de pagamento entre `from` e `to` (parte de despesa ou acerto).
+    match /splits/{splitId}/proofs/{from}/{to}/{file} {
+      function canSee() {
+        let s = splitOf(splitId);
+        return inSplit(s) && (s.get('proofVisibility', 'all') == 'all' || isAdmin(s) || isMember(s, from) || isMember(s, to));
+      }
+
+      function canSend() {
+        let s = splitOf(splitId);
+        return inSplit(s) && s.status == 'open' && (isAdmin(s) || isMember(s, from) || isMember(s, to));
+      }
+
+      allow read: if canSee();
+      allow create: if resource == null && image() && canSend();
+    }
+
+    // Comprovante (foto) da despesa: todo o split vê, qualquer participante envia.
+    match /splits/{splitId}/receipts/{expenseId}/{file} {
+      allow read: if inSplit(splitOf(splitId));
+      allow create: if resource == null && image() && inSplit(splitOf(splitId)) && splitOf(splitId).status == 'open';
+    }
+
+    // Capa com foto: participantes veem; só admin envia.
+    match /covers/{splitId}/{file} {
+      allow read: if inSplit(splitOf(splitId));
+      allow create: if resource == null && image() && isAdmin(splitOf(splitId));
+    }
+
+    // Foto de perfil: quem tem login vê; só o dono envia e apaga.
+    match /users/{uid}/{file} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.auth.uid == uid && image();
+      allow delete: if signedIn() && request.auth.uid == uid;
     }
   }
 }

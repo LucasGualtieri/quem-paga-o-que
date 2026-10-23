@@ -2,7 +2,7 @@ rules_version = '2';
 
 // Regras do Firestore. Testes em functions/test/rules.test.ts (npm run test:emulators).
 // Participantes e papéis só mudam por Cloud Functions (docs/plan.md, seção 3);
-// despesas e acertos ganham escrita nas Fases 5 e 6.
+// despesas, acertos e comprovantes também (Fases 5 e 6).
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() {
@@ -46,22 +46,29 @@ service cloud.firestore {
         && (!('lang' in p) || p.lang in ['pt-BR', 'en']);
     }
 
-    function validProfile(d) {
+    // Foto de perfil: só um arquivo na pasta da própria pessoa no Storage (users/{uid}/…).
+    function validPhoto(uid, p) {
+      return p == null || (p is string && p.matches('users/' + uid + '/[A-Za-z0-9_-][A-Za-z0-9._-]{0,79}'));
+    }
+
+    function validProfile(uid, d) {
       return (!('displayName' in d) || (d.displayName is string && d.displayName.size() > 0 && d.displayName.size() <= 40))
-        && (!('prefs' in d) || validPrefs(d.prefs));
+        && (!('prefs' in d) || validPrefs(d.prefs))
+        && (!('photoPath' in d) || validPhoto(uid, d.photoPath));
     }
 
     match /users/{uid} {
       allow read: if signedIn() && request.auth.uid == uid;
       allow create: if signedIn() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['displayName', 'prefs'])
-        && validProfile(request.resource.data);
+        && request.resource.data.keys().hasOnly(['displayName', 'prefs', 'photoPath'])
+        && validProfile(uid, request.resource.data);
       allow update: if signedIn() && request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'prefs'])
-        && validProfile(request.resource.data);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'prefs', 'photoPath'])
+        && validProfile(uid, request.resource.data);
       allow delete: if false;
     }
 
-    // inviteCodes, recoveryTokens, mergeTokens e qualquer outra coleção: só o Admin SDK (Functions).
+    // inviteCodes, recoveryTokens, mergeTokens, proofs (prazo dos comprovantes) e qualquer
+    // outra coleção: só o Admin SDK (Functions).
   }
 }

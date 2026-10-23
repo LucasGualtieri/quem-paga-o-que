@@ -27,7 +27,12 @@ export type ErrorReason =
   | 'expense-exists'
   | 'expense-missing'
   | 'version-conflict'
-  | 'has-payments';
+  | 'has-payments'
+  | 'not-involved'
+  | 'not-pending'
+  | 'proof-exists'
+  | 'proof-invalid'
+  | 'payment-missing';
 
 export interface ErrorDetails {
   reason: ErrorReason;
@@ -192,4 +197,90 @@ export interface ExpenseRef {
 }
 export interface ExpenseWriteResponse {
   version: number;
+}
+
+/**
+ * Pagamentos e comprovantes (Fase 6). Só as Functions escrevem: conferem quem pode
+ * (spec 04), o split aberto e calculam o valor pelo @qpq/calc. Nenhum mexe em `version`
+ * (decisão 8); cada mudança de pagamento numa despesa sobe `paySeq`.
+ */
+
+/** Uma parte de despesa: a de `memberId` na despesa `expenseId`. */
+export interface ShareRef {
+  splitId: string;
+  expenseId: string;
+  memberId: string;
+}
+export interface PayWriteResponse {
+  /** `paySeq` da despesa depois da mudança: o app tira a mudança otimista quando o snapshot chega nele. */
+  paySeq: number;
+}
+
+/** Acerto pelo cartão do Saldo: `from` paga a `to` a dívida atual do par (`M`). Id gerado no aparelho. */
+export interface CreatePaymentRequest {
+  splitId: string;
+  id: string;
+  from: string;
+  to: string;
+}
+export interface CreatePaymentResponse {
+  /** Centavos registrados (a dívida do par no servidor); 0 = nada a acertar, nada foi gravado. */
+  amount: number;
+}
+export interface PaymentRef {
+  splitId: string;
+  paymentId: string;
+}
+
+/**
+ * Comprovante enviado ao Storage (só imagem, até 2 MB). Fica guardado no máximo
+ * 15 dias e é apagado ao finalizar o split (decisão 9).
+ */
+export const PROOF_TTL_DAYS = 15;
+export const PROOF_MAX_BYTES = 2 * 1024 * 1024;
+
+/** Quem vê comprovantes de pagamento no split (decisão 9). */
+export type ProofVisibility = 'all' | 'involved';
+
+/** Comprovante guardado: `path` some (null) quando expira. */
+export interface ProofInfo {
+  path: string | null;
+  /** Quando foi enviado (ms desde 1970). */
+  at: number;
+  /** Quem enviou (memberId). */
+  by: string;
+}
+
+/** Caminho no Storage do comprovante de um pagamento entre `from` e `to` (as regras leem as duas pontas daqui). */
+export function proofPath(splitId: string, from: string, to: string, file: string): string {
+  return `splits/${splitId}/proofs/${from}/${to}/${file}`;
+}
+export function receiptPath(splitId: string, expenseId: string, file: string): string {
+  return `splits/${splitId}/receipts/${expenseId}/${file}`;
+}
+export function coverPath(splitId: string, file: string): string {
+  return `covers/${splitId}/${file}`;
+}
+export function avatarPath(uid: string, file: string): string {
+  return `users/${uid}/${file}`;
+}
+
+export type AttachProofRequest =
+  | { splitId: string; kind: 'share'; expenseId: string; memberId: string; path: string }
+  | { splitId: string; kind: 'payment'; paymentId: string; path: string };
+
+export interface SetProofVisibilityRequest {
+  splitId: string;
+  value: ProofVisibility;
+}
+/** Comprovante (foto) da despesa; `path: null` tira. */
+export interface SetReceiptRequest {
+  splitId: string;
+  expenseId: string;
+  path: string | null;
+}
+/** Capa com foto do split; `path: null` volta para o emoji. */
+export interface SetSplitPhotoRequest {
+  splitId: string;
+  path: string | null;
 }

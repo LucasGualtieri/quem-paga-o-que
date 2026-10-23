@@ -4,9 +4,12 @@ import { initializeApp } from 'firebase/app';
 import { connectAuthEmulator, createUserWithEmailAndPassword, getAuth, signInAnonymously, type Auth } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore, type Firestore } from 'firebase/firestore';
 import { connectFunctionsEmulator, getFunctions, httpsCallable } from 'firebase/functions';
+import { connectStorageEmulator, getStorage, ref, uploadBytes, type FirebaseStorage } from 'firebase/storage';
+import { getStorage as adminStorage } from 'firebase-admin/storage';
 import type { CreateSplitRequest, CreateSplitResponse, ErrorReason } from '@qpq/shared';
 
 export const PROJECT = 'demo-qpq';
+export const BUCKET = 'demo-qpq.appspot.com';
 const HOST = '127.0.0.1';
 
 let seq = 0;
@@ -15,6 +18,7 @@ export interface TestUser {
   uid: string;
   auth: Auth;
   db: Firestore;
+  storage: FirebaseStorage;
   call: <Res = unknown>(name: string, data: unknown) => Promise<Res>;
 }
 
@@ -26,8 +30,10 @@ function connect(name: string) {
   connectFirestoreEmulator(db, HOST, 8080);
   const fns = getFunctions(app, 'us-east1');
   connectFunctionsEmulator(fns, HOST, 5001);
+  const storage = getStorage(app, BUCKET);
+  connectStorageEmulator(storage, HOST, 9199);
   const call = async <Res,>(fn: string, data: unknown) => (await httpsCallable<unknown, Res>(fns, fn)(data)).data;
-  return { auth, db, call };
+  return { auth, db, storage, call };
 }
 
 /** Um usuário anônimo novo (convidado), com o SDK do cliente apontado para os emuladores. */
@@ -77,9 +83,33 @@ export async function clearAuth(): Promise<void> {
   await fetch(`http://${HOST}:9099/emulator/v1/projects/${PROJECT}/accounts`, { method: 'DELETE' });
 }
 
+function adminApp() {
+  return adminApps()[0] ?? adminInit({ projectId: PROJECT, storageBucket: BUCKET });
+}
+
 /** Admin SDK (ignora regras) para preparar e conferir dados. */
 export function admin() {
-  return adminFirestore(adminApps()[0] ?? adminInit({ projectId: PROJECT }));
+  return adminFirestore(adminApp());
+}
+
+/** Bucket do emulador de Storage, pelo Admin SDK. */
+export function bucket() {
+  return adminStorage(adminApp()).bucket(BUCKET);
+}
+
+/** Uma "foto" pequena (JPEG falso) enviada pelo app da pessoa, sob as regras do Storage. */
+export async function upload(user: Pick<TestUser, 'storage'>, path: string, contentType = 'image/jpeg', size = 64): Promise<string> {
+  await uploadBytes(ref(user.storage, path), new Uint8Array(size).fill(7), { contentType });
+  return path;
+}
+
+export async function exists(path: string): Promise<boolean> {
+  return (await bucket().file(path).exists())[0];
+}
+
+export async function clearStorage(): Promise<void> {
+  const [files] = await bucket().getFiles();
+  await Promise.all(files.map((f) => f.delete().catch(() => {})));
 }
 
 export async function createSplit(user: TestUser, req: Partial<CreateSplitRequest> = {}) {
@@ -113,6 +143,8 @@ export async function splitDoc(splitId: string) {
     uids: string[];
     adminUids: string[];
     nextJoinOrder: number;
+    proofVisibility?: string;
+    photo?: unknown;
   };
 }
 

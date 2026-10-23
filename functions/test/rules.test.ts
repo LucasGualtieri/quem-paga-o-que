@@ -70,7 +70,7 @@ describe('splits: escrita direta é sempre negada (tudo passa por Functions)', (
     await assertFails(deleteDoc(doc(as('ana'), 'splits/s1')));
   });
 
-  it('despesas e acertos: escrita fechada até as Fases 5 e 6', async () => {
+  it('despesas e acertos: escrita direta fechada (só Functions)', async () => {
     await assertFails(setDoc(doc(as('ana'), 'splits/s1/expenses/e2'), { name: 'x' }));
     await assertFails(setDoc(doc(as('ana'), 'splits/s1/payments/p2'), { amount: 1 }));
   });
@@ -129,5 +129,23 @@ describe('histórico de despesas (Fase 5)', () => {
     await assertFails(updateDoc(doc(as('ana'), 'splits/s1/expenses/e1'), { name: 'x' }));
     await assertFails(setDoc(doc(as('bia'), 'splits/s1/expenses/e9'), { name: 'x', amount: 1 }));
     await assertFails(deleteDoc(doc(as('ana'), 'splits/s1/expenses/e1')));
+  });
+});
+
+describe('pagamentos e foto de perfil (Fase 6)', () => {
+  it('pagamentos, comprovantes e partes pagas só mudam por Functions', async () => {
+    await assertFails(setDoc(doc(as('bia'), 'splits/s1/payments/p2'), { from: 'm2', to: 'm1', amount: 100 }));
+    await assertFails(deleteDoc(doc(as('ana'), 'splits/s1/payments/p1')));
+    await assertFails(updateDoc(doc(as('bia'), 'splits/s1/expenses/e1'), { 'paid.m2': 333 }));
+    await assertFails(updateDoc(doc(as('ana'), 'splits/s1'), { proofVisibility: 'involved' }));
+    await assertFails(getDoc(doc(as('ana'), 'proofs/x')));
+  });
+
+  it('a foto de perfil aponta só para a pasta da própria pessoa', async () => {
+    await assertSucceeds(updateDoc(doc(as('ana'), 'users/ana'), { photoPath: 'users/ana/foto-1.jpg' }));
+    await assertSucceeds(updateDoc(doc(as('ana'), 'users/ana'), { photoPath: null }));
+    await assertFails(updateDoc(doc(as('ana'), 'users/ana'), { photoPath: 'users/bia/foto.jpg' }));
+    await assertFails(updateDoc(doc(as('ana'), 'users/ana'), { photoPath: 'users/ana/../bia/foto.jpg' }));
+    await assertFails(updateDoc(doc(as('ana'), 'users/ana'), { photoPath: 42 }));
   });
 });

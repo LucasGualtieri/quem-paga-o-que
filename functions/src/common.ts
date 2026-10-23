@@ -2,6 +2,8 @@ import { randomBytes, createHash } from 'node:crypto';
 import { getApps, initializeApp, type App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, type DocumentReference, type Transaction } from 'firebase-admin/firestore';
+import { getStorage } from 'firebase-admin/storage';
+import { ledger, type Expense, type JoinOrder, type Ledger, type Payment } from '@qpq/calc';
 import { HttpsError, type CallableRequest, type FunctionsErrorCode } from 'firebase-functions/v2/https';
 import type { ErrorDetails, ErrorReason } from '@qpq/shared';
 
@@ -27,6 +29,11 @@ export function auth() {
   return getAuth(app());
 }
 
+/** Bucket padrão do projeto (comprovantes, capas e fotos de perfil). */
+export function bucket() {
+  return getStorage(app()).bucket();
+}
+
 export interface Member {
   name: string;
   nameKey: string;
@@ -47,6 +54,10 @@ export interface SplitData {
   uids: string[];
   adminUids: string[];
   nextJoinOrder: number;
+  /** Quem vê comprovantes (decisão 9); ausente = "all". */
+  proofVisibility?: 'all' | 'involved';
+  /** Capa com foto (caminho no Storage). */
+  photo?: string | null;
 }
 
 const HTTP_CODE: Partial<Record<ErrorReason, FunctionsErrorCode>> = {
@@ -145,6 +156,29 @@ export function secretToken(): { token: string; hash: string } {
 
 export function hashToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
+}
+
+/** Despesas (sem as excluídas) e acertos do split, lidos dentro da transação. */
+export async function readMoney(tx: Transaction, ref: DocumentReference) {
+  const [expenses, payments] = await Promise.all([tx.get(ref.collection('expenses')), tx.get(ref.collection('payments'))]);
+  return {
+    // Despesas excluídas (exclusão marcada, decisão 7) não entram em saldo nenhum.
+    expenses: expenses.docs.filter((d) => !d.get('deletedAt')).map((d) => d.data() as Expense),
+    payments: payments.docs.map((d) => d.data() as Payment),
+  };
+}
+
+export function orderOf(split: SplitData): JoinOrder {
+  return Object.fromEntries(Object.entries(split.members).map(([id, m]) => [id, m.joinOrder]));
+}
+
+/** Saldos do split, sempre pelo motor compartilhado (@qpq/calc). */
+export function ledgerOf(split: SplitData, money: { expenses: Expense[]; payments: Payment[] }): Ledger {
+  return ledger({ order: orderOf(split), ...money });
+}
+
+export function requireOpen(split: SplitData): void {
+  if (split.status !== 'open') fail('split-done');
 }
 
 export type { DocumentReference, Transaction };

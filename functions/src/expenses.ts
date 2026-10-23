@@ -1,8 +1,8 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { effectiveAmount, validateExpense, type Expense, type ExpenseMode, type JoinOrder, type SplitMode, type Weights } from '@qpq/calc';
-import { cleanName, isValidDate, normalizeTags, type ExpenseWriteResponse } from '@qpq/shared';
-import { db, fail, input, loadSplit, opts, requireAdmin, requireMember, text, uidOf, type Member, type SplitData } from './common.ts';
+import { cleanName, isValidDate, normalizeTags, type ExpenseWriteResponse, type ProofInfo } from '@qpq/shared';
+import { db, fail, input, loadSplit, opts, requireMember, requireOpen, text, uidOf, type Member, type SplitData } from './common.ts';
 
 const MODES: readonly ExpenseMode[] = ['equal', 'frac', 'pct', 'exact', 'items'];
 const SPLIT_MODES: readonly SplitMode[] = ['equal', 'frac', 'pct', 'exact'];
@@ -115,26 +115,25 @@ function checked(raw: unknown, split: SplitData): Clean {
   return clean;
 }
 
-function expenseRef(splitId: string, id: string) {
+export function expenseRef(splitId: string, id: string) {
   if (!ID.test(id)) fail('invalid-input');
   return db().doc(`splits/${splitId}/expenses/${id}`);
 }
 
-function requireOpen(split: SplitData): void {
-  if (split.status !== 'open') fail('split-done');
-}
-
 /** Autor ou admin (spec 04). */
-function requireEditor(split: SplitData, uid: string, authorId: string): [string, Member] {
+export function requireEditor(split: SplitData, uid: string, authorId: string): [string, Member] {
   const me = requireMember(split, uid);
   if (me[0] !== authorId && !me[1].admin) fail('not-admin');
   return me;
 }
 
-async function addHistory(
+export type HistoryKind = 'created' | 'edited' | 'deleted' | 'restored' | 'paid' | 'received' | 'unpaid' | 'confirmed' | 'disputed' | 'proof';
+
+/** Entrada do Histórico; nas de pagamento, `memberId` é de quem é a parte. */
+export async function addHistory(
   tx: FirebaseFirestore.Transaction,
   expenseRef_: FirebaseFirestore.DocumentReference,
-  entry: { seq: number; kind: 'created' | 'edited' | 'deleted' | 'restored'; by: string; from?: number; to?: number },
+  entry: { seq: number; kind: HistoryKind; by: string; from?: number; to?: number; memberId?: string },
 ) {
   tx.create(expenseRef_.collection('history').doc(), { ...entry, at: FieldValue.serverTimestamp() });
 }
@@ -162,17 +161,33 @@ export const createExpense = onCall(opts, async (req): Promise<ExpenseWriteRespo
       paid: {},
       proof: {},
       pendConf: {},
+      receipt: null,
+      paySeq: 0,
     });
     await addHistory(tx, ref, { seq: 1, kind: 'created', by: me, to: clean.amount });
   });
   return { version: 1 };
 });
 
-async function loadExpense(tx: FirebaseFirestore.Transaction, splitId: string, id: unknown) {
+export async function loadExpense(tx: FirebaseFirestore.Transaction, splitId: string, id: unknown) {
   const ref = expenseRef(splitId, text(id));
   const snap = await tx.get(ref);
   if (!snap.exists) fail('expense-missing');
-  return { ref, e: snap.data() as Record<string, unknown> & { version: number; author: string; updatedBy: string; amount: number; deletedAt: unknown } };
+  return { ref, e: snap.data() as Record<string, unknown> & StoredExpense };
+}
+
+/** Despesa como está no Firestore (os campos que as Functions leem). */
+export interface StoredExpense extends Expense {
+  version: number;
+  author: string;
+  updatedBy: string;
+  amount: number;
+  deletedAt: unknown;
+  paid: Record<string, number>;
+  pendConf: Record<string, boolean>;
+  proof: Record<string, ProofInfo>;
+  receipt?: ProofInfo | null;
+  paySeq?: number;
 }
 
 export const updateExpense = onCall(opts, async (req): Promise<ExpenseWriteResponse> => {
