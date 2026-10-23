@@ -4,13 +4,13 @@ Os tokens da Folha de estilo são a referência; nenhuma cor deve ser escrita di
 
 | Token | Claro | Escuro | Uso |
 | --- | --- | --- | --- |
-| `--accent` | #5534E0 | #A08CFF | Ação principal, seleção |
+| `--accent` | #5534E0 | #A08CFF | Ação principal, seleção, botão flutuante "+" de nova despesa |
 | `--pos` / `--pos-soft` | #0B7A43 / #DFF3E7 | #52D38E / #14301F | A receber |
 | `--neg` / `--neg-soft` | #B53A08 / #FCE9DE | #FF9257 / #3B2013 | Deve |
 | `--zero` / `--zero-soft` | #5F616B / #EAEAE6 | #A0A1AC / #2A2A31 | Quitado, resolvido |
 | `--me-soft` | #F6F3FF | #221D3A | Fundo do seu cartão no Saldo |
 | `--bg` / `--surface` | #F3F3F0 / #FFFFFF | #111114 / #1C1C21 | Fundo e cartões |
-| `--sun` | #FFCF3F | #FFD25A | Botão "+" de nova despesa |
+| `--sun` | #FFCF3F | #FFD25A | Só ilustração: o "+" dos estados vazios e a moeda "R$" do login. Não é o botão flutuante |
 
 **Tipografia:** Bricolage Grotesque (títulos e valores) e Figtree (texto e interface).
 

@@ -1,0 +1,13 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "prototipo",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "scripts/serve-reference.mjs"
+      ],
+      "port": 8000
+    }
+  ]
+}

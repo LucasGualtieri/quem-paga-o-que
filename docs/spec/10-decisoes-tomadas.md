@@ -20,4 +20,4 @@ O que foi decidido e descartado durante o design. Ideias descartadas não devem 
 | Login com ilustração neutra | O selo verde de "pago" na ilustração era enganoso. |
 | Filtros em dois menus (Pessoas, Tags) | Uma fileira de chips misturando pessoas e tags não escalava. |
 | Login opcional; convidado pode criar split | Barreira de cadastro afasta quem só quer ver a própria parte; o link de recuperação cobre a troca de aparelho. |
-| "+" amarelo abre nova despesa; o "+" do estado vazio da home vira "Novo split" | Cada botão faz a ação mais provável daquela tela. |
+| "+" flutuante (roxo, `--accent`) abre nova despesa; o "+" amarelo da ilustração do estado vazio da home vira "Novo split" | Cada botão faz a ação mais provável daquela tela. |
