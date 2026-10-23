@@ -41,6 +41,8 @@ export interface OptimisticAction {
   apply: () => (() => void) | void;
   /** Grava no servidor. */
   commit: () => Promise<unknown>;
+  /** Texto do toast quando o servidor recusa; sem ele, o aviso genérico. */
+  errorText?: (error: unknown) => string | undefined;
 }
 
 /** Ação otimista genérica (marcar pago, acerto, finalizar…): aplica, grava e só desfaz se o servidor recusar. */
@@ -48,13 +50,13 @@ export function useOptimisticAction(): (action: OptimisticAction) => Promise<voi
   const { t } = useTranslation();
   const toast = useToast();
   return useCallback(
-    async ({ apply, commit }: OptimisticAction) => {
+    async ({ apply, commit, errorText }: OptimisticAction) => {
       const rollback = apply();
       try {
         await commit();
-      } catch {
+      } catch (error) {
         rollback?.();
-        toast.show({ kind: 'error', text: t('errors.saveFailed') });
+        toast.show({ kind: 'error', text: errorText?.(error) ?? t('errors.saveFailed') });
       }
     },
     [toast, t],

@@ -10,7 +10,7 @@ Cada split tem dois papéis: **admin** (pode haver vários; quem cria é admin) 
 | Registrar acerto nos cartões do Saldo | Quem está na linha (deve ou recebe) ou admin | Vale em qualquer cartão, não só no seu. |
 | Desfazer acerto registrado | As duas pessoas do acerto ou admin |  |
 | Anexar comprovante depois | As duas pessoas do pagamento (na parte de despesa, também admin) | Só enquanto não houver comprovante. |
-| Convidar, promover, tirar admin, remover | Só admin | Membro vê a aba Pessoas com cadeado e o texto "fale com…" (abaixo). Admin age sobre os outros; sobre si mesmo, ver "Deixar de ser admin". |
+| Convidar, promover, tirar admin, remover | Só admin. "Tornar admin" só aparece para quem já entrou (escolheu o nome) | Membro vê a aba Pessoas com cadeado e o texto "fale com…" (abaixo). Admin age sobre os outros; sobre si mesmo, ver "Deixar de ser admin". |
 | Liberar nome | Só admin | Desliga a pessoa do nome: o nome volta a ficar livre em "Quem é você?"; despesas, partes e histórico continuam com ele. Também tira o admin daquele participante. |
 | Deixar de ser admin | O próprio admin | Só se restar outro admin. Fica na sua linha em Pessoas. |
 | Sair do split | Qualquer participante | Só com saldo zero neste split; admin, só se restar outro admin. Fica no menu de três pontos. |
@@ -33,4 +33,4 @@ Cada split tem dois papéis: **admin** (pode haver vários; quem cria é admin) 
 - Admin pode reabrir quando quiser.
 - Na home, splits finalizados ficam no filtro "Finalizados" e não entram no total "No total, você deve/recebe".
 
-**Criar split:** nome, capa (emoji ou foto, opcional) e participantes só pelo nome ("Só o nome basta"), sem nomes repetidos (ver Contas). Depois aparece a tela com link de convite, código e Compartilhar.
+**Criar split:** nome, capa (emoji ou foto, opcional), o seu nome e os outros participantes só pelo nome ("Só o nome basta"), sem nomes repetidos (ver Contas). Depois aparece a tela com link de convite, código e Compartilhar.

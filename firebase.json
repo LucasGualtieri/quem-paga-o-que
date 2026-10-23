@@ -8,9 +8,39 @@
   },
   "emulators": {
     "singleProjectMode": true,
-    "auth": { "port": 9099 },
-    "firestore": { "port": 8080 },
-    "storage": { "port": 9199 },
-    "ui": { "enabled": true, "port": 4000 }
-  }
+    "auth": {
+      "port": 9099
+    },
+    "firestore": {
+      "port": 8080
+    },
+    "storage": {
+      "port": 9199
+    },
+    "ui": {
+      "enabled": true,
+      "port": 4000
+    },
+    "functions": {
+      "port": 5001
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "runtime": "nodejs22",
+      "ignore": [
+        "node_modules",
+        "src",
+        "test",
+        "*.log",
+        "tsconfig.json",
+        "vitest.config.ts"
+      ],
+      "predeploy": [
+        "npm run build -w @qpq/functions"
+      ]
+    }
+  ]
 }

@@ -13,3 +13,4 @@ firestore-debug.log
 ui-debug.log
 storage-debug.log
 .firebase/
+functions/lib/

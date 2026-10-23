@@ -5,7 +5,17 @@
     "you": "Você",
     "all": "Todos",
     "less": "Menos uma parte",
-    "more": "Mais uma parte"
+    "more": "Mais uma parte",
+    "back": "Voltar",
+    "cancel": "Cancelar",
+    "continue": "Continuar",
+    "loading": "Carregando",
+    "optional": "opcional",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "linkCopied": "Link copiado",
+    "share": "Compartilhar",
+    "moreOptions": "Mais opções"
   },
   "status": {
     "pending": "Pendente",
@@ -29,7 +39,16 @@
     "people_one": "{{count}} pessoa",
     "people_other": "{{count}} pessoas",
     "open": "Em andamento",
-    "done": "Finalizado"
+    "done": "Finalizado",
+    "tabs": {
+      "nav": "Seções do split",
+      "tx": "Transações",
+      "sal": "Saldo",
+      "me": "Minha visão",
+      "ppl": "Pessoas",
+      "adminOnly": "só admin"
+    },
+    "txEmpty": "Nenhuma despesa ainda"
   },
   "tx": {
     "paidBy": "{{name}} pagou",
@@ -113,5 +132,137 @@
     "sectionPalette": "01 · Paleta",
     "sectionComponents": "05 · Componentes",
     "sectionInteractive": "Interativo (tema atual)"
+  },
+  "balance": {
+    "settled": "Quitado",
+    "toReceive": "a receber",
+    "youOwe": "você deve",
+    "allSquare": "tudo certo",
+    "receiveTotal": "a receber no total",
+    "oweTotal": "você deve no total",
+    "allSettled": "tudo quitado",
+    "sub": "Você deve {{owe}} · te devem {{recv}}"
+  },
+  "home": {
+    "hello": "Oi, {{name}}",
+    "mySplits": "Meus splits",
+    "guestBanner": "Você está sem conta. Seus splits ficam salvos neste aparelho.",
+    "overall": "Seu saldo nos splits em andamento",
+    "filter": "Filtrar splits",
+    "tabOpen": "Em andamento",
+    "tabDone": "Finalizados",
+    "doneEmpty": "Nenhum split finalizado ainda.",
+    "emptyTitle": "Nenhum split por aqui",
+    "emptyBody": "Crie um para a viagem, o churrasco ou o amigo oculto e pare de fazer conta no guardanapo.",
+    "newSplit": "Novo split",
+    "join": "Entrar com código ou link"
+  },
+  "create": {
+    "title": "Novo split",
+    "name": "Nome do split",
+    "namePh": "Ex.: Churras de sábado",
+    "cover": "Capa",
+    "participants": "Participantes",
+    "you": "você",
+    "yourName": "Seu nome",
+    "yourNamePh": "Como o grupo te chama",
+    "personPh": "Nome do amigo",
+    "add": "Adicionar",
+    "addHint": "Só o nome basta. Depois você convida por link e cada um escolhe quem é.",
+    "submit": "Criar split",
+    "removePerson": "Remover {{name}}",
+    "emoji": {
+      "fireworks": "Fogos",
+      "gift": "Presente",
+      "mountain": "Montanha",
+      "pizza": "Pizza",
+      "beach": "Praia",
+      "party": "Festa",
+      "cheers": "Brinde",
+      "camping": "Acampamento"
+    }
+  },
+  "created": {
+    "title": "“{{name}}” está pronto!",
+    "body": "Mande o link no grupo. Quem entrar escolhe o próprio nome na lista.",
+    "inviteLink": "Link de convite",
+    "code": "Código",
+    "goSplit": "Ir para o split"
+  },
+  "join": {
+    "title": "Entrar em um split",
+    "body": "Cole o link que te mandaram ou digite o código do split.",
+    "codeLabel": "Código ou link",
+    "codePh": "Ex.: AMG-OC6",
+    "paste": "Colar",
+    "codeErr": "Digite um código ou cole o link do convite",
+    "info": "Não precisa de conta pra ver: você entra, escolhe seu nome e já vê sua parte."
+  },
+  "who": {
+    "title": "Quem é você?",
+    "body": "Escolha seu nome para ver sua parte nas contas.",
+    "createdBy": "criado por {{name}}",
+    "taken": "já entrou",
+    "notListed": "Não estou na lista",
+    "yourName": "Seu nome",
+    "yourNamePh": "Como o grupo te chama",
+    "newHint": "Você entra como participante novo, ainda sem despesas. Os admins do split veem que você chegou e podem te incluir nas contas.",
+    "backToList": "Voltar para a lista de nomes",
+    "pick": "Escolha seu nome",
+    "type": "Digite seu nome",
+    "joinAs": "Entrar como {{name}}",
+    "joined": "Você entrou em {{split}}",
+    "joinedAs": "Você entrou como {{name}} em {{split}}"
+  },
+  "menu": {
+    "invite": "Convidar",
+    "theme": "Alternar tema claro/escuro",
+    "leave": "Sair do split"
+  },
+  "people": {
+    "invite": "Convidar por link",
+    "inviteBody": "Quem tiver o link entra e escolhe o próprio nome.",
+    "lockT": "Só admins gerenciam pessoas",
+    "lockB": "Você é membro deste split. Para convidar, promover ou remover alguém, fale com {{who}}.",
+    "anAdmin": "um admin",
+    "orList": "{{list}} ou {{last}}",
+    "orOther": "{{list}} ou outro admin",
+    "members": "Membros",
+    "youSuffix": " (você)",
+    "settled": "Saldo quitado",
+    "balance": "Saldo {{amount}}",
+    "notJoined": "ainda não entrou",
+    "arrived": "chegou pelo convite",
+    "admin": "Admin",
+    "member": "Membro",
+    "makeAdmin": "Tornar admin",
+    "removeAdmin": "Tirar admin",
+    "stepDown": "Deixar de ser admin",
+    "release": "Liberar nome",
+    "remove": "Remover",
+    "removeAria": "Remover {{name}}",
+    "removed": "{{name}} foi removido",
+    "released": "O nome {{name}} ficou livre"
+  },
+  "leave": {
+    "title": "Sair de “{{name}}”?",
+    "body": "Seu nome continua no split, com as despesas, e fica livre para outra pessoa escolher. Você deixa de ver este split.",
+    "confirm": "Sair do split",
+    "left": "Você saiu de {{name}}"
+  },
+  "blocks": {
+    "balanceRemove": "{{name}} ainda tem saldo de {{amount}}. Quitem as contas antes de remover.",
+    "inExpenses": "{{name}} aparece em despesas deste split. Edite-as antes de remover.",
+    "lastAdmin": "Promova outra pessoa a admin antes.",
+    "leaveBalance": "Quite suas contas antes de sair.",
+    "notJoined": "{{name}} ainda não entrou no split."
+  },
+  "reasons": {
+    "invalid-input": "Confira os dados e tente de novo.",
+    "invalid-code": "Não achamos esse convite. Confira o código com quem te convidou.",
+    "name-taken": "Já tem alguém chamado {{name}} aqui. Diferencie, ex.: {{name}} G.",
+    "name-claimed": "Alguém já escolheu {{name}}. Escolha outro nome ou toque em “Não estou na lista”.",
+    "not-member": "Você não está neste split.",
+    "not-admin": "Só admins podem fazer isso."
   }
 }

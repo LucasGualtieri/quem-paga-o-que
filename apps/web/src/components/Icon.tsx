@@ -15,6 +15,15 @@ const PATHS = {
   moon: ['M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z'],
   alert: ['M12 8v5M12 16.5v.5'],
   back: ['M15 5l-7 7 7 7'],
+  link: ['M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1', 'M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1'],
+  share: ['M12 3v13M7 8l5-5 5 5M5 14v6h14v-6'],
+  lock: ['M7 11h10a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z', 'M8 11V8a4 4 0 0 1 8 0v3'],
+  receipt: ['M6 3h12v18l-3-1.8-3 1.8-3-1.8-3 1.8z', 'M9 8h6M9 12h6'],
+  swap: ['M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7'],
+  user: ['M4 21a8 8 0 0 1 16 0'],
+  trash: ['M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3'],
+  leave: ['M9 4H5v16h4', 'M14 8l4 4-4 4', 'M18 12H8'],
+  dots: [],
 } as const;
 
 const CIRCLES: Partial<Record<IconName, Array<[number, number, number]>>> = {
@@ -22,13 +31,19 @@ const CIRCLES: Partial<Record<IconName, Array<[number, number, number]>>> = {
   people: [[9, 8, 3.5]],
   sun: [[12, 12, 4]],
   alert: [[12, 12, 9]],
+  user: [[12, 8, 4]],
+  dots: [
+    [5, 12, 1.8],
+    [12, 12, 1.8],
+    [19, 12, 1.8],
+  ],
 };
 
 export type IconName = keyof typeof PATHS;
 
 export function Icon({ name, size, className }: { name: IconName; size?: 'sm' | 'lg'; className?: string }) {
   return (
-    <svg className={cx('ic', size, className)} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <svg className={cx('ic', size, name === 'dots' && 'dots', className)} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
       {CIRCLES[name]?.map(([cx_, cy, r]) => <circle key={`${cx_}-${cy}`} cx={cx_} cy={cy} r={r} />)}
       {PATHS[name].map((d) => (
         <path key={d} d={d} />

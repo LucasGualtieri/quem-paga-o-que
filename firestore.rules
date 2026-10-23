@@ -1,10 +1,38 @@
 rules_version = '2';
 
-// Tudo fechado até a Fase 3 escrever as regras de verdade (com testes).
+// Regras do Firestore. Testes em functions/test/rules.test.ts (npm run test:emulators).
+// Participantes e papéis só mudam por Cloud Functions (docs/plan.md, seção 3);
+// despesas e acertos ganham escrita nas Fases 5 e 6.
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
+    function signedIn() {
+      return request.auth != null;
     }
+
+    function inSplit(splitId) {
+      return signedIn() && request.auth.uid in get(/databases/$(database)/documents/splits/$(splitId)).data.uids;
+    }
+
+    match /splits/{splitId} {
+      allow read: if signedIn() && request.auth.uid in resource.data.uids;
+      allow write: if false;
+
+      match /expenses/{expenseId} {
+        allow read: if inSplit(splitId);
+        allow write: if false;
+      }
+
+      match /payments/{paymentId} {
+        allow read: if inSplit(splitId);
+        allow write: if false;
+      }
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // inviteCodes, recoveryTokens e qualquer outra coleção: só o Admin SDK (Functions).
   }
 }

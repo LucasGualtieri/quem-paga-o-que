@@ -129,6 +129,10 @@ a {
   width: 26px;
   height: 26px;
 }
+.ic.dots {
+  fill: currentColor;
+  stroke: none;
+}
 .iconbtn {
   width: 44px;
   height: 44px;

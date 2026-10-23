@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './theme/tokens.css';
 import './theme/base.css';
+import './screens/screens.css';
 import './i18n/index.ts';
 import { App } from './App.tsx';
 import { ToastProvider } from './components/index.ts';

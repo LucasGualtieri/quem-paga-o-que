@@ -4,7 +4,8 @@
   "type": "module",
   "workspaces": [
     "packages/*",
-    "apps/*"
+    "apps/*",
+    "functions"
   ],
   "engines": {
     "node": ">=22"
@@ -14,13 +15,15 @@
     "build": "npm run build -w @qpq/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm test --workspaces --if-present",
-    "e2e": "npm run e2e -w @qpq/web",
-    "emulators": "firebase emulators:start --project demo-qpq"
+    "e2e": "npm run build -w @qpq/functions && firebase emulators:exec --only auth,firestore,functions --project demo-qpq \"npm run e2e -w @qpq/web\"",
+    "emulators": "npm run build -w @qpq/functions && firebase emulators:start --project demo-qpq",
+    "test:emulators": "npm run build -w @qpq/functions && firebase emulators:exec --only auth,firestore,functions --project demo-qpq \"npm run test:integration -w @qpq/functions\""
   },
   "devDependencies": {
     "@vitest/coverage-v8": "5.0.5",
     "typescript": "7.0.2",
     "vitest": "5.0.5",
-    "firebase-tools": "15.34.1"
+    "firebase-tools": "15.34.1",
+    "@types/node": "26.6.5"
   }
 }

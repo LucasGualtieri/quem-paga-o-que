@@ -16,6 +16,8 @@ Os pontos de partida são sugestões para a conversa, não decisões tomadas. Ao
 | 8 | Duas pessoas editando a mesma despesa ao mesmo tempo | Fase 5 | Aviso de conflito por número de versão, em vez de "última gravação vence" | Em aberto |
 | 9 | Comprovantes: onde ficam, por quanto tempo e quem vê (LGPD) | Fase 6 | Só as duas pessoas do pagamento e os admins veem; retenção a definir com quem cuida de privacidade | Em aberto |
 | 10 | Provedor de e-mail transacional e remetente | Fase 7 | Resend com domínio próprio, chave em secret das Functions | Em aberto |
+| 11 | De onde vem o nome de quem cria um split sem conta | Fase 3 | Campo "Seu nome" na tela Novo split | **Decidido** |
+| 12 | Promover a admin quem ainda não entrou no split | Fase 3 | Só quem já escolheu o nome | **Decidido** |
 
 ## Respostas
 
@@ -33,9 +35,9 @@ Spec atualizada: `02-modelo-de-dados-e-calculo.md`.
 
 ### 3. Duas pessoas escolhem o mesmo nome — decidido em 22/10/2026
 
-- **O nome trava para a primeira pessoa.** Em "Quem é você?", um nome já escolhido continua na lista, desabilitado, com "Já escolhido". Quem chega escolhe outro ou toca em "Não estou na lista".
+- **O nome trava para a primeira pessoa.** Em "Quem é você?", um nome já escolhido continua na lista, desabilitado, com "já entrou" (texto que o protótipo já tinha). Quem chega escolhe outro ou toca em "Não estou na lista".
 - **Só admin libera.** Em Pessoas, o admin toca "Liberar nome" na linha da pessoa: o nome volta a ficar livre, e as despesas, partes e o histórico continuam com ele. Quem estava ligado ao nome deixa de ver o split. Liberar o nome também tira o admin daquele participante, para ninguém herdar o papel ao escolher o nome depois.
-- **Nomes repetidos são bloqueados** no split, ao criar o split e em "Não estou na lista". A comparação ignora maiúsculas, acentos e espaços extras ("Lucas", "lúcas " e "LUCAS" são o mesmo nome). Mensagem: "Já tem um Lucas aqui. Diferencie, ex.: Lucas G."
+- **Nomes repetidos são bloqueados** no split, ao criar o split e em "Não estou na lista". A comparação ignora maiúsculas, acentos e espaços extras ("Lucas", "lúcas " e "LUCAS" são o mesmo nome). Mensagem: "Já tem alguém chamado Lucas aqui. Diferencie, ex.: Lucas G."
 
 Spec atualizada: `03-contas-e-convidados.md` e `04-splits-papeis-permissoes.md`.
 
@@ -47,3 +49,11 @@ Spec atualizada: `03-contas-e-convidados.md` e `04-splits-papeis-permissoes.md`.
 - **Único admin que perde o acesso** (convidado sem link de recuperação): nada de automático na v1. O lembrete de salvar a conta e o link de recuperação cobrem esse caso; os membros continuam usando o split, só sem convidar, promover ou finalizar.
 
 Spec atualizada: `04-splits-papeis-permissoes.md`.
+
+### 11. Nome de quem cria um split sem conta — decidido em 23/10/2026
+
+Na tela Novo split, a sua linha da lista de participantes é um campo "Seu nome" (com "(você)" e o selo Admin). O nome fica salvo no perfil e vem preenchido nos próximos splits. Spec atualizada: `03-contas-e-convidados.md` e `04-splits-papeis-permissoes.md`.
+
+### 12. Promover quem ainda não entrou — decidido em 23/10/2026
+
+"Tornar admin" só aparece para quem já escolheu o nome no split. Evita que alguém com o link escolha um nome que já é admin. Spec atualizada: `04-splits-papeis-permissoes.md`.

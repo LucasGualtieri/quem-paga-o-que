@@ -1,0 +1,14 @@
+{
+  "name": "@qpq/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Regras puras compartilhadas entre o app e as Cloud Functions: nomes, códigos de convite e o contrato das chamadas.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --coverage"
+  }
+}

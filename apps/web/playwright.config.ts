@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
-// E2E contra o build de produção (vite preview) com as telas de desenvolvimento ligadas.
+// E2E contra o build de produção (vite preview), com as telas de revisão ligadas e os
+// emuladores do Firebase. Rode pela raiz: `npm run e2e` (sobe os emuladores antes).
 export default defineConfig({
   testDir: 'e2e',
   outputDir: 'test-results',
@@ -19,7 +20,7 @@ export default defineConfig({
   webServer: {
     command: 'npm run build && npm run preview',
     url: 'http://localhost:4173',
-    env: { VITE_DEV_TOOLS: 'true' },
+    env: { VITE_DEV_TOOLS: 'true', VITE_USE_EMULATORS: 'true' },
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

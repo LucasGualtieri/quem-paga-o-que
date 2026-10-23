@@ -17,6 +17,15 @@
         "dev"
       ],
       "port": 5173
+    },
+    {
+      "name": "emuladores",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "emulators"
+      ],
+      "port": 4000
     }
   ]
 }

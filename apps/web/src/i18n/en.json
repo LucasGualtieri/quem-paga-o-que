@@ -5,7 +5,17 @@
     "you": "You",
     "all": "Everyone",
     "less": "One share less",
-    "more": "One share more"
+    "more": "One share more",
+    "back": "Back",
+    "cancel": "Cancel",
+    "continue": "Continue",
+    "loading": "Loading",
+    "optional": "optional",
+    "copy": "Copy",
+    "copied": "Copied",
+    "linkCopied": "Link copied",
+    "share": "Share",
+    "moreOptions": "More options"
   },
   "status": {
     "pending": "Pending",
@@ -29,7 +39,16 @@
     "people_one": "{{count}} person",
     "people_other": "{{count}} people",
     "open": "In progress",
-    "done": "Finished"
+    "done": "Finished",
+    "tabs": {
+      "nav": "Split sections",
+      "tx": "Expenses",
+      "sal": "Balance",
+      "me": "My view",
+      "ppl": "People",
+      "adminOnly": "admin only"
+    },
+    "txEmpty": "No expenses yet"
   },
   "tx": {
     "paidBy": "{{name}} paid",
@@ -113,5 +132,137 @@
     "sectionPalette": "01 · Palette",
     "sectionComponents": "05 · Components",
     "sectionInteractive": "Interactive (current theme)"
+  },
+  "balance": {
+    "settled": "Settled",
+    "toReceive": "to receive",
+    "youOwe": "you owe",
+    "allSquare": "all square",
+    "receiveTotal": "to receive in total",
+    "oweTotal": "you owe in total",
+    "allSettled": "all settled",
+    "sub": "You owe {{owe}} · owed to you {{recv}}"
+  },
+  "home": {
+    "hello": "Hi, {{name}}",
+    "mySplits": "My splits",
+    "guestBanner": "No account yet. Your splits are saved on this device.",
+    "overall": "Your balance across active splits",
+    "filter": "Filter splits",
+    "tabOpen": "Active",
+    "tabDone": "Closed",
+    "doneEmpty": "No closed splits yet.",
+    "emptyTitle": "No splits yet",
+    "emptyBody": "Start one for the trip, the barbecue or Secret Santa and stop doing math on napkins.",
+    "newSplit": "New split",
+    "join": "Join with code or link"
+  },
+  "create": {
+    "title": "New split",
+    "name": "Split name",
+    "namePh": "E.g. Saturday barbecue",
+    "cover": "Cover",
+    "participants": "People",
+    "you": "you",
+    "yourName": "Your name",
+    "yourNamePh": "What the group calls you",
+    "personPh": "Friend’s name",
+    "add": "Add",
+    "addHint": "A name is enough. Invite by link later and each person picks who they are.",
+    "submit": "Create split",
+    "removePerson": "Remove {{name}}",
+    "emoji": {
+      "fireworks": "Fireworks",
+      "gift": "Gift",
+      "mountain": "Mountain",
+      "pizza": "Pizza",
+      "beach": "Beach",
+      "party": "Party",
+      "cheers": "Cheers",
+      "camping": "Camping"
+    }
+  },
+  "created": {
+    "title": "“{{name}}” is ready!",
+    "body": "Share the link in the group chat. Whoever joins picks their own name.",
+    "inviteLink": "Invite link",
+    "code": "Code",
+    "goSplit": "Go to split"
+  },
+  "join": {
+    "title": "Join a split",
+    "body": "Paste the link you got or type the split code.",
+    "codeLabel": "Code or link",
+    "codePh": "E.g. AMG-OC6",
+    "paste": "Paste",
+    "codeErr": "Type a code or paste the invite link",
+    "info": "No account needed to look: join, pick your name and see your share."
+  },
+  "who": {
+    "title": "Who are you?",
+    "body": "Pick your name to see your share.",
+    "createdBy": "created by {{name}}",
+    "taken": "already joined",
+    "notListed": "I’m not on the list",
+    "yourName": "Your name",
+    "yourNamePh": "What the group calls you",
+    "newHint": "You join as a new participant with no expenses yet. The split admins see you arrived and can add you to expenses.",
+    "backToList": "Back to the name list",
+    "pick": "Pick your name",
+    "type": "Type your name",
+    "joinAs": "Join as {{name}}",
+    "joined": "You joined {{split}}",
+    "joinedAs": "You joined {{split}} as {{name}}"
+  },
+  "menu": {
+    "invite": "Invite",
+    "theme": "Toggle light/dark theme",
+    "leave": "Leave split"
+  },
+  "people": {
+    "invite": "Invite by link",
+    "inviteBody": "Anyone with the link joins and picks their name.",
+    "lockT": "Only admins manage people",
+    "lockB": "You are a member of this split. To invite, promote or remove someone, ask {{who}}.",
+    "anAdmin": "an admin",
+    "orList": "{{list}} or {{last}}",
+    "orOther": "{{list}} or another admin",
+    "members": "Members",
+    "youSuffix": " (you)",
+    "settled": "Settled",
+    "balance": "Balance {{amount}}",
+    "notJoined": "hasn’t joined yet",
+    "arrived": "joined via invite",
+    "admin": "Admin",
+    "member": "Member",
+    "makeAdmin": "Make admin",
+    "removeAdmin": "Remove admin",
+    "stepDown": "Stop being admin",
+    "release": "Free name",
+    "remove": "Remove",
+    "removeAria": "Remove {{name}}",
+    "removed": "{{name}} was removed",
+    "released": "The name {{name}} is free now"
+  },
+  "leave": {
+    "title": "Leave “{{name}}”?",
+    "body": "Your name stays in the split, with its expenses, and becomes free for someone else to pick. You stop seeing this split.",
+    "confirm": "Leave split",
+    "left": "You left {{name}}"
+  },
+  "blocks": {
+    "balanceRemove": "{{name}} still has a balance of {{amount}}. Settle up before removing.",
+    "inExpenses": "{{name}} is part of expenses in this split. Edit them before removing.",
+    "lastAdmin": "Make someone else admin first.",
+    "leaveBalance": "Settle up before leaving.",
+    "notJoined": "{{name}} hasn’t joined the split yet."
+  },
+  "reasons": {
+    "invalid-input": "Check the details and try again.",
+    "invalid-code": "We couldn’t find that invite. Check the code with whoever invited you.",
+    "name-taken": "There’s already someone called {{name}} here. Tell them apart, e.g. {{name}} G.",
+    "name-claimed": "Someone already picked {{name}}. Pick another name or tap “I’m not on the list”.",
+    "not-member": "You’re not in this split.",
+    "not-admin": "Only admins can do that."
   }
 }

@@ -1,0 +1,139 @@
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Avatar, avatarColor, Badge, Button, Icon } from '../components/index.ts';
+import { adminContact, balances, membersInOrder, promoteBlock, removeBlock, type Member, type MemberPatch, type Money, type SplitDoc } from '../data/model.ts';
+import { useLang } from '../i18n/index.ts';
+import { formatCents } from '../lib/money.ts';
+import { InviteBox } from './Created.tsx';
+import { useReasonText } from './reasons.ts';
+
+export type PeopleAction = (patch: MemberPatch, commit: () => Promise<unknown>, done?: string) => void;
+
+/** Aba Pessoas: admin gerencia; membro vê o cadeado e "fale com…" (spec 04, decisões 3 e 4). */
+export function PeopleTab({ split, money, me, act }: { split: SplitDoc; money: Money; me: Member; act: PeopleAction }) {
+  const { t } = useTranslation();
+  const lang = useLang();
+  const reasonText = useReasonText();
+  const [msg, setMsg] = useState<{ id: string; text: string } | null>(null);
+  const members = membersInOrder(split);
+  const nets = balances(split, money);
+  const isAdmin = me.admin;
+
+  const block = (m: Member, b: ReturnType<typeof removeBlock>) => {
+    if (!b) return false;
+    setMsg({ id: m.id, text: reasonText({ reason: b.reason, name: m.name, ...(b.amount !== undefined ? { amount: b.amount } : {}) }) });
+    return true;
+  };
+
+  const setAdmin = (m: Member, admin: boolean) => {
+    if (block(m, promoteBlock(split, m.id, admin))) return;
+    setMsg(null);
+    act({ memberId: m.id, change: { admin } }, () => import('../data/api.ts').then(({ api }) => api.setAdmin({ splitId: split.id, memberId: m.id, admin })));
+  };
+  const release = (m: Member) => {
+    setMsg(null);
+    act(
+      { memberId: m.id, change: { uid: null, admin: false } },
+      () => import('../data/api.ts').then(({ api }) => api.releaseName({ splitId: split.id, memberId: m.id })),
+      t('people.released', { name: m.name }),
+    );
+  };
+  const remove = (m: Member) => {
+    if (block(m, removeBlock(split, money, m.id))) return;
+    setMsg(null);
+    act(
+      { memberId: m.id, change: 'removed' },
+      () => import('../data/api.ts').then(({ api }) => api.removeMember({ splitId: split.id, memberId: m.id })),
+      t('people.removed', { name: m.name }),
+    );
+  };
+
+  const otherAdmins = members.filter((m) => m.admin && m.id !== me.id).map((m) => m.name);
+
+  return (
+    <div className="content with-tabs" style={{ gap: 18 }}>
+      {isAdmin ? (
+        <div className="card card-pad">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Icon name="link" className="accent-ic" />
+            <h2 className="h4" style={{ flex: 1 }}>
+              {t('people.invite')}
+            </h2>
+          </div>
+          <p className="cap">{t('people.inviteBody')}</p>
+          <InviteBox code={split.code} splitName={split.name} />
+        </div>
+      ) : (
+        <div className="info">
+          <Icon name="lock" />
+          <span>
+            <strong>{t('people.lockT')}</strong>
+            {t('people.lockB', { who: adminContact(otherAdmins, (k, o) => t(k, o ?? {})) })}
+          </span>
+        </div>
+      )}
+
+      <section>
+        <div className="sec-h">
+          <h2 className="h4">{t('people.members')}</h2>
+          <span className="cap amt">{members.length}</span>
+        </div>
+        <div className="list">
+          {members.map((m) => {
+            const mine = m.id === me.id;
+            const c = nets[m.id] ?? 0;
+            const status = !m.uid ? t('people.notJoined') : m.isNew ? t('people.arrived') : null;
+            return (
+              <div key={m.id} className={`row2 ${mine ? 'me-row' : ''}`}>
+                <div className="top">
+                  <Avatar name={m.name} color={avatarColor(m.joinOrder)} size="lg" />
+                  <span className="mid">
+                    <span className="ttl">
+                      {m.name}
+                      {mine ? t('people.youSuffix') : ''}
+                    </span>
+                    <span className="cap amt">
+                      {c === 0 ? t('people.settled') : t('people.balance', { amount: formatCents(c, lang, { signed: true }) })}
+                      {status ? ` · ${status}` : ''}
+                    </span>
+                  </span>
+                  <Badge tone={m.admin ? 'acc' : 'zero'}>{m.admin ? t('people.admin') : t('people.member')}</Badge>
+                </div>
+                {isAdmin && !mine && (
+                  <div className="acts">
+                    {(m.admin || m.uid) && (
+                      <Button variant="secondary" size="sm" onClick={() => setAdmin(m, !m.admin)}>
+                        {m.admin ? t('people.removeAdmin') : t('people.makeAdmin')}
+                      </Button>
+                    )}
+                    {m.uid && (
+                      <Button variant="secondary" size="sm" onClick={() => release(m)}>
+                        {t('people.release')}
+                      </Button>
+                    )}
+                    <Button variant="danger" size="sm" aria-label={t('people.removeAria', { name: m.name })} icon={<Icon name="trash" size="sm" />} onClick={() => remove(m)}>
+                      {t('people.remove')}
+                    </Button>
+                  </div>
+                )}
+                {isAdmin && mine && (
+                  <div className="acts">
+                    <Button variant="secondary" size="sm" onClick={() => setAdmin(m, false)}>
+                      {t('people.stepDown')}
+                    </Button>
+                  </div>
+                )}
+                {msg?.id === m.id && (
+                  <div className="alert" role="alert">
+                    <Icon name="alert" size="sm" />
+                    <span>{msg.text}</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    </div>
+  );
+}

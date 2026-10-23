@@ -142,6 +142,15 @@ Decisões: 3 ✅, 4 ✅.
 - Normalização de nome (`nameKey`) num módulo compartilhado, com testes (maiúsculas, acentos, espaços).
 - `firestore.rules` + `storage.rules` com a suíte de regras da seção 3. O prompt de regras do MCP do Firebase ajuda aqui.
 - **Pronto:** suíte de rules verde no emulador; e2e "cria split → convida → outro navegador entra pelo código"; screenshots ok.
+- **Status: concluída.** Notas da implementação:
+  - `packages/shared`: normalização de nomes (`nameKey`), código e link de convite, emojis de capa e o contrato das Functions (pedidos, respostas e motivos de recusa).
+  - `functions/`: `createSplit`, `previewInvite`, `joinSplit`, `setAdmin`, `releaseName`, `leaveSplit`, `removeMember` (us-east1), empacotadas com esbuild (inclui `@qpq/calc` e `@qpq/shared`). Saldo para sair/remover sempre pelo `@qpq/calc`.
+  - Regras: leitura só para quem está no split; escrita direta em `splits` sempre negada; despesas e acertos só leitura até as Fases 5 e 6; `users/{uid}` só leitura do próprio até a Fase 4.
+  - App: home (lista, total, filtros), Novo split, "está pronto" com link/código, Entrar com código ou link, "Quem é você?", tela do split com abas e Pessoas completa, menu com Convidar, tema e Sair do split.
+  - UX otimista: Pessoas (tornar/tirar admin, liberar nome, remover) muda na hora e volta com toast se o servidor recusar; criar abre o convite na hora; entrar abre o split na hora (carregando); sair tira o split da home na hora. As mesmas checagens do servidor rodam antes na tela (avisos na própria linha).
+  - Abas Transações, Saldo e Minha visão mostram só "Nenhuma despesa ainda" (sem o "+") até as Fases 5 e 6. Capa com foto fica para a Fase 6.
+  - **O Pages ainda não mostra o produto:** sem `VITE_FIREBASE_*` de um projeto de staging, o build publicado só tem as telas de revisão. Falta criar o projeto (Blaze, us-east1), pôr a configuração nos secrets do Actions e fazer o deploy de regras e Functions.
+  - Textos novos que não estão no protótipo (revisar): "chegou pelo convite", "ainda não entrou", "Liberar nome", "Deixar de ser admin", "Sair do split" (folha e avisos), mensagens de convite inválido e de nome já escolhido.
 
 ### Fase 4 — Contas
 Decisões: 5, 6.
