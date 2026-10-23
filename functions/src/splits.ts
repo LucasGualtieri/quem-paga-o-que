@@ -1,7 +1,6 @@
 import { randomInt } from 'node:crypto';
-import { getApps, initializeApp } from 'firebase-admin/app';
-import { FieldValue, getFirestore, type DocumentReference, type Transaction } from 'firebase-admin/firestore';
-import { HttpsError, onCall, type CallableRequest, type FunctionsErrorCode } from 'firebase-functions/v2/https';
+import { FieldValue, type DocumentReference, type Transaction } from 'firebase-admin/firestore';
+import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { ledger, type Expense, type JoinOrder, type Payment } from '@qpq/calc';
 import {
   cleanName,
@@ -13,120 +12,30 @@ import {
   parseInvite,
   SPLIT_NAME_MAX,
   type CreateSplitResponse,
-  type ErrorDetails,
-  type ErrorReason,
   type JoinSplitResponse,
   type PreviewInviteResponse,
+  type RegenerateCodeResponse,
 } from '@qpq/shared';
+import {
+  db,
+  fail,
+  input,
+  loadSplit,
+  memberOf,
+  mirrors,
+  newId,
+  opts,
+  otherLinkedAdmins,
+  requireAdmin,
+  requireMember,
+  target,
+  text,
+  uidOf,
+  type Member,
+  type SplitData,
+} from './common.ts';
 
-const REGION = 'us-east1';
 const MAX_PEOPLE = 50;
-
-let firestore: ReturnType<typeof getFirestore> | undefined;
-
-function db() {
-  // Passa o app explicitamente: no pacote publicado o firebase-admin é carregado por
-  // ESM e CJS, que têm registros de app separados (o padrão do getFirestore() não acha o app).
-  firestore ??= getFirestore(getApps()[0] ?? initializeApp());
-  return firestore;
-}
-
-interface Member {
-  name: string;
-  nameKey: string;
-  uid: string | null;
-  admin: boolean;
-  joinOrder: number;
-  joinedAt: unknown;
-  isNew: boolean;
-}
-
-interface SplitData {
-  name: string;
-  emoji: string;
-  status: 'open' | 'done';
-  code: string;
-  createdBy: string;
-  members: Record<string, Member>;
-  uids: string[];
-  adminUids: string[];
-  nextJoinOrder: number;
-}
-
-const HTTP_CODE: Partial<Record<ErrorReason, FunctionsErrorCode>> = {
-  'invalid-input': 'invalid-argument',
-  'invalid-code': 'not-found',
-  'not-member': 'permission-denied',
-  'not-admin': 'permission-denied',
-};
-
-/** Recusa com um motivo que o app traduz (`details.reason`). */
-function fail(reason: ErrorReason, extra: Omit<ErrorDetails, 'reason'> = {}): never {
-  const details: ErrorDetails = { reason, ...extra };
-  throw new HttpsError(HTTP_CODE[reason] ?? 'failed-precondition', reason, details);
-}
-
-function uidOf(req: CallableRequest): string {
-  const uid = req.auth?.uid;
-  if (!uid) throw new HttpsError('unauthenticated', 'unauthenticated');
-  return uid;
-}
-
-function input(req: CallableRequest): Record<string, unknown> {
-  return req.data && typeof req.data === 'object' ? (req.data as Record<string, unknown>) : fail('invalid-input');
-}
-
-function text(v: unknown): string {
-  return typeof v === 'string' ? v : fail('invalid-input');
-}
-
-function newId(): string {
-  return db().collection('_').doc().id;
-}
-
-/** `uids` e `adminUids` são espelhos de `members`, usados pelas regras. */
-function mirrors(members: Record<string, Member>) {
-  const linked = Object.values(members)
-    .filter((m) => m.uid)
-    .sort((a, b) => a.joinOrder - b.joinOrder);
-  return {
-    members,
-    uids: linked.map((m) => m.uid!),
-    adminUids: linked.filter((m) => m.admin).map((m) => m.uid!),
-  };
-}
-
-function memberOf(split: SplitData, uid: string): [string, Member] | null {
-  return Object.entries(split.members).find(([, m]) => m.uid === uid) ?? null;
-}
-
-/** Admins ligados a alguém, fora `exceptId`. "Sempre ao menos um admin" (decisão 4). */
-function otherLinkedAdmins(split: SplitData, exceptId: string): number {
-  return Object.entries(split.members).filter(([id, m]) => id !== exceptId && m.admin && m.uid).length;
-}
-
-async function loadSplit(tx: Transaction, splitId: unknown): Promise<{ ref: DocumentReference; split: SplitData }> {
-  const id = text(splitId);
-  if (!id || id.includes('/')) fail('invalid-input');
-  const ref = db().doc(`splits/${id}`);
-  const snap = await tx.get(ref);
-  if (!snap.exists) fail('not-member');
-  return { ref, split: snap.data() as SplitData };
-}
-
-function requireMember(split: SplitData, uid: string): [string, Member] {
-  return memberOf(split, uid) ?? fail('not-member');
-}
-
-function requireAdmin(split: SplitData, uid: string): [string, Member] {
-  const me = requireMember(split, uid);
-  if (!me[1].admin) fail('not-admin');
-  return me;
-}
-
-function target(split: SplitData, memberId: unknown): Member {
-  return split.members[text(memberId)] ?? fail('invalid-input');
-}
 
 async function readMoney(tx: Transaction, ref: DocumentReference) {
   const [expenses, payments] = await Promise.all([tx.get(ref.collection('expenses')), tx.get(ref.collection('payments'))]);
@@ -152,6 +61,15 @@ function appearsIn(expenses: readonly Expense[], memberId: string): boolean {
   );
 }
 
+/** Código de convite ainda não usado (lido dentro da transação). */
+async function freshCode(tx: Transaction): Promise<string> {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const code = generateCode(() => randomInt(0, 2 ** 32) / 2 ** 32);
+    if (!(await tx.get(db().doc(`inviteCodes/${code}`))).exists) return code;
+  }
+  throw new HttpsError('unavailable', 'code-space');
+}
+
 async function splitByCode(tx: Transaction, raw: unknown) {
   const code = parseInvite(text(raw)) ?? fail('invalid-code');
   const codeSnap = await tx.get(db().doc(`inviteCodes/${code}`));
@@ -161,9 +79,6 @@ async function splitByCode(tx: Transaction, raw: unknown) {
   if (!snap.exists) fail('invalid-code');
   return { ref, split: snap.data() as SplitData };
 }
-
-// invoker público: o navegador chama direto; quem decide é a autenticação e as checagens de cada função.
-const opts = { region: REGION, maxInstances: 10, invoker: 'public' as const };
 
 export const createSplit = onCall(opts, async (req): Promise<CreateSplitResponse> => {
   const uid = uidOf(req);
@@ -188,12 +103,7 @@ export const createSplit = onCall(opts, async (req): Promise<CreateSplitResponse
   });
 
   const code = await db().runTransaction(async (tx) => {
-    let code = '';
-    for (let attempt = 0; ; attempt++) {
-      code = generateCode(() => randomInt(0, 2 ** 32) / 2 ** 32);
-      if (!(await tx.get(db().doc(`inviteCodes/${code}`))).exists) break;
-      if (attempt > 8) throw new HttpsError('unavailable', 'code-space');
-    }
+    const code = await freshCode(tx);
     tx.create(db().doc(`inviteCodes/${code}`), { splitId: ref.id });
     tx.create(ref, {
       name,
@@ -327,4 +237,19 @@ export const removeMember = onCall(opts, async (req) => {
     tx.update(ref, mirrors(rest));
   });
   return { ok: true };
+});
+
+/** "Gerar novo código" (decisão 6): o antigo para na hora; quem já entrou continua. */
+export const regenerateCode = onCall(opts, async (req): Promise<RegenerateCodeResponse> => {
+  const uid = uidOf(req);
+  const data = input(req);
+  return db().runTransaction(async (tx) => {
+    const { ref, split } = await loadSplit(tx, data.splitId);
+    requireAdmin(split, uid);
+    const code = await freshCode(tx);
+    tx.delete(db().doc(`inviteCodes/${split.code}`));
+    tx.create(db().doc(`inviteCodes/${code}`), { splitId: ref.id });
+    tx.update(ref, { code });
+    return { code };
+  });
 });

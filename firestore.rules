@@ -28,11 +28,34 @@ service cloud.firestore {
       }
     }
 
-    match /users/{uid} {
-      allow read: if signedIn() && request.auth.uid == uid;
-      allow write: if false;
+    // Perfil e preferências (spec 08). `recovery` só as Functions escrevem.
+    function validPrefs(p) {
+      return p is map
+        && p.keys().hasOnly(['inapp', 'email', 'selfName', 'askProof', 'theme', 'lang'])
+        && (!('inapp' in p) || p.inapp is bool)
+        && (!('email' in p) || p.email is bool)
+        && (!('selfName' in p) || p.selfName is bool)
+        && (!('askProof' in p) || p.askProof is bool)
+        && (!('theme' in p) || p.theme in ['light', 'dark'])
+        && (!('lang' in p) || p.lang in ['pt-BR', 'en']);
     }
 
-    // inviteCodes, recoveryTokens e qualquer outra coleção: só o Admin SDK (Functions).
+    function validProfile(d) {
+      return (!('displayName' in d) || (d.displayName is string && d.displayName.size() > 0 && d.displayName.size() <= 40))
+        && (!('prefs' in d) || validPrefs(d.prefs));
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['displayName', 'prefs'])
+        && validProfile(request.resource.data);
+      allow update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'prefs'])
+        && validProfile(request.resource.data);
+      allow delete: if false;
+    }
+
+    // inviteCodes, recoveryTokens, mergeTokens e qualquer outra coleção: só o Admin SDK (Functions).
   }
 }

@@ -33,3 +33,13 @@ describe('findDuplicate', () => {
     expect(findDuplicate(['Lucas', 'Bia'])).toBeNull();
   });
 });
+
+describe('isValidEmail', () => {
+  it('aceita e-mail comum e recusa o resto', async () => {
+    const { isValidEmail } = await import('../src/index.ts');
+    expect(isValidEmail('lucas@exemplo.com')).toBe(true);
+    expect(isValidEmail(' lucas@exemplo.com ')).toBe(true);
+    expect(isValidEmail('lucas@')).toBe(false);
+    expect(isValidEmail('sem arroba')).toBe(false);
+  });
+});

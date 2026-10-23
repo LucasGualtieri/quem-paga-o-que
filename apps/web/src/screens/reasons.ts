@@ -26,6 +26,10 @@ export function useReasonText() {
       case 'name-claimed':
       case 'not-member':
       case 'not-admin':
+      case 'not-guest':
+      case 'invalid-recovery':
+      case 'invalid-merge':
+      case 'merge-choice':
         return t(`reasons.${details.reason}`, { name });
       default:
         return t('errors.saveFailed');

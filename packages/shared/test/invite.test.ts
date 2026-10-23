@@ -36,3 +36,10 @@ describe('código de convite', () => {
     expect(inviteLink('https://x.dev/app/index.html', 'K7M-24Q')).toBe('https://x.dev/app/#/convite/K7M-24Q');
   });
 });
+
+describe('link de recuperação', () => {
+  it('monta o link com o token depois de #/r/', async () => {
+    const { recoveryLink } = await import('../src/index.ts');
+    expect(recoveryLink('https://x.dev/app/', 'abc_DEF-123')).toBe('https://x.dev/app/#/r/abc_DEF-123');
+  });
+});

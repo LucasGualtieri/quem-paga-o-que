@@ -3,9 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router';
 import { coverColor, inviteLink } from '@qpq/shared';
 import { Button, Cover, Icon, Skeleton, useToast } from '../components/index.ts';
+import { withGoogle } from '../data/account.ts';
 import { useSplit } from '../data/hooks.ts';
 import { useSession } from '../data/session.ts';
+import { useAuthFlow } from './authFlow.ts';
 import { appBase, BackLink, copyText } from './common.tsx';
+import { dismissNudge, nudgeDismissed } from './Recovery.tsx';
 
 /** Link de convite com Copiar; sem código ainda, mostra o carregando. */
 export function InviteBox({ code, splitName }: { code: string | null; splitName: string }) {
@@ -49,6 +52,56 @@ export function InviteBox({ code, splitName }: { code: string | null; splitName:
   );
 }
 
+/** Convidado que acabou de criar um split: "Salve sua conta…" (spec 03). Fechado, não volta na sessão. */
+function SaveNudge() {
+  const { t } = useTranslation();
+  const session = useSession();
+  const flow = useAuthFlow();
+  const [hidden, setHidden] = useState(nudgeDismissed);
+  if (hidden || session.status !== 'ready' || !session.isAnonymous) return null;
+  return (
+    <div className="card nudge">
+      <div className="nudge-head">
+        <span className="balico acc" aria-hidden="true">
+          <Icon name="shield" />
+        </span>
+        <div>
+          <p className="h4">{t('nudge.title')}</p>
+          <p className="cap" style={{ marginTop: 3 }}>
+            {t('nudge.body')}
+          </p>
+        </div>
+      </div>
+      <div className="nudge-acts">
+        <Button
+          size="sm"
+          icon={
+            <span className="gmark sm" aria-hidden="true">
+              G
+            </span>
+          }
+          onClick={() => void flow(withGoogle)}
+        >
+          {t('nudge.google')}
+        </Button>
+        <Link to="/salvar" className="btn btn-s btn-sm">
+          {t('nudge.recovery')}
+        </Link>
+      </div>
+      <button
+        type="button"
+        className="linkbtn muted-link"
+        onClick={() => {
+          dismissNudge();
+          setHidden(true);
+        }}
+      >
+        {t('nudge.notNow')}
+      </button>
+    </div>
+  );
+}
+
 /** "Split está pronto": aparece na hora ao criar (código chega em seguida). */
 export function CreatedView({ splitId, name, emoji, code }: { splitId: string | null; name: string; emoji: string; code: string | null }) {
   const { t } = useTranslation();
@@ -67,6 +120,7 @@ export function CreatedView({ splitId, name, emoji, code }: { splitId: string | 
           <span className="label">{t('created.inviteLink')}</span>
           <InviteBox code={code} splitName={name} />
         </div>
+        <SaveNudge />
       </div>
       <div className="bottombar">
         <Link to={target} className="btn btn-p btn-block" aria-disabled={!splitId}>

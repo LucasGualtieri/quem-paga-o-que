@@ -24,3 +24,9 @@ export function inviteLink(appBase: string, code: string): string {
   const base = appBase.replace(/[^/]*$/, '');
   return `${base}#/convite/${code}`;
 }
+
+/** Link pessoal de recuperação (decisão 6): vale até ser revogado. */
+export function recoveryLink(appBase: string, token: string): string {
+  const base = appBase.replace(/[^/]*$/, '');
+  return `${base}#/r/${token}`;
+}

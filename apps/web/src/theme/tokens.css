@@ -32,6 +32,8 @@
   --knob: #FFFFFF; /* Bolinha do interruptor */
   --alert: #C22F0A; /* Contador de notificações no sino */
   --alert-ink: #FFFFFF; /* Número sobre --alert */
+  --gmark: #FFFFFF; /* Círculo do "G" nos botões do Google */
+  --gmark-ink: #3A3A44; /* Letra "G" sobre --gmark */
 
   --av-1: #E4DEFF; /* Avatar 1: fundo */
   --av-1-ink: #3A23A8; /* Avatar 1: inicial */
@@ -63,6 +65,7 @@
   --shadow-fab: 0 10px 24px rgba(85, 52, 224, 0.35); /* Botão flutuante */
   --shadow-sun: 0 8px 20px rgba(0, 0, 0, 0.12); /* Elementos --sun das ilustrações */
   --shadow-knob: 0 1px 3px rgba(0, 0, 0, 0.25); /* Bolinha do interruptor */
+  --shadow-ill: 0 18px 40px rgba(24, 24, 60, 0.16); /* Cartão da ilustração da entrada */
   --scrim: rgba(16, 16, 24, 0.45); /* Fundo escurecido atrás de folhas */
 }
 
@@ -89,6 +92,8 @@
   --knob: #FFFFFF; /* Bolinha do interruptor */
   --alert: #C22F0A; /* Contador de notificações no sino */
   --alert-ink: #FFFFFF; /* Número sobre --alert */
+  --gmark: #FFFFFF; /* Círculo do "G" nos botões do Google */
+  --gmark-ink: #3A3A44; /* Letra "G" sobre --gmark */
 
   --av-1: #3B3080; /* Avatar 1: fundo */
   --av-1-ink: #E9E4FF; /* Avatar 1: inicial */
@@ -120,5 +125,6 @@
   --shadow-fab: 0 10px 24px rgba(85, 52, 224, 0.35); /* Botão flutuante */
   --shadow-sun: 0 8px 20px rgba(0, 0, 0, 0.12); /* Elementos --sun das ilustrações */
   --shadow-knob: 0 1px 3px rgba(0, 0, 0, 0.25); /* Bolinha do interruptor */
+  --shadow-ill: 0 18px 40px rgba(24, 24, 60, 0.16); /* Cartão da ilustração da entrada */
   --scrim: rgba(0, 0, 0, 0.6); /* Fundo escurecido atrás de folhas */
 }

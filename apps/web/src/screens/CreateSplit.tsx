@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { cleanName, COVER_EMOJIS, findDuplicate, isValidName, nameKey, SPLIT_NAME_MAX } from '@qpq/shared';
@@ -28,6 +28,14 @@ export default function CreateSplit() {
   const [newName, setNewName] = useState('');
   const [addError, setAddError] = useState<string | undefined>();
   const [created, setCreated] = useState<{ name: string; emoji: string } | null>(null);
+  // Se a pessoa sair da tela antes do servidor responder, não a puxamos de volta.
+  const mounted = useRef(true);
+  useEffect(
+    () => () => {
+      mounted.current = false;
+    },
+    [],
+  );
 
   // Seu nome vem preenchido do perfil (decisão da Fase 3), até você mexer nele.
   useEffect(() => {
@@ -61,8 +69,9 @@ export default function CreateSplit() {
     setCreated({ name: cleanName(name), emoji });
     try {
       const res = await api.createSplit({ name, emoji, selfName, people });
-      void navigate(`/s/${res.splitId}/pronto`, { replace: true });
+      if (mounted.current) void navigate(`/s/${res.splitId}/pronto`, { replace: true });
     } catch (error) {
+      if (!mounted.current) return;
       setCreated(null);
       toast.show({ kind: 'error', text: reasonText(detailsOf(error)) });
     }

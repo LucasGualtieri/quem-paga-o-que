@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { coverColor } from '@qpq/shared';
 import type { Expense, Payment } from '@qpq/calc';
-import { Badge, Cover, Icon, Segmented, SkeletonCard, ThemeToggle } from '../components/index.ts';
+import { Avatar, Badge, Cover, Icon, Segmented, SkeletonCard, ThemeToggle } from '../components/index.ts';
 import { firebase } from '../firebase.ts';
 import { useMySplits, useProfileName } from '../data/hooks.ts';
 import { hiddenSplits } from '../data/local.ts';
@@ -73,11 +73,17 @@ export default function Home() {
           <h1 className="h1">{t('home.mySplits')}</h1>
         </div>
         <ThemeToggle />
+        <Link to="/conta" className="avbtn" aria-label={t('account.title')}>
+          <Avatar name={name || '?'} color={1} size="lg" />
+        </Link>
       </header>
       {session.status === 'ready' && session.isAnonymous && (
         <div className="banner" role="status">
           <Icon name="user" />
-          <span>{t('home.guestBanner')}</span>
+          <span style={{ flex: 1 }}>{t('home.guestBanner')}</span>
+          <Link to="/salvar" className="btn btn-p btn-sm">
+            {t('account.saveAcc')}
+          </Link>
         </div>
       )}
 

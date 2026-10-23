@@ -82,14 +82,35 @@ describe('códigos de convite e usuários', () => {
     await assertFails(getDocs(collection(as('ana'), 'inviteCodes')));
   });
 
-  it('cada um lê só o próprio perfil; escrita fica para a Fase 4', async () => {
+  it('cada um lê só o próprio perfil', async () => {
     await assertSucceeds(getDoc(doc(as('ana'), 'users/ana')));
     await assertFails(getDoc(doc(as('bia'), 'users/ana')));
-    await assertFails(setDoc(doc(as('ana'), 'users/ana'), { displayName: 'X' }));
   });
 
   it('qualquer outra coleção é fechada', async () => {
     await assertFails(getDoc(doc(as('ana'), 'qualquer/coisa')));
     await assertFails(setDoc(doc(as('ana'), 'qualquer/coisa'), { a: 1 }));
+  });
+});
+
+describe('perfil e preferências (Fase 4)', () => {
+  it('a pessoa grava o próprio nome e preferências válidas', async () => {
+    await assertSucceeds(updateDoc(doc(as('ana'), 'users/ana'), { displayName: 'Ana', 'prefs.theme': 'dark', 'prefs.inapp': false }));
+    await assertSucceeds(setDoc(doc(as('bia'), 'users/bia'), { prefs: { lang: 'en', askProof: true } }));
+  });
+
+  it('valores inválidos, campos extras e o perfil dos outros são negados', async () => {
+    await assertFails(updateDoc(doc(as('ana'), 'users/ana'), { 'prefs.theme': 'roxo' }));
+    await assertFails(updateDoc(doc(as('ana'), 'users/ana'), { 'prefs.inapp': 'sim' }));
+    await assertFails(updateDoc(doc(as('ana'), 'users/ana'), { displayName: '' }));
+    await assertFails(updateDoc(doc(as('ana'), 'users/ana'), { displayName: 'x'.repeat(41) }));
+    await assertFails(updateDoc(doc(as('ana'), 'users/ana'), { 'prefs.push': true }));
+    await assertFails(updateDoc(doc(as('ana'), 'users/ana'), { recovery: { active: true } }));
+    await assertFails(updateDoc(doc(as('bia'), 'users/ana'), { displayName: 'Bia' }));
+  });
+
+  it('tokens de recuperação e de fusão: só as Functions', async () => {
+    await assertFails(getDoc(doc(as('ana'), 'recoveryTokens/x')));
+    await assertFails(setDoc(doc(as('ana'), 'mergeTokens/x'), { guestUid: 'ana' }));
   });
 });

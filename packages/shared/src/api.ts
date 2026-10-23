@@ -15,7 +15,11 @@ export type ErrorReason =
   | 'last-admin'
   | 'self-action'
   | 'balance-not-zero'
-  | 'in-expenses';
+  | 'in-expenses'
+  | 'not-guest'
+  | 'invalid-recovery'
+  | 'invalid-merge'
+  | 'merge-choice';
 
 export interface ErrorDetails {
   reason: ErrorReason;
@@ -76,4 +80,51 @@ export interface MemberRequest {
 }
 export interface SplitRequest {
   splitId: string;
+}
+
+/** Link de recuperação do convidado (decisão 6). Só convidado cria; gerar outro revoga o anterior. */
+export interface CreateRecoveryResponse {
+  token: string;
+}
+export interface RedeemRecoveryRequest {
+  token: string;
+}
+export interface RedeemRecoveryResponse {
+  /** Token de login do Firebase para `signInWithCustomToken`. */
+  customToken: string;
+}
+
+export interface RegenerateCodeResponse {
+  code: string;
+}
+
+/**
+ * Fusão convidado → conta que já existe (decisão 5), em três passos:
+ * `prepareMerge` ainda como convidado; `previewMerge` e `mergeGuest` já na conta.
+ */
+export interface PrepareMergeResponse {
+  token: string;
+}
+export interface MergeTokenRequest {
+  token: string;
+}
+export interface MergeConflict {
+  splitId: string;
+  splitName: string;
+  emoji: string;
+  /** Nome que o convidado escolheu neste split. */
+  guest: { id: string; name: string };
+  /** Nome que a conta já tinha neste split. */
+  account: { id: string; name: string };
+}
+export interface PreviewMergeResponse {
+  /** Splits que vêm junto. */
+  splitCount: number;
+  /** Splits em que os dois lados têm nome: a pessoa escolhe qual manter. */
+  conflicts: MergeConflict[];
+}
+export interface MergeGuestRequest {
+  token: string;
+  /** splitId → id do nome que fica, para cada conflito. */
+  keep: Record<string, string>;
 }

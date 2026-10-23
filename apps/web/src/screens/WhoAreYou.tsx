@@ -5,7 +5,7 @@ import { cleanName, coverColor, isValidName, nameKey, type ErrorDetails, type Pr
 import { Avatar, avatarColor, Button, Card, Cover, Icon, SkeletonCard, useToast } from '../components/index.ts';
 import { api, detailsOf } from '../data/api.ts';
 import { trackJoin } from '../data/local.ts';
-import { useSession } from '../data/session.ts';
+import { continueAsGuest, useSession } from '../data/session.ts';
 import { BackLink } from './common.tsx';
 import { useReasonText } from './reasons.ts';
 
@@ -24,6 +24,11 @@ export default function WhoAreYou() {
   const [isNew, setIsNew] = useState(false);
   const [newName, setNewName] = useState('');
   const returned = (location.state as { error?: ErrorDetails } | null)?.error ?? null;
+
+  // Quem abre o convite não precisa de conta (spec 03): vira convidado na hora.
+  useEffect(() => {
+    if (session.status === 'signedOut') void continueAsGuest();
+  }, [session.status]);
 
   useEffect(() => {
     if (session.status !== 'ready') return;

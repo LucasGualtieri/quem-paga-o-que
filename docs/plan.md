@@ -166,6 +166,16 @@ Decisões: 5 ✅, 6 ✅.
 - "Gerar novo código" em Pessoas (admin), com folha de confirmação.
 - Sua conta: perfil, `selfName`, preferências, sair, troca de senha.
 - **Pronto:** e2e "convidado cria split → salva com e-mail → splits continuam", "convidado salva com e-mail que já existe → splits vêm junto; mesmo split pergunta qual nome", "link de recuperação restaura a identidade em outro contexto; link revogado falha" e "código novo: o antigo para de funcionar".
+- **Status: concluída.** Notas da implementação:
+  - Functions novas: `createRecoveryLink`, `revokeRecovery`, `redeemRecovery` (token próprio do Firebase), `regenerateCode`, `prepareMerge`, `previewMerge`, `mergeGuest`. Só o hash dos tokens fica no Firestore. Ajudantes comuns em `functions/src/common.ts`.
+  - "Convidado" = nenhuma credencial ligada (`identities` vazio no token), não só `sign_in_provider == anonymous`: quem volta pelo link de recuperação entra com token próprio e continua convidado (no servidor e no app).
+  - Regras: `users/{uid}` aceita do dono só `displayName` (1–40) e `prefs` com chaves e tipos conhecidos; `recovery` só as Functions escrevem.
+  - App: tela de entrada (ilustração neutra), e-mail (criar, entrar, esqueci a senha), Google por popup, `/juntar` (escolher o nome por split), "Não perca seus splits" (`/salvar`), `/r/:token`, Sua conta (perfil, "Você × nome", notificações e comprovante como preferências, tema, idioma, sair), lembrete após criar, avatar na home, "Gerar novo código" em Pessoas.
+  - Tema e idioma sincronizam com a conta (`PrefsSync`).
+  - Push não aparece no navegador (spec 07). "Trocar foto" fica para a Fase 6 (Storage). E-mail só leitura na v1.
+  - Como só o hash do link de recuperação é guardado, ele não pode ser mostrado de novo: com um link ativo, a tela mostra "Você já guardou um link… em {data}" e "Gerar novo link".
+  - **Staging precisa de configuração manual** (console do Firebase): ligar os provedores E-mail/senha e Google, autorizar o domínio `lucasgualtieri.github.io`, e dar à conta de serviço das Functions o papel "Criador de token da conta de serviço" (para `createCustomToken`).
+  - Textos novos fora do protótipo (revisar): tela de e-mail, tela de juntar, avisos de sair sem conta, link já guardado, revogar, gerar novo código.
 
 ### Fase 5 — Despesas
 Decisões: 7, 8.

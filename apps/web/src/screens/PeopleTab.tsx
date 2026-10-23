@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Avatar, avatarColor, Badge, Button, Icon } from '../components/index.ts';
+import { Avatar, avatarColor, Badge, Button, Icon, Sheet, useToast } from '../components/index.ts';
+import { api, detailsOf } from '../data/api.ts';
+import { useProfile } from '../data/hooks.ts';
+import { useSession } from '../data/session.ts';
+import { useOptimisticAction } from '../lib/optimistic.ts';
 import { adminContact, balances, membersInOrder, promoteBlock, removeBlock, type Member, type MemberPatch, type Money, type SplitDoc } from '../data/model.ts';
 import { useLang } from '../i18n/index.ts';
 import { formatCents } from '../lib/money.ts';
@@ -15,6 +19,38 @@ export function PeopleTab({ split, money, me, act }: { split: SplitDoc; money: M
   const lang = useLang();
   const reasonText = useReasonText();
   const [msg, setMsg] = useState<{ id: string; text: string } | null>(null);
+  const [newCode, setNewCode] = useState(false);
+  const [code, setCode] = useState<string | null>(split.code);
+  const run = useOptimisticAction();
+  const toast = useToast();
+  const session = useSession();
+  const profile = useProfile(session.status === 'ready' ? session.uid : null);
+  // "Você" × nome (spec 08): com o nome, a lista não põe "(você)".
+  const selfName = profile.status === 'ready' && !!profile.data.prefs.selfName;
+
+  // Quando o snapshot traz um código diferente, ele vence; até lá, o carregando ocupa o lugar.
+  const [seenCode, setSeenCode] = useState(split.code);
+  if (split.code !== seenCode) {
+    setSeenCode(split.code);
+    setCode(split.code);
+  }
+
+  const regenerate = () => {
+    setNewCode(false);
+    const old = split.code;
+    void run({
+      apply: () => {
+        setCode(null);
+        return () => setCode(old);
+      },
+      commit: async () => {
+        const res = await api.regenerateCode({ splitId: split.id });
+        setCode(res.code);
+        toast.show({ text: t('invite.done') });
+      },
+      errorText: (e) => reasonText(detailsOf(e)),
+    });
+  };
   const members = membersInOrder(split);
   const nets = balances(split, money);
   const isAdmin = me.admin;
@@ -28,13 +64,13 @@ export function PeopleTab({ split, money, me, act }: { split: SplitDoc; money: M
   const setAdmin = (m: Member, admin: boolean) => {
     if (block(m, promoteBlock(split, m.id, admin))) return;
     setMsg(null);
-    act({ memberId: m.id, change: { admin } }, () => import('../data/api.ts').then(({ api }) => api.setAdmin({ splitId: split.id, memberId: m.id, admin })));
+    act({ memberId: m.id, change: { admin } }, () => api.setAdmin({ splitId: split.id, memberId: m.id, admin }));
   };
   const release = (m: Member) => {
     setMsg(null);
     act(
       { memberId: m.id, change: { uid: null, admin: false } },
-      () => import('../data/api.ts').then(({ api }) => api.releaseName({ splitId: split.id, memberId: m.id })),
+      () => api.releaseName({ splitId: split.id, memberId: m.id }),
       t('people.released', { name: m.name }),
     );
   };
@@ -43,7 +79,7 @@ export function PeopleTab({ split, money, me, act }: { split: SplitDoc; money: M
     setMsg(null);
     act(
       { memberId: m.id, change: 'removed' },
-      () => import('../data/api.ts').then(({ api }) => api.removeMember({ splitId: split.id, memberId: m.id })),
+      () => api.removeMember({ splitId: split.id, memberId: m.id }),
       t('people.removed', { name: m.name }),
     );
   };
@@ -61,7 +97,10 @@ export function PeopleTab({ split, money, me, act }: { split: SplitDoc; money: M
             </h2>
           </div>
           <p className="cap">{t('people.inviteBody')}</p>
-          <InviteBox code={split.code} splitName={split.name} />
+          <InviteBox code={code} splitName={split.name} />
+          <Button variant="ghost" size="sm" style={{ alignSelf: 'flex-start' }} onClick={() => setNewCode(true)}>
+            {t('invite.regenerate')}
+          </Button>
         </div>
       ) : (
         <div className="info">
@@ -90,7 +129,7 @@ export function PeopleTab({ split, money, me, act }: { split: SplitDoc; money: M
                   <span className="mid">
                     <span className="ttl">
                       {m.name}
-                      {mine ? t('people.youSuffix') : ''}
+                      {mine && !selfName ? t('people.youSuffix') : ''}
                     </span>
                     <span className="cap amt">
                       {c === 0 ? t('people.settled') : t('people.balance', { amount: formatCents(c, lang, { signed: true }) })}
@@ -134,6 +173,18 @@ export function PeopleTab({ split, money, me, act }: { split: SplitDoc; money: M
           })}
         </div>
       </section>
+
+      <Sheet open={newCode} title={t('invite.confirmT')} onClose={() => setNewCode(false)}>
+        <p className="muted">{t('invite.confirmB')}</p>
+        <div className="sheet-acts">
+          <Button block onClick={regenerate}>
+            {t('invite.regenerate')}
+          </Button>
+          <Button variant="ghost" block onClick={() => setNewCode(false)}>
+            {t('common.cancel')}
+          </Button>
+        </div>
+      </Sheet>
     </div>
   );
 }

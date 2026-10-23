@@ -34,3 +34,7 @@ export function findDuplicate(names: readonly string[]): string | null {
   }
   return null;
 }
+
+export function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}

@@ -1,11 +1,19 @@
 import { httpsCallable } from 'firebase/functions';
 import type {
+  CreateRecoveryResponse,
   CreateSplitRequest,
   CreateSplitResponse,
   ErrorDetails,
   JoinSplitRequest,
   JoinSplitResponse,
   MemberRequest,
+  MergeGuestRequest,
+  MergeTokenRequest,
+  PrepareMergeResponse,
+  PreviewMergeResponse,
+  RedeemRecoveryRequest,
+  RedeemRecoveryResponse,
+  RegenerateCodeResponse,
   PreviewInviteRequest,
   PreviewInviteResponse,
   SetAdminRequest,
@@ -26,6 +34,14 @@ export const api = {
   releaseName: callable<MemberRequest, unknown>('releaseName'),
   removeMember: callable<MemberRequest, unknown>('removeMember'),
   leaveSplit: callable<SplitRequest, unknown>('leaveSplit'),
+  regenerateCode: callable<SplitRequest, RegenerateCodeResponse>('regenerateCode'),
+  // Contas (decisões 5 e 6).
+  createRecoveryLink: callable<Record<string, never>, CreateRecoveryResponse>('createRecoveryLink'),
+  revokeRecovery: callable<Record<string, never>, unknown>('revokeRecovery'),
+  redeemRecovery: callable<RedeemRecoveryRequest, RedeemRecoveryResponse>('redeemRecovery'),
+  prepareMerge: callable<Record<string, never>, PrepareMergeResponse>('prepareMerge'),
+  previewMerge: callable<MergeTokenRequest, PreviewMergeResponse>('previewMerge'),
+  mergeGuest: callable<MergeGuestRequest, unknown>('mergeGuest'),
 };
 
 /** O motivo da recusa enviado pela Function, se houver. */

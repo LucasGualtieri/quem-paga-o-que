@@ -1,4 +1,4 @@
-import { collection, doc, onSnapshot, query, where } from 'firebase/firestore';
+import { collection, doc, onSnapshot, query, setDoc, where } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import type { Expense, Payment } from '@qpq/calc';
 import { firebase } from '../firebase.ts';
@@ -53,15 +53,56 @@ export function useMoney(splitId: string, enabled: boolean): Money {
   return money;
 }
 
-export function useProfileName(uid: string | null): string {
-  const [name, setName] = useState('');
+export interface Prefs {
+  inapp?: boolean;
+  email?: boolean;
+  selfName?: boolean;
+  askProof?: boolean;
+  theme?: 'light' | 'dark';
+  lang?: 'pt-BR' | 'en';
+}
+
+export interface Profile {
+  displayName: string;
+  prefs: Prefs;
+  /** Link de recuperação ativo (só as Functions escrevem). */
+  recovery: { active: boolean; createdAt: Date | null };
+}
+
+const EMPTY_PROFILE: Profile = { displayName: '', prefs: {}, recovery: { active: false, createdAt: null } };
+
+/** Perfil e preferências do usuário (users/{uid}), em tempo real. */
+export function useProfile(uid: string | null): Loadable<Profile> {
+  const [state, setState] = useState<Loadable<Profile>>({ status: 'loading' });
   useEffect(() => {
     if (!uid) return;
+    setState({ status: 'loading' });
     return onSnapshot(
       doc(firebase().db, 'users', uid),
-      (snap) => setName((snap.get('displayName') as string | undefined) ?? ''),
-      () => {},
+      (snap) => {
+        const d = snap.data() ?? {};
+        const rec = (d.recovery ?? {}) as { active?: boolean; createdAt?: { toDate(): Date } };
+        setState({
+          status: 'ready',
+          data: {
+            displayName: (d.displayName as string | undefined) ?? '',
+            prefs: (d.prefs as Prefs | undefined) ?? {},
+            recovery: { active: !!rec.active, createdAt: rec.createdAt?.toDate() ?? null },
+          },
+        });
+      },
+      () => setState({ status: 'ready', data: EMPTY_PROFILE }),
     );
   }, [uid]);
-  return name;
+  return state;
+}
+
+export function useProfileName(uid: string | null): string {
+  const p = useProfile(uid);
+  return p.status === 'ready' ? p.data.displayName : '';
+}
+
+/** Grava nome e preferências; o cache local do Firestore já mostra a mudança na hora. */
+export function saveProfile(uid: string, patch: { displayName?: string; prefs?: Prefs }): Promise<void> {
+  return setDoc(doc(firebase().db, 'users', uid), patch, { merge: true });
 }
