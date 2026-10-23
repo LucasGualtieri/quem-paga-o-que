@@ -174,7 +174,7 @@ Decisões: 5 ✅, 6 ✅.
   - Tema e idioma sincronizam com a conta (`PrefsSync`).
   - Push não aparece no navegador (spec 07). "Trocar foto" fica para a Fase 6 (Storage). E-mail só leitura na v1.
   - Como só o hash do link de recuperação é guardado, ele não pode ser mostrado de novo: com um link ativo, a tela mostra "Você já guardou um link… em {data}" e "Gerar novo link".
-  - **Staging precisa de configuração manual** (console do Firebase): ligar os provedores E-mail/senha e Google, autorizar o domínio `lucasgualtieri.github.io`, e dar à conta de serviço das Functions o papel "Criador de token da conta de serviço" (para `createCustomToken`; sem ele, `redeemRecovery` dá 500 com `iam.serviceAccounts.signBlob`).
+  - **Configuração manual do staging — feita em 23/10/2026** (console do Firebase e do Google Cloud): ligar os provedores E-mail/senha e Google, autorizar o domínio `lucasgualtieri.github.io`, e dar à conta de serviço das Functions o papel "Criador de token da conta de serviço" (para `createCustomToken`; sem ele, `redeemRecovery` dá 500 com `iam.serviceAccounts.signBlob`). Verificado no staging: link de recuperação devolve a mesma identidade em outro aparelho, link revogado é recusado, criar conta com e-mail funciona. O papel novo levou cerca de 1 minuto para valer.
   - Deploy de Function nova no staging: na criação o Cloud Run não recebeu o invoker público (401 em HTML antes do código); um segundo deploy, que é atualização, aplicou. Registrado no `CLAUDE.md`.
   - Textos novos fora do protótipo (revisar): tela de e-mail, tela de juntar, avisos de sair sem conta, link já guardado, revogar, gerar novo código.
 
