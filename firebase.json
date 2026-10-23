@@ -39,7 +39,7 @@
         "vitest.config.ts"
       ],
       "predeploy": [
-        "npm run build -w @qpq/functions"
+        "npm run bundle -w @qpq/functions"
       ]
     }
   ]

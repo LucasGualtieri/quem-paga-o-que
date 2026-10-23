@@ -15,15 +15,18 @@
     "build": "npm run build -w @qpq/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm test --workspaces --if-present",
-    "e2e": "npm run build -w @qpq/functions && firebase emulators:exec --only auth,firestore,functions --project demo-qpq \"npm run e2e -w @qpq/web\"",
-    "emulators": "npm run build -w @qpq/functions && firebase emulators:start --project demo-qpq",
-    "test:emulators": "npm run build -w @qpq/functions && firebase emulators:exec --only auth,firestore,functions --project demo-qpq \"npm run test:integration -w @qpq/functions\""
+    "e2e": "npm run bundle -w @qpq/functions && firebase emulators:exec --only auth,firestore,functions --project demo-qpq \"npm run e2e -w @qpq/web\"",
+    "emulators": "npm run bundle -w @qpq/functions && firebase emulators:start --project demo-qpq",
+    "test:emulators": "npm run bundle -w @qpq/functions && firebase emulators:exec --only auth,firestore,functions --project demo-qpq \"npm run test:integration -w @qpq/functions\""
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "6.0.0",
+    "@types/node": "26.6.5",
     "@vitest/coverage-v8": "5.0.5",
-    "typescript": "7.0.2",
-    "vitest": "5.0.5",
+    "esbuild": "0.28.2",
+    "firebase": "13.1.0",
     "firebase-tools": "15.34.1",
-    "@types/node": "26.6.5"
+    "typescript": "7.0.2",
+    "vitest": "5.0.5"
   }
 }
