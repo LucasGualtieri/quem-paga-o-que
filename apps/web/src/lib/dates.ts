@@ -11,6 +11,11 @@ export function shortDay(d: Date, lang: Lang): string {
   return lang === 'en' ? `${weekday}, ${month} ${day}` : `${weekday}, ${day} ${month}`;
 }
 
+/** "31 dez" em PT, "Dec 31" em EN (linhas de Minha visão). */
+export function dayMonth(d: Date, lang: Lang): string {
+  return shortDay(d, lang).replace(/^[^,]*, /, '');
+}
+
 /** "Ter, 22 dez · 18:20" em PT, "Tue, Dec 22 · 6:20 PM" em EN. */
 export function shortDayTime(d: Date, lang: Lang): string {
   const time = new Intl.DateTimeFormat(lang === 'en' ? 'en-US' : 'pt-BR', { hour: 'numeric', minute: '2-digit', hour12: lang === 'en' }).format(d);

@@ -208,6 +208,8 @@ describe('fromDoc (editar)', () => {
     paid: {},
     pendConf: {},
     proof: {},
+    receipt: null,
+    paySeq: 0,
   };
 
   it('volta ao estado do formulário no idioma da tela', () => {

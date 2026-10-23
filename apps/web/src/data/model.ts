@@ -1,5 +1,5 @@
 import { shares as calcShares, ledger, type Cents, type Expense, type ExpenseMode, type JoinOrder, type MemberId, type Payment, type SplitMode, type Weights } from '@qpq/calc';
-import type { ErrorReason } from '@qpq/shared';
+import type { ErrorReason, ProofInfo, ProofVisibility } from '@qpq/shared';
 
 /** Participante como está no Firestore (splits/{id}.members). */
 export interface MemberDoc {
@@ -21,6 +21,10 @@ export interface SplitDoc {
   members: Record<MemberId, MemberDoc>;
   uids: string[];
   adminUids: string[];
+  /** Quem vê comprovantes (decisão 9); ausente = "all". */
+  proofVisibility?: ProofVisibility;
+  /** Capa com foto (caminho no Storage); sem ela, o emoji. */
+  photo?: string | null;
 }
 
 export type Member = MemberDoc & { id: MemberId };
@@ -28,6 +32,11 @@ export type Member = MemberDoc & { id: MemberId };
 export interface Money {
   expenses: readonly Expense[];
   payments: readonly Payment[];
+}
+
+/** Pode ver a foto do comprovante entre `from` e `to` (as regras do Storage decidem igual). */
+export function canSeeProof(split: SplitDoc, me: Member, from: MemberId, to: MemberId): boolean {
+  return (split.proofVisibility ?? 'all') === 'all' || me.admin || me.id === from || me.id === to;
 }
 
 export interface Block {
@@ -151,7 +160,23 @@ export interface ExpenseDoc {
   paid: Record<MemberId, Cents>;
   /** Pagamento marcado que quem recebeu ainda não confirmou. */
   pendConf: Record<MemberId, boolean>;
-  proof: Record<MemberId, string>;
+  /** Comprovante de cada parte paga; `path: null` = expirou (decisão 9). */
+  proof: Record<MemberId, ProofInfo>;
+  /** Comprovante (foto) da despesa. */
+  receipt: ProofInfo | null;
+  /** Sobe a cada mudança de pagamento (não é edição: `version` fica). */
+  paySeq: number;
+}
+
+/** Acerto registrado pelo Saldo (splits/{id}/payments/{id}). */
+export interface PaymentDoc {
+  id: string;
+  from: MemberId;
+  to: MemberId;
+  amount: Cents;
+  by: MemberId;
+  when: Date | null;
+  proof: ProofInfo | null;
 }
 
 /** Despesas que contam (as excluídas ficam de fora). */

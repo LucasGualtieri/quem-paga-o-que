@@ -20,6 +20,8 @@ const doc = (id: string, over: Partial<ExpenseDoc> = {}): ExpenseDoc => ({
   paid: {},
   pendConf: {},
   proof: {},
+  receipt: null,
+  paySeq: 0,
   ...over,
 });
 

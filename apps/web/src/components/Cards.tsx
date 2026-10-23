@@ -8,10 +8,11 @@ export function Card({ className, ...rest }: HTMLAttributes<HTMLDivElement>) {
 /** Cor da capa do split: 1–8, de --cv-N em tokens.css. */
 export type CoverColor = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
-export function Cover({ emoji, color, size }: { emoji: string; color: CoverColor; size?: 'sm' | 'xl' }) {
+/** Capa do split: o emoji, ou a foto (`src`) quando houver. */
+export function Cover({ emoji, color, size, src }: { emoji: string; color: CoverColor; size?: 'sm' | 'xl'; src?: string | null }) {
   return (
     <span className={cx('cover', `cv-${color}`, size)} aria-hidden="true">
-      {emoji}
+      {src ? <img src={src} alt="" /> : emoji}
     </span>
   );
 }

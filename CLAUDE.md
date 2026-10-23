@@ -19,7 +19,7 @@ Web app de divisão de despesas em grupo. Front estático no GitHub Pages, back-
   screenshots em apps/web/test-results)
 - emuladores: npm run emulators (precisa de Java 21+; app em dev usa eles)
 - protótipo: node scripts/serve-reference.mjs (http://localhost:8000)
-- deploy no staging: npm run deploy:staging (regras + Functions em
+- deploy no staging: npm run deploy:staging (regras, Storage e Functions em
   qpq-staging); o Pages publica o app sozinho a cada push na main.
   Function nova: rode o deploy duas vezes (na criação o Cloud Run não
   recebe o invoker público; na atualização recebe). Nunca publique em

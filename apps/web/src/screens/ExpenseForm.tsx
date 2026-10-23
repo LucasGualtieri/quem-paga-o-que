@@ -14,6 +14,8 @@ import { BackLink, todayStr, useWho } from './common.tsx';
 import { ErrorLine, splitErrorText, splitStatus, WeightRows } from './ExpenseParts.tsx';
 import { ItemsEditor } from './ItemsEditor.tsx';
 import { useExpenseActions } from './useExpenseActions.ts';
+import { ReceiptField } from './ReceiptField.tsx';
+import { usePayActions } from './usePayActions.ts';
 
 const newExpenseId = () => crypto.randomUUID().replaceAll('-', '').slice(0, 20);
 
@@ -25,6 +27,9 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc?: ExpenseDo
   const order = useMemo(() => orderOf(split), [split]);
   const whoName = useWho(split, me);
   const actions = useExpenseActions(split, me);
+  const pay = usePayActions(split, me);
+  // Foto do comprovante: 'keep' = como está; null = tirar; File = nova (vai depois de salvar).
+  const [receipt, setReceipt] = useState<File | null | 'keep'>('keep');
   const fmt = (c: number) => formatCents(c, lang);
   // A versão que a pessoa está editando (decisão 8): fixa desde que abriu.
   const expectedVersion = useRef(doc?.version ?? 0).current;
@@ -32,7 +37,7 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc?: ExpenseDo
   const [form, setForm] = useState<FormState>(() => (doc ? fromDoc(doc, lang) : initialForm(people, me.id, todayStr())));
   const [showErrors, setShowErrors] = useState(false);
   const [withOpen, setWithOpen] = useState(people.length <= 5);
-  const [more, setMore] = useState(!!doc && (doc.note !== '' || doc.longDesc !== '' || doc.tags.some((k) => k !== 'other')));
+  const [more, setMore] = useState(!!doc && (doc.note !== '' || doc.longDesc !== '' || !!doc.receipt || doc.tags.some((k) => k !== 'other')));
 
   const a = useMemo(() => analyze(form, order), [form, order]);
   const set = (change: Partial<FormState>) => setForm((f) => ({ ...f, ...change }));
@@ -55,12 +60,19 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc?: ExpenseDo
       return;
     }
     const input = toInput(form);
+    const receiptChange = (id: string) => {
+      // Vai na fila da despesa, depois de salvar; não é edição (decisão 8).
+      if (receipt instanceof File) void pay.setReceipt({ id, receipt: doc?.receipt ?? null }, receipt);
+      else if (receipt === null && doc?.receipt?.path) void pay.setReceipt(doc, null);
+    };
     if (doc) {
       actions.update(doc, input, expectedVersion);
+      receiptChange(doc.id);
       void navigate(back, { replace: true });
     } else {
       const id = newExpenseId();
       actions.create(id, input);
+      receiptChange(id);
       void navigate(back, { replace: true, state: { added: id } });
     }
   };
@@ -304,6 +316,7 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc?: ExpenseDo
                 </label>
                 <textarea id="ad-long" className="input" value={form.longDesc} maxLength={2000} placeholder={t('expense.form.longPh')} onChange={(e) => set({ longDesc: e.target.value })} />
               </div>
+              <ReceiptField current={doc?.receipt ?? null} value={receipt} onChange={setReceipt} />
               <div>
                 <label className="label" htmlFor="ad-note">
                   {t('expense.form.note')}

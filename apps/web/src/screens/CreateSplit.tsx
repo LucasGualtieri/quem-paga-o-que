@@ -8,6 +8,7 @@ import { useProfileName } from '../data/hooks.ts';
 import { useSession } from '../data/session.ts';
 import { BackLink } from './common.tsx';
 import { CreatedView } from './Created.tsx';
+import { useUploadCover } from './Photos.tsx';
 import { useReasonText } from './reasons.ts';
 
 const EMOJI_KEYS = ['fireworks', 'gift', 'mountain', 'pizza', 'beach', 'party', 'cheers', 'camping'] as const;
@@ -28,14 +29,28 @@ export default function CreateSplit() {
   const [newName, setNewName] = useState('');
   const [addError, setAddError] = useState<string | undefined>();
   const [created, setCreated] = useState<{ name: string; emoji: string } | null>(null);
+  // Capa com foto (opcional): sobe depois que o split existe; até lá aparece daqui.
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const uploadCover = useUploadCover();
+  useEffect(() => {
+    if (!photo) {
+      setPhotoUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(photo);
+    setPhotoUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [photo]);
   // Se a pessoa sair da tela antes do servidor responder, não a puxamos de volta.
+  // (Marca de novo ao montar: no StrictMode do dev o efeito roda, desmonta e roda outra vez.)
   const mounted = useRef(true);
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
       mounted.current = false;
-    },
-    [],
-  );
+    };
+  }, []);
 
   // Seu nome vem preenchido do perfil (decisão da Fase 3), até você mexer nele.
   useEffect(() => {
@@ -69,6 +84,7 @@ export default function CreateSplit() {
     setCreated({ name: cleanName(name), emoji });
     try {
       const res = await api.createSplit({ name, emoji, selfName, people });
+      if (photo) uploadCover(res.splitId, photo);
       if (mounted.current) void navigate(`/s/${res.splitId}/pronto`, { replace: true });
     } catch (error) {
       if (!mounted.current) return;
@@ -77,7 +93,7 @@ export default function CreateSplit() {
     }
   };
 
-  if (created) return <CreatedView splitId={null} name={created.name} emoji={created.emoji} code={null} />;
+  if (created) return <CreatedView splitId={null} name={created.name} emoji={created.emoji} code={null} previewUrl={photoUrl} />;
 
   return (
     <main className="page">
@@ -94,10 +110,32 @@ export default function CreateSplit() {
           </span>
           <div className="emojis" role="group" aria-label={t('create.cover')}>
             {COVER_EMOJIS.map((e, i) => (
-              <button key={e} type="button" className={`emo ${emoji === e ? 'on' : ''}`} aria-pressed={emoji === e} aria-label={t(`create.emoji.${EMOJI_KEYS[i]}`)} onClick={() => setEmoji(e)}>
+              <button
+                key={e}
+                type="button"
+                className={`emo ${!photo && emoji === e ? 'on' : ''}`}
+                aria-pressed={!photo && emoji === e}
+                aria-label={t(`create.emoji.${EMOJI_KEYS[i]}`)}
+                onClick={() => {
+                  setEmoji(e);
+                  setPhoto(null);
+                }}
+              >
                 {e}
               </button>
             ))}
+          </div>
+          <div className="filerow" style={{ marginTop: 8 }}>
+            <label className={`filebtn ${photo ? 'on' : ''}`}>
+              <input type="file" accept="image/*" onChange={(ev) => ev.target.files?.[0] && setPhoto(ev.target.files[0])} />
+              {photoUrl ? <img className="thumb" src={photoUrl} alt="" /> : <Icon name="camera" />}
+              <span>{photo ? t('photo.groupChosen') : t('photo.group')}</span>
+            </label>
+            {photo && (
+              <button type="button" className="iconbtn" aria-label={t('photo.remove')} onClick={() => setPhoto(null)}>
+                <Icon name="x" />
+              </button>
+            )}
           </div>
         </div>
 

@@ -9,6 +9,7 @@ import { useSession } from '../data/session.ts';
 import { useAuthFlow } from './authFlow.ts';
 import { appBase, BackLink, copyText } from './common.tsx';
 import { dismissNudge, nudgeDismissed } from './Recovery.tsx';
+import { SplitCover } from './Photos.tsx';
 
 /** Link de convite com Copiar; sem código ainda, mostra o carregando. */
 export function InviteBox({ code, splitName }: { code: string | null; splitName: string }) {
@@ -103,7 +104,7 @@ function SaveNudge() {
 }
 
 /** "Split está pronto": aparece na hora ao criar (código chega em seguida). */
-export function CreatedView({ splitId, name, emoji, code }: { splitId: string | null; name: string; emoji: string; code: string | null }) {
+export function CreatedView({ splitId, name, emoji, code, photo = null, previewUrl = null }: { splitId: string | null; name: string; emoji: string; code: string | null; photo?: string | null; previewUrl?: string | null }) {
   const { t } = useTranslation();
   const target = splitId ? `/s/${splitId}` : '/';
   return (
@@ -113,7 +114,7 @@ export function CreatedView({ splitId, name, emoji, code }: { splitId: string | 
         <BackLink to={target} label={t('common.close')} icon="x" />
       </header>
       <div className="created">
-        <Cover emoji={emoji} color={coverColor(emoji)} size="xl" />
+        {previewUrl ? <Cover emoji={emoji} color={coverColor(emoji)} size="xl" src={previewUrl} /> : <SplitCover split={{ id: splitId ?? '', emoji, photo }} size="xl" />}
         <h1 className="h2">{t('created.title', { name })}</h1>
         <p className="muted">{t('created.body')}</p>
         <div className="card invite-card">
@@ -136,5 +137,5 @@ export default function Created() {
   const session = useSession();
   const split = useSplit(id, session.status === 'ready' ? session.uid : null);
   const data = split.status === 'ready' ? split.data : null;
-  return <CreatedView splitId={id} name={data?.name ?? ''} emoji={data?.emoji ?? '🎆'} code={data?.code ?? null} />;
+  return <CreatedView splitId={id} name={data?.name ?? ''} emoji={data?.emoji ?? '🎆'} code={data?.code ?? null} photo={data?.photo ?? null} />;
 }

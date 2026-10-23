@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router';
 import { cleanName, isValidName } from '@qpq/shared';
-import { Avatar, Button, Card, Icon, Segmented, Sheet, SkeletonCard, useToast, type IconName } from '../components/index.ts';
+import { Button, Card, Icon, Segmented, Sheet, SkeletonCard, useToast, type IconName } from '../components/index.ts';
 import { sendPasswordReset } from '../data/account.ts';
 import { api } from '../data/api.ts';
 import { saveProfile, useProfile, type Prefs } from '../data/hooks.ts';
@@ -11,6 +11,7 @@ import { setLang, useLang, type Lang } from '../i18n/index.ts';
 import { useOptimisticAction, useOptimisticValue } from '../lib/optimistic.ts';
 import { setTheme, useTheme, type Theme } from '../theme/theme.ts';
 import { BackLink } from './common.tsx';
+import { ProfileAvatar, useChangeProfilePhoto } from './Photos.tsx';
 import { useShortDate } from './Recovery.tsx';
 
 /** Linha com interruptor: a linha inteira é o role="switch" (protótipo, setrow). */
@@ -34,7 +35,26 @@ function usePref<K extends keyof Prefs>(uid: string, prefs: Prefs, key: K, fallb
   return useOptimisticValue<NonNullable<Prefs[K]>>((prefs[key] ?? fallback) as NonNullable<Prefs[K]>, (v) => saveProfile(uid, { prefs: { [key]: v } }));
 }
 
-function AccountBody({ uid, isAnonymous, email, hasPassword, name, prefs, recovery }: { uid: string; isAnonymous: boolean; email: string | null; hasPassword: boolean; name: string; prefs: Prefs; recovery: { active: boolean; createdAt: Date | null } }) {
+function AccountBody({
+  uid,
+  isAnonymous,
+  email,
+  hasPassword,
+  name,
+  photoPath,
+  prefs,
+  recovery,
+}: {
+  uid: string;
+  isAnonymous: boolean;
+  email: string | null;
+  hasPassword: boolean;
+  name: string;
+  photoPath: string | null;
+  prefs: Prefs;
+  recovery: { active: boolean; createdAt: Date | null };
+}) {
+  const changePhoto = useChangeProfilePhoto(uid, photoPath);
   const { t } = useTranslation();
   const navigate = useNavigate();
   const toast = useToast();
@@ -83,7 +103,12 @@ function AccountBody({ uid, isAnonymous, email, hasPassword, name, prefs, recove
   return (
     <div className="content" style={{ gap: 20, paddingBottom: 40 }}>
       <div className="profile-head">
-        <Avatar name={name || '?'} color={1} className="xl" />
+        <ProfileAvatar name={name} photoPath={photoPath} className="xl" />
+        <label className="linkbtn" style={{ cursor: 'pointer', position: 'relative' }}>
+          <input type="file" accept="image/*" className="sr-only" onChange={(e) => e.target.files?.[0] && changePhoto(e.target.files[0])} />
+          <Icon name="camera" size="sm" />
+          {t('photo.change')}
+        </label>
       </div>
 
       <section>
@@ -279,6 +304,7 @@ export default function Account() {
           email={session.email}
           hasPassword={session.hasPassword}
           name={profile.data.displayName}
+          photoPath={profile.data.photoPath}
           prefs={profile.data.prefs}
           recovery={profile.data.recovery}
         />

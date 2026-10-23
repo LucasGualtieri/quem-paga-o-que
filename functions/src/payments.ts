@@ -196,12 +196,12 @@ export const deletePayment = onCall(opts, async (req) => {
 });
 
 /** Enviar comprovante depois (ou logo depois de marcar): só enquanto não houver (spec 04). */
-export const attachProof = onCall(opts, async (req) => {
+export const attachProof = onCall(opts, async (req): Promise<Partial<PayWriteResponse>> => {
   const uid = uidOf(req);
   const data = input(req);
   const splitId = text(data.splitId);
   if (data.kind === 'share') {
-    await db().runTransaction(async (tx) => {
+    const paySeq = await db().runTransaction(async (tx) => {
       const s = await loadShare(tx, data, uid);
       requireShareActor(s.me, s.e.payer, s.id);
       // Expirado (`path: null`) também conta: o prazo de 15 dias não recomeça (decisão 9).
@@ -211,9 +211,9 @@ export const attachProof = onCall(opts, async (req) => {
       await requireFile(path);
       const proof = newProof(path, s.me[0]);
       register(tx, splitId, proof, { kind: 'share', expenseId: s.ref.id, memberId: s.id });
-      await payWrite(tx, s.ref, s.e, { [`proof.${s.id}`]: proof }, { kind: 'proof', by: s.me[0], memberId: s.id });
+      return payWrite(tx, s.ref, s.e, { [`proof.${s.id}`]: proof }, { kind: 'proof', by: s.me[0], memberId: s.id });
     });
-    return {};
+    return { paySeq };
   }
   if (data.kind !== 'payment') fail('invalid-input');
   await db().runTransaction(async (tx) => {

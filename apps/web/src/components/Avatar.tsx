@@ -14,10 +14,11 @@ export function initialOf(name: string): string {
   return name.trim().charAt(0).toLocaleUpperCase() || '?';
 }
 
-export function Avatar({ name, color, size, className }: { name: string; color: AvatarColor; size?: 'sm' | 'lg'; className?: string }) {
+/** Inicial do nome na cor da pessoa, ou a foto de perfil (`src`) quando houver. */
+export function Avatar({ name, color, size, className, src }: { name: string; color: AvatarColor; size?: 'sm' | 'lg'; className?: string; src?: string | null }) {
   return (
-    <span className={cx('av', `av-${color}`, size, className)} aria-hidden="true">
-      {initialOf(name)}
+    <span className={cx('av', `av-${color}`, size, className, src && 'has-img')} aria-hidden="true">
+      {src ? <img src={src} alt="" /> : initialOf(name)}
     </span>
   );
 }

@@ -33,7 +33,8 @@ export async function joinAs(browser: Browser, code: string, name: string): Prom
   await page.goto(`./#/convite/${code}`);
   await page.getByRole('radio', { name: new RegExp(name) }).check();
   await page.getByRole('button', { name: `Entrar como ${name}` }).click();
-  await expect(page.locator('.toast-region')).toContainText('Você entrou');
+  // Com vários testes em paralelo, o emulador de Functions demora mais para responder.
+  await expect(page.locator('.toast-region')).toContainText('Você entrou', { timeout: 15_000 });
   return page;
 }
 

@@ -2,11 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router';
 import { collection, onSnapshot } from 'firebase/firestore';
-import { coverColor } from '@qpq/shared';
 import type { Payment } from '@qpq/calc';
-import { Avatar, Badge, Cover, Icon, Segmented, SkeletonCard, ThemeToggle } from '../components/index.ts';
+import { Badge, Icon, Segmented, SkeletonCard, ThemeToggle } from '../components/index.ts';
 import { firebase } from '../firebase.ts';
-import { toExpenseDoc, useMySplits, useProfileName } from '../data/hooks.ts';
+import { toExpenseDoc, useMySplits, useProfile } from '../data/hooks.ts';
+import { ProfileAvatar, SplitCover } from './Photos.tsx';
 import { hiddenSplits } from '../data/local.ts';
 import { balances, myMember, type Money, type SplitDoc } from '../data/model.ts';
 import { useSession } from '../data/session.ts';
@@ -44,7 +44,9 @@ export default function Home() {
   const session = useSession();
   const uid = session.status === 'ready' ? session.uid : null;
   const result = useMySplits(uid);
-  const name = useProfileName(uid);
+  const profile = useProfile(uid);
+  const name = profile.status === 'ready' ? profile.data.displayName : '';
+  const photoPath = profile.status === 'ready' ? profile.data.photoPath : null;
   const hidden = hiddenSplits.use();
   const [filter, setFilter] = useState<'open' | 'done'>('open');
   const view = useBalanceView();
@@ -74,7 +76,7 @@ export default function Home() {
         </div>
         <ThemeToggle />
         <Link to="/conta" className="avbtn" aria-label={t('account.title')}>
-          <Avatar name={name || '?'} color={1} size="lg" />
+          <ProfileAvatar name={name} photoPath={photoPath} size="lg" />
         </Link>
       </header>
       {session.status === 'ready' && session.isAnonymous && (
@@ -137,7 +139,7 @@ export default function Home() {
               const count = Object.keys(s.members).length;
               return (
                 <Link key={s.id} to={`/s/${s.id}`} className="home-card">
-                  <Cover emoji={s.emoji} color={coverColor(s.emoji)} />
+                  <SplitCover split={s} />
                   <span className="hdr-mid">
                     <span className="sc-name clamp2">{s.name}</span>
                     <span className="sc-meta">

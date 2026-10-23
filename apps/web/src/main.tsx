@@ -4,6 +4,7 @@ import './theme/tokens.css';
 import './theme/base.css';
 import './screens/screens.css';
 import './screens/expenses.css';
+import './screens/payments.css';
 import './i18n/index.ts';
 import { App } from './App.tsx';
 import { ToastProvider } from './components/index.ts';

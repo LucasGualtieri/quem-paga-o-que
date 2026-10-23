@@ -36,6 +36,11 @@ export function useReasonText() {
       case 'expense-missing':
       case 'version-conflict':
       case 'has-payments':
+      case 'not-involved':
+      case 'not-pending':
+      case 'proof-exists':
+      case 'proof-invalid':
+      case 'payment-missing':
         return t(`reasons.${details.reason}`, { name });
       default:
         return t('errors.saveFailed');

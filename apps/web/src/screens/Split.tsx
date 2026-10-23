@@ -1,16 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router';
-import { coverColor, inviteLink } from '@qpq/shared';
-import { Button, Cover, Icon, Sheet, SkeletonCard, useToast, type IconName } from '../components/index.ts';
+import { inviteLink } from '@qpq/shared';
+import { Button, Icon, Sheet, SkeletonCard, useToast, type IconName } from '../components/index.ts';
 import { api, detailsOf } from '../data/api.ts';
 import { useMoney, useSplit } from '../data/hooks.ts';
 import { hideSplit, pendingJoins } from '../data/local.ts';
-import { applyPatches, leaveBlock, membersInOrder, myMember, type MemberPatch, type SplitDoc } from '../data/model.ts';
+import { applyPatches, leaveBlock, membersInOrder, myMember, type ExpenseDoc, type Member, type MemberPatch, type PaymentDoc, type SplitDoc } from '../data/model.ts';
 import { useSession } from '../data/session.ts';
 import { useOptimisticAction } from '../lib/optimistic.ts';
 import { setTheme, useTheme } from '../theme/theme.ts';
-import { appBase, copyText, EmptyArt } from './common.tsx';
+import { BalanceTab } from './BalanceTab.tsx';
+import { appBase, copyText, useWho } from './common.tsx';
+import { MyViewTab } from './MyViewTab.tsx';
+import { usePayFlow } from './PaySheet.tsx';
+import { SplitCover } from './Photos.tsx';
 import { PeopleTab, type PeopleAction } from './PeopleTab.tsx';
 import { TxTab } from './TxTab.tsx';
 import { useReasonText } from './reasons.ts';
@@ -56,6 +60,18 @@ function usePatches(split: SplitDoc | null): [SplitDoc | null, PeopleAction] {
   );
 
   return [split ? applyPatches(split, patches.map((p) => p.patch)) : null, act];
+}
+
+/** Saldo e Minha visão, com as folhas de pagamento e de comprovante. */
+function MoneyTab({ tab, split, me, expenses, payments }: { tab: 'saldo' | 'eu'; split: SplitDoc; me: Member; expenses: readonly ExpenseDoc[]; payments: readonly PaymentDoc[] }) {
+  const who = useWho(split, me);
+  const { flow, sheets } = usePayFlow(split, me, who);
+  return (
+    <>
+      {tab === 'saldo' ? <BalanceTab split={split} me={me} expenses={expenses} payments={payments} flow={flow} /> : <MyViewTab split={split} me={me} expenses={expenses} payments={payments} flow={flow} />}
+      {sheets}
+    </>
+  );
 }
 
 function SplitSkeleton() {
@@ -132,7 +148,7 @@ export default function Split() {
         <Link to="/" className="iconbtn" aria-label={t('common.back')}>
           <Icon name="back" />
         </Link>
-        {view && <Cover emoji={view.emoji} color={coverColor(view.emoji)} size="sm" />}
+        {view && <SplitCover split={view} size="sm" />}
         <div className="hdr-mid">
           <h1 className="h3 clamp2">{view?.name ?? ''}</h1>
           {view && (
@@ -190,12 +206,7 @@ export default function Split() {
       ) : current.key === 'tx' ? (
         <TxTab split={view} me={me} expenses={money.expenses} loaded={money.loaded} canAdd={view.status === 'open'} onAdd={() => void navigate(`/s/${id}/despesa/nova`)} lastAdded={added} />
       ) : (
-        <div className="content with-tabs">
-          <div className="empty" style={{ paddingTop: 50 }}>
-            <EmptyArt />
-            <h2 className="h2">{t('split.txEmpty')}</h2>
-          </div>
-        </div>
+        <MoneyTab tab={current.key === 'saldo' ? 'saldo' : 'eu'} split={view} me={me} expenses={money.expenses} payments={money.payments} />
       )}
 
       {view && me && current.key === 'tx' && view.status === 'open' && money.expenses.length > 0 && (

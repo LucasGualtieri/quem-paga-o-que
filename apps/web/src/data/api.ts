@@ -1,6 +1,15 @@
 import { httpsCallable } from 'firebase/functions';
 import type {
+  AttachProofRequest,
   CreateExpenseRequest,
+  CreatePaymentRequest,
+  CreatePaymentResponse,
+  PaymentRef,
+  PayWriteResponse,
+  SetProofVisibilityRequest,
+  SetReceiptRequest,
+  SetSplitPhotoRequest,
+  ShareRef,
   CreateRecoveryResponse,
   CreateSplitRequest,
   CreateSplitResponse,
@@ -44,6 +53,17 @@ export const api = {
   updateExpense: callable<UpdateExpenseRequest, ExpenseWriteResponse>('updateExpense'),
   deleteExpense: callable<ExpenseRef, ExpenseWriteResponse>('deleteExpense'),
   restoreExpense: callable<ExpenseRef, ExpenseWriteResponse>('restoreExpense'),
+  // Pagamentos e comprovantes (Fase 6): só as Functions escrevem.
+  markShare: callable<ShareRef, PayWriteResponse>('markShare'),
+  unmarkShare: callable<ShareRef, PayWriteResponse>('unmarkShare'),
+  confirmShare: callable<ShareRef, PayWriteResponse>('confirmShare'),
+  disputeShare: callable<ShareRef, PayWriteResponse>('disputeShare'),
+  createPayment: callable<CreatePaymentRequest, CreatePaymentResponse>('createPayment'),
+  deletePayment: callable<PaymentRef, unknown>('deletePayment'),
+  attachProof: callable<AttachProofRequest, Partial<PayWriteResponse>>('attachProof'),
+  setProofVisibility: callable<SetProofVisibilityRequest, unknown>('setProofVisibility'),
+  setReceipt: callable<SetReceiptRequest, unknown>('setReceipt'),
+  setSplitPhoto: callable<SetSplitPhotoRequest, unknown>('setSplitPhoto'),
   // Contas (decisões 5 e 6).
   createRecoveryLink: callable<Record<string, never>, CreateRecoveryResponse>('createRecoveryLink'),
   revokeRecovery: callable<Record<string, never>, unknown>('revokeRecovery'),

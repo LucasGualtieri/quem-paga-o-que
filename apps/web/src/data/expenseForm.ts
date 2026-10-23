@@ -292,7 +292,7 @@ export function docFromInput(id: string, input: ExpenseInput, me: MemberId, vers
   // Ao editar, o que a edição tirou (itens, pesos…) não pode sobrar da versão anterior.
   const base = prev
     ? (({ w: _w, items: _i, rest: _r, restMode: _rm, restW: _rw, ...keep }) => keep)(prev)
-    : { paid: {}, pendConf: {}, proof: {}, author: me, deletedAt: null };
+    : { paid: {}, pendConf: {}, proof: {}, receipt: null, paySeq: 0, author: me, deletedAt: null };
   return {
     ...base,
     ...rest,

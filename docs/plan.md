@@ -30,19 +30,20 @@ Decisões que moldam o plano:
 
 ### Guardado
 
-- `users/{uid}`: `displayName`, `email?`, `photoPath?`, `prefs {inapp, email, selfName, askProof, theme, lang}`, `createdAt`. O campo `push` não existe na v1, que só tem web.
+- `users/{uid}`: `displayName`, `email?`, `photoPath?` (foto em `users/{uid}/…` no Storage; o dono grava), `prefs {inapp, email, selfName, askProof, theme, lang}`, `createdAt`. O campo `push` não existe na v1, que só tem web.
 - `splits/{splitId}`:
-  - `name, emoji, photoPath?, status: open|done, doneAt?, code, createdAt`
+  - `name, emoji, photo?` (capa em `covers/{id}/…`), `proofVisibility: all|involved` (decisão 9), `status: open|done, doneAt?, code, createdAt`
   - `members: { [memberId]: { name, nameKey, uid|null, admin, joinOrder, joinedAt, isNew? } }`; `nameKey` é o nome normalizado (minúsculas, sem acentos, espaços colapsados), único no split (decisão 3).
   - `uids: string[]` e `adminUids: string[]` (espelhos derivados de `members`, usados pelas regras), `nextJoinOrder`.
   - O admin é do **participante** (`members[x].admin`), não do UID: "Liberar nome" e "Sair do split" desvinculam o UID e tiram o admin juntos (decisões 3 e 4).
   - Participante = `memberId` (estável); o vínculo com o usuário é `members[x].uid`. Quem cria entra já vinculado ao próprio uid.
 - `splits/{id}/expenses/{expId}`:
   - `name, amount, payer, members[], mode, w, items[], rest[], restMode, restW, date, tags[], note, longDesc, receiptPath?, author, version, createdAt, updatedAt`
-  - `paid: {[memberId]: cents}`, `proof: {[memberId]: path}`, `pendConf: {[memberId]: true}`
+  - `paid: {[memberId]: cents}`, `proof: {[memberId]: {path|null, at, by}}` (`path: null` = expirou), `pendConf: {[memberId]: true}`, `receipt: {path|null, at, by}|null` (comprovante da despesa), `paySeq` (sobe a cada mudança de pagamento; não é `version`)
   - Todos os ids são `memberId`.
 - `splits/{id}/expenses/{expId}/history/{hId}`: `{kind, by, at, from?, to?, memberId?}`. Só Functions escrevem aqui.
-- `splits/{id}/payments/{pid}`: `from, to, amount, when, proofPath?, by`.
+- `splits/{id}/payments/{pid}`: `from, to, amount, when, proof: {path|null, at, by}|null, by`. Só Functions escrevem.
+- `proofs/{sha256(path)}` → `{splitId, path, at, target}`: prazo de 15 dias de cada comprovante (decisão 9). Só Functions acessam; a rotina diária `purgeProofs` apaga a foto e deixa `path: null`.
 - `inviteCodes/{code}` → `{splitId}`. Só Functions leem.
 - `recoveryTokens/{sha256(token)}` → `{uid, createdAt, revokedAt?}`. Só Functions acessam. Um token ativo por pessoa (gerar outro revoga o anterior); revogado ao salvar a conta (decisão 6).
 - `mergeTokens/{sha256(token)}` → `{guestUid, expiresAt}`: prova curta (10 min) de que quem pede a fusão era o convidado. Só Functions acessam (decisão 5).
@@ -63,11 +64,11 @@ A parte quitada é `min(paid[x], share[x])`. Se `paid[x] < share[x]`, a diferen�
 | Ler split e subcoleções | Rules: `auth.uid in split.uids` | Membro lê, estranho não |
 | Lançar despesa | Rules: membro, split `open`, `author` = meu memberId, validação de forma (inteiros ≥ 0, `version == 1`) | Lança com e sem permissão; split finalizado bloqueia |
 | Lançar / editar / excluir / desfazer despesa | **Functions** `createExpense`, `updateExpense`, `deleteExpense`, `restoreExpense` (as regras negam escrita direta): membro lança; autor ou admin edita/exclui; split `open`; valida com `@qpq/calc` (`validateExpense`); `version` +1 a cada mudança; edição com versão atrasada recusa com `version-conflict` (nome de quem alterou) a menos que `force` ("Salvar a minha por cima"); excluir = marcar `deletedAt` e só sem `paid` nem `pendConf` (`has-payments`); histórico em `history/` só por Function | Não-membro, não-autor e split finalizado negam; dados que o motor recusa negam; versão errada avisa; excluir com parte paga nega; desfazer exige as pessoas ainda no split |
-| Marcar parte paga | Rules: `diff().affectedKeys()` ⊆ `{paid, proof, pendConf}` e só na chave `x` onde caller = x, payer ou admin; o payer nunca tem chave | Matriz de quem pode marcar a parte de quem |
-| Confirmar / "Não recebi" | Rules: só payer ou admin mexe em `pendConf`; "Não recebi" apaga `paid[x]` + `proof[x]` | Membro comum não confirma pelo outro |
-| Registrar acerto | Rules: `from` ou `to` = caller, ou admin; `open` | Terceiro não-admin nega |
-| Desfazer acerto | Rules (delete): `from`/`to` ou admin; `open` | Idem |
-| Anexar comprovante depois | Rules: campo antes ausente + Storage rules por caminho `splits/{id}/proofs/...` | Segundo upload nega |
+| Marcar parte paga | **Function** `markShare` (as regras negam escrita direta em despesas): caller = a própria pessoa, quem pagou ou admin; valor = parte calculada pelo `@qpq/calc`; `pendConf` só quando quem marca não é quem pagou; Desfazer = `unmarkShare` (apaga o comprovante) | Matriz de quem pode marcar a parte de quem (`functions/test/payments.test.ts`) |
+| Confirmar / "Não recebi" | **Functions** `confirmShare` / `disputeShare`: só quem pagou a despesa ou admin, e só com `pendConf`; "Não recebi" apaga `paid[x]`, `pendConf[x]` e o comprovante | Membro comum não confirma pelo outro; sem pendência recusa |
+| Registrar acerto | **Function** `createPayment`: `from`/`to` = caller ou admin, split `open`; o valor é a dívida atual do par (`M`), calculada no servidor (0 = nada gravado) | Terceiro não-admin nega; repetir não duplica |
+| Desfazer acerto | **Function** `deletePayment`: `from`/`to` ou admin; `open`; apaga o comprovante | Idem |
+| Anexar comprovante depois | **Function** `attachProof` + Storage rules em `splits/{id}/proofs/{from}/{to}/…` (só imagem ≤ 2 MB, só criar); só enquanto não houver (expirado conta); na parte de despesa as duas pessoas ou admin, no acerto só as duas | Segundo envio nega; caminho de outro par nega; leitura conforme "Quem vê comprovantes" (`storage.rules.test.ts`) |
 | Participantes e papéis (qualquer mudança em `members`, `uids`, `adminUids`) | Rules: **nenhuma escrita direta**; tudo passa por Functions em transação, que mantêm os espelhos coerentes e a regra "sempre ao menos um admin" | Escrita direta em `members` nega, até para admin |
 | Criar split | **Function** `createSplit`: nomes sem repetir (`nameKey`), quem cria vira admin | Nomes "Lucas" e "lúcas" juntos falham |
 | Promover / tirar admin de outro | **Function** `setAdmin` (só admin; nunca deixa zero admins) | Membro nega; admin tira outro admin ok |
@@ -204,6 +205,16 @@ Decisão: 9 ✅ (quem vê é escolha do split, padrão "Todo o split"; no máxim
 - Marcar pago / Recebi otimistas, `pendConf`, Confirmar / Não recebi.
 - Folha de comprovante (`askProof`) e upload no Storage com regras de leitura.
 - **Pronto:** e2e de dois usuários (marcar pago → o outro confirma ou contesta); rules de Storage; screenshots × `Telas_5_Pagamentos`.
+- **Status: concluída.** Notas da implementação:
+  - Pagamentos também só por Functions (`functions/src/payments.ts`): `markShare`, `unmarkShare`, `confirmShare`, `disputeShare`, `createPayment`, `deletePayment`, `attachProof`, `setReceipt`, `setSplitPhoto`, `setProofVisibility`. Nenhum mexe em `version` (decisão 8); a parte paga sobe `paySeq` e entra no Histórico (marcou que pagou, confirmou, desfez, avisou que não recebeu, enviou comprovante). O valor do acerto é calculado no servidor (`M` do par).
+  - UX otimista: `data/payStore.ts` põe a marcação, o acerto e o comprovante por cima do snapshot na hora e tira quando o servidor alcança (`paySeq`, id do acerto); se o servidor recusar, volta com toast. Toast com Desfazer ao marcar pago / Recebi / acerto.
+  - Comprovante (decisão 9): o app reduz para 1600 px e regrava em JPEG ≤ 1 MB (sem metadados), sobe direto ao Storage e chama `attachProof`. A leitura é sempre por `getBlob` (passa pelas regras), nunca por link público. Rotina diária `purgeProofs` (us-east1, 04:00 de Brasília): passou de 15 dias, apaga a foto e marca `path: null` ("comprovante expirado"); apaga também fotos enviadas e nunca anexadas. **Apagar ao finalizar fica para a Fase 8** (Finalizar ainda não existe).
+  - "Quem vê comprovantes" em Pessoas (admin escolhe; membro vê a opção). Comprovante da despesa no formulário (Mais detalhes) e no detalhe; capa com foto em Novo split; "Trocar foto" em Sua conta (avatar da home também).
+  - O resolvido no cartão do Saldo ficou com valor em cima e ações (câmera, Desfazer) embaixo: em 390 px a linha do protótipo quebrava o texto em três linhas. A câmera abre o comprovante quando há um.
+  - A prévia de Saldo na tela Paleta (prometida na Fase 2) ficou para a Fase 8: a aba lê sessão e perfil do Firebase e a Paleta roda sem back-end.
+  - Notificações dos pagamentos são da Fase 7: os toasts ainda não dizem "avisamos Beatriz".
+  - Configuração manual do staging (Lucas): ligar o Storage em us-east1, aplicar o CORS do bucket (`storage.cors.json`) e criar a variável `VITE_FIREBASE_STORAGE_BUCKET` se o bucket não for `qpq-staging.firebasestorage.app`. Ver `docs/handoff.md`.
+  - Textos novos fora do protótipo (revisar): "Marcamos que o pagamento de {nome} não chegou", "{nome} pode conferir o comprovante.", "Comprovantes ficam guardados por 15 dias.", "comprovante expirado", textos de "Quem vê comprovantes", "Só os envolvidos e admins veem este comprovante.", erros de foto, linhas do Histórico de pagamento, motivos de recusa novos.
 
 ### Fase 7 — Notificações
 Decisão: 10.

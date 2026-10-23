@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { nameKey, TAGS } from '@qpq/shared';
 import { Avatar, avatarColor, Button, Chip, Icon, SkeletonCard } from '../components/index.ts';
+import { pendingChecks } from '../data/balance.ts';
 import { membersInOrder, sharesOf, type ExpenseDoc, type Member, type SplitDoc } from '../data/model.ts';
 import { useLang } from '../i18n/index.ts';
 import { formatCents } from '../lib/money.ts';
@@ -198,7 +199,7 @@ export function TxTab({ split, me, expenses, loaded, canAdd, onAdd, lastAdded }:
           <div className="list">
             {items.map((e) => {
               const mine = mineOf(e);
-              const pend = e.payer === me.id ? Object.values(e.pendConf).filter(Boolean).length : 0;
+              const pend = e.payer === me.id ? pendingChecks(e) : 0;
               const note = modeNote(e);
               return (
                 <Link key={e.id} to={`/s/${split.id}/despesa/${e.id}`} className={`row txrow ${lastAdded === e.id ? 'new' : ''}`}>

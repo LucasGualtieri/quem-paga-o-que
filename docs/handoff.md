@@ -1,15 +1,15 @@
 # Quem Paga O Quê? — handoff para uma nova conversa
 
-Atualizado em 23/10/2026, no commit `7e60ec3` (branch `main`, já no GitHub). Leia este arquivo primeiro; ele aponta para o resto.
+Atualizado em 23/10/2026, ao fim da Fase 6 (branch `main`). Leia este arquivo primeiro; ele aponta para o resto.
 
 ## Como começar a nova conversa
 
 Abra o Claude Code na pasta do projeto e cole:
 
 ```text
-Leia docs/handoff.md, CLAUDE.md e docs/plan.md. O projeto está na Fase 5 concluída.
-Antes da Fase 6, me entreviste sobre a decisão 9 (comprovantes e LGPD) de
-docs/spec/pontos-em-aberto.md; depois implemente a Fase 6.
+Leia docs/handoff.md, CLAUDE.md e docs/plan.md. O projeto está na Fase 6 concluída.
+Antes da Fase 7, me entreviste sobre a decisão 10 (provedor de e-mail e remetente) de
+docs/spec/pontos-em-aberto.md; depois implemente a Fase 7.
 ```
 
 ## O produto
@@ -41,17 +41,16 @@ Web app de divisão de despesas em grupo ("Quem Paga O Quê?"). Front estático 
 | 3 | Splits, convite, "Quem é você?", Pessoas, permissões no servidor | ✅ |
 | 4 | Contas: entrada, e-mail/Google, link de recuperação, fusão com conta existente, Sua conta | ✅ |
 | 5 | Despesas: formulário, 5 modos de divisão, itens, Transações, detalhe, editar/excluir, conflito de edição | ✅ (CI verde, Functions no staging) |
-| **6** | **Saldo, Minha visão, marcar pago/Recebi, confirmar/"Não recebi", comprovantes (Storage)** | **próxima — travada pela decisão 9** |
-| 7 | Notificações (4 eventos, sino, banner por `hlShare`, e-mail) | pendente — decisão 10 |
+| 6 | Saldo, Minha visão, marcar pago/Recebi, confirmar/"Não recebi", acertos, comprovantes (Storage), capa e foto de perfil | ✅ nos emuladores (ver "Pendências": Storage do staging) |
+| **7** | **Notificações (4 eventos, sino, banner por `hlShare`, e-mail)** | **próxima — travada pela decisão 10** |
 | 8 | Finalizar split, home completa, desktop ≥ 1024 px, acessibilidade | pendente |
 
 ### Decisões (docs/spec/pontos-em-aberto.md)
 
-Decididas (1–8): centavos pela ordem de entrada (`joinOrder`); `paid[pessoa]` guarda centavos pagos; nome escolhido trava e só admin libera; sempre ao menos um admin e "Sair do split" só com saldo zero; convidado que salva com conta existente entra nela e traz os splits (pergunta qual nome manter quando há dois no mesmo split, nome que fica herda admin); convite sem prazo e admin gera código novo; link de recuperação sem prazo, reutilizável até revogar e revogado ao salvar a conta; excluir despesa com parte paga é bloqueado, notificações da despesa excluída somem; edição simultânea avisa por versão ("Ver a versão nova" / "Salvar a minha por cima"). Detalhes e textos exatos estão na spec.
+Decididas (1–9): centavos pela ordem de entrada (`joinOrder`); `paid[pessoa]` guarda centavos pagos; nome escolhido trava e só admin libera; sempre ao menos um admin e "Sair do split" só com saldo zero; convidado que salva com conta existente entra nela e traz os splits (pergunta qual nome manter quando há dois no mesmo split, nome que fica herda admin); convite sem prazo e admin gera código novo; link de recuperação sem prazo, reutilizável até revogar e revogado ao salvar a conta; excluir despesa com parte paga é bloqueado, notificações da despesa excluída somem; edição simultânea avisa por versão ("Ver a versão nova" / "Salvar a minha por cima"); comprovantes: quem vê é escolha do split em Pessoas (padrão "Todo o split", ou "Só os envolvidos e admins"), guardados no máximo 15 dias e apagados ao finalizar, só imagem recomprimida no aparelho. Detalhes e textos exatos estão na spec.
 
 **Em aberto:**
-- **9 — Comprovantes e LGPD** (onde ficam, por quanto tempo, quem vê). Ponto de partida sugerido: só as duas pessoas do pagamento e os admins veem; retenção a definir. **Bloqueia a Fase 6.** Entrevistar o Lucas antes de codar (ele prefere ser entrevistado com opções recomendadas).
-- **10 — Provedor de e-mail transacional e remetente** (Resend com domínio próprio, chave em secret). Bloqueia a Fase 7.
+- **10 — Provedor de e-mail transacional e remetente** (Resend com domínio próprio, chave em secret). **Bloqueia a Fase 7.** Entrevistar o Lucas antes de codar (ele prefere ser entrevistado com opções recomendadas).
 
 ## Como o código está organizado
 
@@ -62,6 +61,9 @@ functions/         Cloud Functions chamáveis (us-east1, esbuild)
   src/splits.ts    createSplit, previewInvite, joinSplit, setAdmin, releaseName, leaveSplit, removeMember, regenerateCode
   src/accounts.ts  createRecoveryLink, revokeRecovery, redeemRecovery, prepareMerge, previewMerge, mergeGuest
   src/expenses.ts  createExpense, updateExpense, deleteExpense, restoreExpense
+  src/payments.ts  markShare, unmarkShare, confirmShare, disputeShare, createPayment, deletePayment,
+                   attachProof, setReceipt, setSplitPhoto, setProofVisibility
+  src/proofs.ts    prazo de 15 dias dos comprovantes (purgeProofs, rotina diária)
   src/common.ts    ajudantes (db(), fail(), isGuest()…)
 apps/web/          SPA (React 19 + Vite + HashRouter)
   src/theme/tokens.css   ÚNICA fonte de cor (um teste falha se houver cor em outro arquivo)
@@ -69,25 +71,26 @@ apps/web/          SPA (React 19 + Vite + HashRouter)
   src/data/              Firebase, hooks em tempo real, modelo, lógica pura do formulário, store otimista
   src/screens/           telas do produto; src/dev/ telas de revisão
   e2e/                   Playwright (390 e 1440 px)
-firestore.rules, storage.rules (storage ainda fechado), firebase.json, .firebaserc
+firestore.rules, storage.rules (lê o split no Firestore), storage.cors.json, firebase.json, .firebaserc
 ```
 
 Conceitos que não são óbvios:
-- **Escrita só por Functions** para `splits` (participantes e papéis) e `expenses`: as regras negam escrita direta. Perfil/preferências (`users/{uid}`) o próprio dono grava, com validação nas regras.
+- **Escrita só por Functions** para `splits` (participantes e papéis), `expenses` (inclusive partes pagas) e `payments`: as regras negam escrita direta. Perfil/preferências (`users/{uid}`) o próprio dono grava, com validação nas regras.
 - **Saldo nunca é guardado**: sai de `expenses` (sem as com `deletedAt`) e `payments` pelo `@qpq/calc`.
 - **Participante ≠ usuário**: `members[memberId]` tem `uid` (ou `null` se ainda não entrou); `uids` e `adminUids` são espelhos mantidos pelas Functions.
-- **UX otimista em tudo**: `lib/optimistic.ts` (`useOptimisticValue`/`useOptimisticAction`) e, para despesas, `data/expenseStore.ts` (mudança aparece na hora, fila por despesa, conflito de edição). Se o servidor recusar, volta com toast.
+- **UX otimista em tudo**: `lib/optimistic.ts` (`useOptimisticValue`/`useOptimisticAction`), `data/expenseStore.ts` para edições de despesa (fila por despesa, conflito de edição) e `data/payStore.ts` para pagamentos, acertos e comprovantes (saem quando o snapshot alcança `paySeq`). Se o servidor recusar, volta com toast.
 - **Convidado** = sem credencial ligada (`identities` vazio no token), inclusive quem volta pelo link de recuperação.
-- Despesa: `paid` (centavos pagos por parte), `pendConf`, `proof` já existem no modelo, vazios até a Fase 6.
+- Pagamento de parte não é edição: não mexe em `version` (decisão 8), sobe `paySeq`. Comprovante = `{path, at, by}`; `path: null` = expirou (não aceita outro).
+- Fotos: leitura sempre por `getBlob` (passa pelas regras do Storage), nunca por link público; envio já reduzido (`lib/image.ts`) e por caminho que diz de quem é (`splits/{id}/proofs/{from}/{to}/…`).
 
-## O que a Fase 6 precisa fazer (de docs/plan.md + spec 06)
+## O que a Fase 7 precisa fazer (de docs/plan.md + spec 07)
 
-- Aba **Saldo**: cartão "Seu saldo", um cartão por pessoa (o seu primeiro, aberto, `--me-soft`; os outros minimizados, por tamanho do saldo), linhas com a dívida real do par (`M`), "Marcar como pago"/"Recebi", linha resolvida (cinza, tracejada) com Desfazer e câmera, "Expandir/Minimizar todos".
-- Aba **Minha visão**: Devo / Já paguei / A receber; linhas ficam no lugar ("Pendente" → "Pago"); "Acerto de contas" e "Quitado no acerto".
-- **Marcar pago / Recebi** otimistas; `pendConf` e Confirmar / "Não recebi" (que desfaz a parte e apaga o comprovante). No detalhe da despesa (hoje só leitura Pendente/Pago) entram as ações, o banner por notificação fica para a Fase 7.
-- **Pagamento de acerto** (`payments`): Function nova (a regra hoje nega escrita); quem pode: quem está na linha ou admin; desfazer: as duas pessoas ou admin.
-- **Comprovante**: preferência `askProof` (já existe em Sua conta), folha para anexar foto, upload no **Storage** (`splits/{id}/proofs/…`), `storage.rules` com leitura restrita (decisão 9), "Enviar comprovante" depois, só enquanto não houver. Também entra o comprovante no formulário e no detalhe da despesa, e **"Trocar foto" do perfil** e **capa com foto** do split (ficaram para cá).
-- Testes pedidos no plano: e2e de dois usuários (marcar pago → o outro confirma/contesta), rules de Storage, screenshots × `Telas_5_Pagamentos`.
+- Triggers (Functions) das 4 situações da spec 07: alguém marca a própria parte paga (avisa quem pagou, com botões de confirmar), acerto pelo Saldo (a outra pessoa), comprovante enviado depois (a outra pessoa do pagamento), "Não recebi" (quem marcou). Hoje os pagamentos já gravam Histórico e `paySeq`; as notificações não existem.
+- `users/{uid}/notifications/{nid}` (só Functions criam), sino com contagem (até "9+"), lista, "Marcar todas como lidas", sino some com `inapp` desligado.
+- Banner no detalhe por `hlShare` (parâmetro de navegação) × pendência por `pendConf` (já existe). Com o banner aberto, os botões da linha daquela pessoa somem.
+- Toasts passam a dizer "avisamos Beatriz" (hoje: "Pagamento registrado").
+- Excluir despesa some com as notificações dela (decisão 7); Desfazer traz de volta.
+- E-mail via Function (decisão 10), indisponível para convidado.
 
 ## Preferências do Lucas (aprenda com elas)
 
@@ -116,6 +119,7 @@ npm run deploy:staging               # regras + Functions em qpq-staging
 - O Python do macOS não lê a pasta do Desktop; use o servidor Node do protótipo.
 - O Pages publica com as **telas de revisão ligadas** (`VITE_DEV_TOOLS=true` no workflow) até o lançamento; desligar antes de lançar. A configuração do Firebase do app vem de variáveis do repositório (`VITE_FIREBASE_*`).
 - Os logs do emulador de Functions poluem o `npm run e2e`; filtre com `grep -v '^>'`.
+- Com muitos testes em paralelo o emulador de Functions fica lento e o e2e falha por tempo; numa máquina com muitos núcleos, rode com poucos workers: `npx firebase emulators:exec --only auth,firestore,functions,storage --project demo-qpq "npm run e2e -w @qpq/web -- --workers=2"`.
 - `npm audit` acusa alertas só em `firebase-tools` (CLI de desenvolvimento).
 - O hook em `.claude/settings.json` roda typecheck e testes depois de cada edição de código.
 - Dados de teste no staging (contas e splits de teste) podem existir; não são dados reais.
@@ -126,7 +130,9 @@ E-mail/senha e Google ligados (nome público "Quem Paga O Quê? (staging)"); dom
 
 ## Pendências e riscos conhecidos
 
-- A Fase 5 foi verificada nos emuladores (e2e) e as Functions respondem no staging, mas o fluxo de despesas **ainda não foi testado à mão no app publicado**.
+- **Storage do staging (Lucas):** (1) no console do Firebase, Storage → Começar, em **us-east1** (bucket `qpq-staging.firebasestorage.app`); (2) aplicar o CORS do bucket para o app ler as fotos: `gcloud storage buckets update gs://qpq-staging.firebasestorage.app --cors-file=storage.cors.json` (ou pelo Cloud Console); (3) se o bucket tiver outro nome, criar a variável `VITE_FIREBASE_STORAGE_BUCKET` no repositório. Depois rodar `npm run deploy:staging` **duas vezes** (Functions novas). Na primeira publicação das regras do Storage o Firebase pede acesso da conta de serviço do Storage ao Firestore (regras entre serviços): aceitar. A rotina `purgeProofs` usa o Cloud Scheduler.
+- As Fases 5 e 6 foram verificadas nos emuladores (e2e em 390 e 1440 px), mas despesas e pagamentos **ainda não foram testados à mão no app publicado**.
+- Apagar comprovantes ao finalizar o split (decisão 9) entra junto com Finalizar, na Fase 8.
 - Antes de ir ao ar (Fase 8): criar projeto de produção (Blaze, `us-east1`, alerta de orçamento), alias `prod`, desligar as telas de revisão, revisão manual em iPhone e Android.
 - Layout desktop (≥ 1024 px) e acabamento de acessibilidade são da Fase 8; o produto hoje é coluna única de até 560 px.
 - Receber e-mail (Fase 7) depende do provedor da decisão 10 e de um domínio de remetente.

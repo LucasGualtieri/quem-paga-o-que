@@ -3,12 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useNavigate, useParams } from 'react-router';
 import { Avatar, avatarColor, Badge, Button, Icon, Sheet, SkeletonCard } from '../components/index.ts';
 import { useExpenses, useHistory, useSplit, type HistoryEntry } from '../data/hooks.ts';
-import { myMember, sharesOf, type ExpenseDoc, type Member, type SplitDoc } from '../data/model.ts';
+import { canSeeProof, myMember, sharesOf, type ExpenseDoc, type Member, type SplitDoc } from '../data/model.ts';
 import { useSession } from '../data/session.ts';
 import { useLang } from '../i18n/index.ts';
 import { dateOf, shortDay, shortDayTime } from '../lib/dates.ts';
 import { formatCents } from '../lib/money.ts';
 import { BackLink, TagIcon, useWho } from './common.tsx';
+import { PhotoBox, usePayFlow } from './PaySheet.tsx';
 import { hasPayments, useExpenseActions } from './useExpenseActions.ts';
 
 function useWhen() {
@@ -25,7 +26,9 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc: ExpenseDoc
   const actions = useExpenseActions(split, me);
   const history = useHistory(split.id, doc.id);
   const [confirm, setConfirm] = useState(false);
+  const { flow, sheets } = usePayFlow(split, me, who);
   const fmt = (c: number) => formatCents(c, lang);
+  const isOpen = split.status === 'open';
 
   const sh = sharesOf(doc, split);
   const rows = Object.entries(sh)
@@ -53,6 +56,13 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc: ExpenseDoc
 
   const historyText = (h: HistoryEntry): string => {
     const name = split.members[h.by]?.name ?? '';
+    const whoName = split.members[h.memberId ?? '']?.name ?? '';
+    if (h.kind === 'paid') return h.by === h.memberId ? t('expense.detail.hPaid', { name }) : t('expense.detail.hPaidFor', { name, who: whoName });
+    if (h.kind === 'received') return t('expense.detail.hReceived', { name, who: whoName });
+    if (h.kind === 'unpaid') return t('expense.detail.hUnpaid', { name, who: whoName });
+    if (h.kind === 'confirmed') return t('expense.detail.hConfirmed', { name, who: whoName });
+    if (h.kind === 'disputed') return t('expense.detail.hDisputed', { name, who: whoName });
+    if (h.kind === 'proof') return t('expense.detail.hProof', { name });
     if (h.kind === 'created') return t('expense.detail.hCreated', { name, amount: fmt(h.to ?? doc.amount) });
     if (h.kind === 'edited') return h.from !== undefined && h.to !== undefined ? t('expense.detail.hEditedAmount', { name, from: fmt(h.from), to: fmt(h.to) }) : t('expense.detail.hEdited', { name });
     if (h.kind === 'deleted') return t('expense.detail.hDeleted', { name });
@@ -97,13 +107,21 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc: ExpenseDoc
         <section>
           <div className="sec-h">
             <h2 className="h4">{t('expense.detail.shareOf')}</h2>
-            <span className="cap amt">{pendingCount > 0 ? t('expense.detail.pending', { count: pendingCount }) : ''}</span>
+            <span className="cap amt">{pendingCount > 0 ? t('expense.detail.pending', { count: pendingCount }) : t('my.allPaid')}</span>
           </div>
           <div className="list">
             {rows.map(([id, v]) => {
               const m = split.members[id];
               const isPayer = id === doc.payer;
-              const paid = (doc.paid[id] ?? 0) >= v;
+              const paid = !isPayer && (doc.paid[id] ?? 0) >= v;
+              const proof = doc.proof[id];
+              // Pendência vem do estado (pendConf), não do caminho de entrada (spec 07).
+              const toCheck = paid && !!doc.pendConf[id] && doc.payer === me.id;
+              const canAct = !isPayer && isOpen && (me.admin || id === me.id || doc.payer === me.id);
+              const canAttach = paid && !proof && isOpen && (id === me.id || doc.payer === me.id || me.admin);
+              const canView = paid && !!proof?.path && canSeeProof(split, me, id, doc.payer);
+              const expired = paid && !!proof && !proof.path;
+              const showActs = (canAct && !toCheck) || canAttach || canView || expired || (toCheck && isOpen);
               return (
                 <div key={id} className={`row2 ${id === me.id ? 'me-row' : ''}`}>
                   <div className="top">
@@ -115,12 +133,16 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc: ExpenseDoc
                     <span className="right">
                       <span className="amt strong">{fmt(v)}</span>
                       {isPayer ? (
-                        <Badge tone="zero" icon="check">
+                        <Badge tone="acc" icon="check">
                           {t('expense.detail.paidAcc')}
+                        </Badge>
+                      ) : toCheck ? (
+                        <Badge tone="acc" icon="clock">
+                          {t('expense.detail.paidConfirm')}
                         </Badge>
                       ) : paid ? (
                         <Badge tone="zero" icon="check">
-                          {t('expense.detail.paid')}
+                          {proof?.path ? t('expense.detail.paidProof') : t('expense.detail.paid')}
                         </Badge>
                       ) : (
                         <Badge tone="neg" icon="clock">
@@ -129,6 +151,37 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc: ExpenseDoc
                       )}
                     </span>
                   </div>
+                  {showActs && (
+                    <div className="acts end">
+                      {expired && <span className="cap">{t('pay.proofExpired')}</span>}
+                      {canView && proof && (
+                        <button type="button" className="linkbtn" onClick={() => flow.viewProof({ proof, from: id, to: doc.payer, amount: v, what: doc.name })}>
+                          <Icon name="camera" size="sm" />
+                          {t('pay.seeProof')}
+                        </button>
+                      )}
+                      {canAttach && (
+                        <Button size="sm" variant="ghost" icon={<Icon name="camera" size="sm" />} onClick={() => flow.attachShare(doc, id)}>
+                          {t('pay.sendProof')}
+                        </Button>
+                      )}
+                      {canAct && !toCheck && (
+                        <Button size="sm" variant={!paid && id === me.id ? 'primary' : 'secondary'} onClick={() => (paid ? flow.unmark(doc, id) : flow.markShare(doc, id))}>
+                          {paid ? t('common.undo') : doc.payer === me.id ? t('pay.markRecv') : t('pay.markPaid')}
+                        </Button>
+                      )}
+                      {toCheck && isOpen && (
+                        <>
+                          <Button size="sm" variant="secondary" onClick={() => flow.dispute(doc, id)}>
+                            {t('pay.notRecv')}
+                          </Button>
+                          <Button size="sm" onClick={() => flow.confirm(doc, id)}>
+                            {t('pay.confirmShort')}
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -161,9 +214,13 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc: ExpenseDoc
           <div className="sec-h">
             <h2 className="h4">{t('expense.detail.receipt')}</h2>
           </div>
-          <p className="cap" style={{ padding: '0 4px' }}>
-            {t('expense.detail.noReceipt')}
-          </p>
+          {doc.receipt?.path ? (
+            <PhotoBox path={doc.receipt.path} alt={t('photo.receiptAlt')} />
+          ) : (
+            <p className="cap" style={{ padding: '0 4px' }}>
+              {doc.receipt ? t('expense.detail.receiptExpired') : t('expense.detail.noReceipt')}
+            </p>
+          )}
         </section>
 
         {doc.longDesc && (
@@ -246,6 +303,7 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc: ExpenseDoc
           </Button>
         </div>
       </Sheet>
+      {sheets}
     </main>
   );
 }
