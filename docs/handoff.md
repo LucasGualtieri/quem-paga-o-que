@@ -41,7 +41,7 @@ Web app de divisão de despesas em grupo ("Quem Paga O Quê?"). Front estático 
 | 3 | Splits, convite, "Quem é você?", Pessoas, permissões no servidor | ✅ |
 | 4 | Contas: entrada, e-mail/Google, link de recuperação, fusão com conta existente, Sua conta | ✅ |
 | 5 | Despesas: formulário, 5 modos de divisão, itens, Transações, detalhe, editar/excluir, conflito de edição | ✅ (CI verde, Functions no staging) |
-| 6 | Saldo, Minha visão, marcar pago/Recebi, confirmar/"Não recebi", acertos, comprovantes (Storage), capa e foto de perfil | ✅ nos emuladores (ver "Pendências": Storage do staging) |
+| 6 | Saldo, Minha visão, marcar pago/Recebi, confirmar/"Não recebi", acertos, comprovantes (Storage), capa e foto de perfil | ✅ (CI verde, Functions e Storage no staging) |
 | **7** | **Notificações (4 eventos, sino, banner por `hlShare`, e-mail)** | **próxima — travada pela decisão 10** |
 | 8 | Finalizar split, home completa, desktop ≥ 1024 px, acessibilidade | pendente |
 
@@ -126,11 +126,11 @@ npm run deploy:staging               # regras + Functions em qpq-staging
 
 ## Configuração do staging (já feita pelo Lucas)
 
-E-mail/senha e Google ligados (nome público "Quem Paga O Quê? (staging)"); domínio `lucasgualtieri.github.io` autorizado; a conta de serviço padrão do Compute tem "Criador de token da conta de serviço" (sem isso `redeemRecovery` dá 500). Mudanças de segurança do console (IAM, domínios, provedores) são **do Lucas**: o Claude orienta o passo a passo, quem faz é ele.
+E-mail/senha e Google ligados (nome público "Quem Paga O Quê? (staging)"); domínio `lucasgualtieri.github.io` autorizado; a conta de serviço padrão do Compute tem "Criador de token da conta de serviço" (sem isso `redeemRecovery` dá 500). Mudanças de segurança do console (IAM, domínios, provedores) **precisam do OK explícito do Lucas**: o Claude explica exatamente o que será concedido e só faz depois do sim (foi assim com o papel do Storage). No Cloud Shell pelo navegador do app, texto colado não chega ao terminal: digite tecla por tecla (símbolos literais funcionam).
 
 ## Pendências e riscos conhecidos
 
-- **Storage do staging (Lucas):** (1) no console do Firebase, Storage → Começar, em **us-east1** (bucket `qpq-staging.firebasestorage.app`); (2) aplicar o CORS do bucket para o app ler as fotos: `gcloud storage buckets update gs://qpq-staging.firebasestorage.app --cors-file=storage.cors.json` (ou pelo Cloud Console); (3) se o bucket tiver outro nome, criar a variável `VITE_FIREBASE_STORAGE_BUCKET` no repositório. Depois rodar `npm run deploy:staging` **duas vezes** (Functions novas). Na primeira publicação das regras do Storage o Firebase pede acesso da conta de serviço do Storage ao Firestore (regras entre serviços): aceitar. A rotina `purgeProofs` usa o Cloud Scheduler.
+- **Storage do staging configurado em 23/10/2026:** bucket `qpq-staging.firebasestorage.app` (us-east1, criado pelo console), CORS de `storage.cors.json` aplicado pelo Cloud Shell, regras publicadas e o papel `roles/firebaserules.firestoreServiceAgent` dado à conta de serviço do Storage (`service-419882001563@gcp-sa-firebasestorage.iam.gserviceaccount.com`), sem o qual toda regra que lê o split no Firestore recusa. Verificado no staging: envio e leitura de capa, PDF recusado, CORS só para o Pages e localhost. O deploy em modo não interativo **não** pede esse papel: num projeto novo (produção), conceder antes. Ficou um split "Teste Storage" de um convidado (dado de teste).
 - As Fases 5 e 6 foram verificadas nos emuladores (e2e em 390 e 1440 px), mas despesas e pagamentos **ainda não foram testados à mão no app publicado**.
 - Apagar comprovantes ao finalizar o split (decisão 9) entra junto com Finalizar, na Fase 8.
 - Antes de ir ao ar (Fase 8): criar projeto de produção (Blaze, `us-east1`, alerta de orçamento), alias `prod`, desligar as telas de revisão, revisão manual em iPhone e Android.

@@ -213,7 +213,7 @@ Decisão: 9 ✅ (quem vê é escolha do split, padrão "Todo o split"; no máxim
   - O resolvido no cartão do Saldo ficou com valor em cima e ações (câmera, Desfazer) embaixo: em 390 px a linha do protótipo quebrava o texto em três linhas. A câmera abre o comprovante quando há um.
   - A prévia de Saldo na tela Paleta (prometida na Fase 2) ficou para a Fase 8: a aba lê sessão e perfil do Firebase e a Paleta roda sem back-end.
   - Notificações dos pagamentos são da Fase 7: os toasts ainda não dizem "avisamos Beatriz".
-  - Configuração manual do staging (Lucas): ligar o Storage em us-east1, aplicar o CORS do bucket (`storage.cors.json`) e criar a variável `VITE_FIREBASE_STORAGE_BUCKET` se o bucket não for `qpq-staging.firebasestorage.app`. Ver `docs/handoff.md`.
+  - **Storage do staging configurado (23/10/2026):** bucket `qpq-staging.firebasestorage.app` em us-east1, CORS de `storage.cors.json` (só GET, só o Pages e localhost) e o papel `roles/firebaserules.firestoreServiceAgent` para a conta de serviço do Storage (regras entre serviços; o deploy não interativo não concede sozinho). Verificado com envio e leitura reais.
   - Textos novos fora do protótipo (revisar): "Marcamos que o pagamento de {nome} não chegou", "{nome} pode conferir o comprovante.", "Comprovantes ficam guardados por 15 dias.", "comprovante expirado", textos de "Quem vê comprovantes", "Só os envolvidos e admins veem este comprovante.", erros de foto, linhas do Histórico de pagamento, motivos de recusa novos.
 
 ### Fase 7 — Notificações
