@@ -14,7 +14,7 @@ Os pontos de partida são sugestões para a conversa, não decisões tomadas. Ao
 | 6 | Validade dos links de convite e de recuperação; como revogar | Fase 4 | Sem prazo; admin gera novo código, e o dono revoga o link de recuperação em Sua conta | **Decidido** |
 | 7 | Excluir despesa com partes pagas ou pendência de confirmação; o que acontece com as notificações | Fase 5 | Bloquear até desmarcar os pagamentos, como em remover participante; nenhuma notificação fica órfã | **Decidido** |
 | 8 | Duas pessoas editando a mesma despesa ao mesmo tempo | Fase 5 | Aviso de conflito por número de versão, em vez de "última gravação vence" | **Decidido** |
-| 9 | Comprovantes: onde ficam, por quanto tempo e quem vê (LGPD) | Fase 6 | Só as duas pessoas do pagamento e os admins veem; retenção a definir com quem cuida de privacidade | Em aberto |
+| 9 | Comprovantes: onde ficam, por quanto tempo e quem vê (LGPD) | Fase 6 | Só as duas pessoas do pagamento e os admins veem; retenção a definir com quem cuida de privacidade | **Decidido** |
 | 10 | Provedor de e-mail transacional e remetente | Fase 7 | Resend com domínio próprio, chave em secret das Functions | Em aberto |
 | 11 | De onde vem o nome de quem cria um split sem conta | Fase 3 | Campo "Seu nome" na tela Novo split | **Decidido** |
 | 12 | Promover a admin quem ainda não entrou no split | Fase 3 | Só quem já escolheu o nome | **Decidido** |
@@ -90,3 +90,13 @@ Spec atualizada: `05-despesas-e-divisao.md`.
 - Marcar parte paga, confirmar e anexar comprovante não contam como edição da despesa: não geram conflito e não se perdem quando alguém salva uma edição.
 
 Spec atualizada: `05-despesas-e-divisao.md`.
+
+### 9. Comprovantes e LGPD — decidido em 23/10/2026
+
+- **Quem vê é escolha do split.** Em Pessoas, o admin escolhe "Quem vê comprovantes": **"Todo o split"** (padrão) ou **"Só os envolvidos e admins"** (quem pagou, quem recebeu e os admins). Membro vê a opção atual, só leitura. A troca vale na hora, inclusive para comprovantes já enviados. Quem não pode ver enxerga só "com comprovante", sem abrir a foto.
+- **Prazo: no máximo 15 dias** a partir do envio, e **apagado assim que o split é finalizado** (reabrir não traz de volta). Também some quando o pagamento é desfeito ou contestado ("Não recebi"). Passado o prazo, a linha mostra "comprovante expirado" e não dá para enviar outro. A folha de anexar avisa: "Comprovantes ficam guardados por 15 dias."
+- **Só imagem.** Foto ou print; o app reduz para no máximo 1600 px e regrava em JPEG de até 1 MB, o que tira os metadados (como a localização da câmera). O servidor aceita só imagem de até 2 MB.
+- **Foto da despesa** (o comprovante em "Mais detalhes" do formulário, como uma nota fiscal): qualquer participante do split vê, independentemente da escolha acima. Mesmo prazo do comprovante de pagamento (15 dias, apagada ao finalizar).
+- **Capa do split:** qualquer participante vê; fica enquanto o split existir. **Foto de perfil:** qualquer pessoa com login vê; fica até a pessoa trocar.
+
+Spec atualizada: `02-modelo-de-dados-e-calculo.md`, `04-splits-papeis-permissoes.md`, `05-despesas-e-divisao.md` e `06-saldo-pagamentos-comprovantes.md`.

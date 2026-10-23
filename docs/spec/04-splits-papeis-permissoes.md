@@ -11,6 +11,7 @@ Cada split tem dois papéis: **admin** (pode haver vários; quem cria é admin) 
 | Desfazer acerto registrado | As duas pessoas do acerto ou admin |  |
 | Anexar comprovante depois | As duas pessoas do pagamento (na parte de despesa, também admin) | Só enquanto não houver comprovante. |
 | Convidar, promover, tirar admin, remover | Só admin. "Tornar admin" só aparece para quem já entrou (escolheu o nome) | Membro vê a aba Pessoas com cadeado e o texto "fale com…" (abaixo). Admin age sobre os outros; sobre si mesmo, ver "Deixar de ser admin". |
+| Quem vê comprovantes | Só admin escolhe; membro vê a opção atual | Em Pessoas: "Todo o split" (padrão) ou "Só os envolvidos e admins" (decisão 9). Vale na hora, inclusive para comprovantes já enviados. |
 | Gerar novo código de convite | Só admin | Em Pessoas, com folha de confirmação: "O link e o código atuais param de funcionar. Quem já entrou continua no split." O código antigo para na hora. |
 | Liberar nome | Só admin | Desliga a pessoa do nome: o nome volta a ficar livre em "Quem é você?"; despesas, partes e histórico continuam com ele. Também tira o admin daquele participante. |
 | Deixar de ser admin | O próprio admin | Só se restar outro admin. Fica na sua linha em Pessoas. |

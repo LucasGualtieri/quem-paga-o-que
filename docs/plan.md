@@ -198,7 +198,7 @@ Decisões: 7 ✅, 8 ✅.
 - **Pronto:** testes de componente para cada regra de "não salva"; testes de regras para versão e exclusão bloqueada; e2e lançando uma despesa por modo, excluindo com Desfazer e editando em dois navegadores ao mesmo tempo (aviso de conflito); screenshots × `Telas_3_Despesa`.
 
 ### Fase 6 — Saldo, Minha visão, pagamentos e comprovantes
-Decisão: 9.
+Decisão: 9 ✅ (quem vê é escolha do split, padrão "Todo o split"; no máximo 15 dias e apagado ao finalizar; só imagem recomprimida).
 - Aba Saldo: cartões por pessoa, o seu primeiro e com `--me-soft`, Expandir/Minimizar, linhas `M`, resolvidos tracejados, fade de 4 px.
 - Minha visão: Devo / Já paguei / A receber, linhas que ficam no lugar, "Acerto de contas", "Quitado no acerto".
 - Marcar pago / Recebi otimistas, `pendConf`, Confirmar / Não recebi.
@@ -214,7 +214,7 @@ Decisão: 10.
 - **Pronto:** testes de Functions no emulador para cada evento; e2e "chegar pela notificação mostra o banner; voltar pela lista não mostra".
 
 ### Fase 8 — Finalizar, home completa, desktop e acabamento
-- Finalizar/reabrir com resumo `sug`, "Finalizar mesmo assim" e modo só leitura.
+- Finalizar/reabrir com resumo `sug`, "Finalizar mesmo assim" e modo só leitura. Finalizar apaga na hora os comprovantes (de pagamento e de despesa) do split (decisão 9).
 - Filtro "Finalizados" e total da home.
 - Layout ≥ 1024 px: barra lateral, Transações + Saldo lado a lado.
 - Passada de a11y: contraste AA, alvos de 44 px, `prefers-reduced-motion`, `aria-pressed`.

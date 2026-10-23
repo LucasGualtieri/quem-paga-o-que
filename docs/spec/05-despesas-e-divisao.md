@@ -2,7 +2,7 @@
 
 Uma despesa se lança em uma tela só: a divisão abre dentro do formulário, nunca em tela separada.
 
-**Campos:** descrição (obrigatória), valor (obrigatório, maior que zero), Pago por (escolha única; padrão é você), Dividir com, Como dividir e "Mais detalhes" (data, tags, descrição longa, comprovante, nota). Sem tag escolhida, a despesa recebe "Outros". Tags: Comida, Bebidas, Transporte, Hospedagem, Diversão e Outros.
+**Campos:** descrição (obrigatória), valor (obrigatório, maior que zero), Pago por (escolha única; padrão é você), Dividir com, Como dividir e "Mais detalhes" (data, tags, descrição longa, comprovante, nota). Sem tag escolhida, a despesa recebe "Outros". O comprovante da despesa (foto, como uma nota fiscal) é só imagem, qualquer participante vê e fica guardada no máximo 15 dias (apagada ao finalizar o split; decisão 9). Tags: Comida, Bebidas, Transporte, Hospedagem, Diversão e Outros.
 
 **Dividir com:**
 

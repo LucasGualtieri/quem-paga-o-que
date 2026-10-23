@@ -21,6 +21,9 @@ Marcar como pago vale na hora (atualização otimista); quem recebe pode confirm
 
 - **Desligado por padrão.** Com a preferência "Perguntar sobre comprovante ao marcar como pago" ligada, marcar pago ou recebido abre uma folha para anexar foto (opcional).
 - Com a preferência desligada, a marcação é direta. Dá para anexar depois pelo botão "Enviar comprovante" ou pelo ícone de câmera, enquanto não houver comprovante. Quem recebe é avisado.
+- **Só imagem** (foto ou print). O app reduz para no máximo 1600 px e regrava em JPEG de até 1 MB, sem metadados; o servidor recusa outro tipo ou mais de 2 MB.
+- **Quem vê:** o split escolhe, em Pessoas, "Todo o split" (padrão) ou "Só os envolvidos e admins". Quem não pode ver enxerga só "com comprovante".
+- **Prazo:** fica guardado no máximo 15 dias e é apagado quando o split é finalizado, quando o pagamento é desfeito ou com "Não recebi". Depois do prazo, a linha mostra "comprovante expirado" e não aceita outro. A folha de anexar avisa: "Comprovantes ficam guardados por 15 dias." (decisão 9)
 
 **Confirmação de quem recebe:**
 

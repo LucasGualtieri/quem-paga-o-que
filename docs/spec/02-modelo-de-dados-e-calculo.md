@@ -4,10 +4,11 @@ Valores são sempre **inteiros em centavos**; só a tela formata em R$. Saldo nu
 
 | Entidade | Campos essenciais |
 | --- | --- |
-| Split | `id`, `name` (até 2 linhas na tela), `emoji`, `photo` (capa opcional), `status` open \| done, `doneAt`, `members[]` (cada um com `joinOrder`, a ordem de entrada no split), `admins[]`, `code` de convite |
+| Split | `id`, `name` (até 2 linhas na tela), `emoji`, `photo` (capa opcional), `status` open \| done, `doneAt`, `members[]` (cada um com `joinOrder`, a ordem de entrada no split), `admins[]`, `code` de convite, `proofVisibility` all \| involved (quem vê comprovantes; padrão all) |
 | Despesa | `name`, `amount`, `payer` (quem pagou), `members[]` (com quem dividir), `mode` equal \| frac \| pct \| exact \| items, `w` (pesos por pessoa), `items[]`, `rest[]`, `restMode`, `restW`, `date`, `tags[]`, `note`, `longDesc`, `receipt`, `author`, `history[]` |
 | Parte quitada (por despesa) | `paid[pessoa]` (centavos pagos, não um booleano), `proof[pessoa]`, `pendConf[pessoa]` |
 | Pagamento de acerto (entre duas pessoas) | `from`, `to`, `amount`, `when`, `proof` |
+| Comprovante (de pagamento e da despesa) | Só imagem, guardados no máximo 15 dias e apagados ao finalizar o split; depois do prazo ficam marcados como expirados (decisão 9) |
 | Notificação | `who`, `split`, `txId`, `amount`, `proof`, `when`, `read`, `status` new \| confirmed \| disputed |
 | Preferências do usuário | `push`, `inapp`, `email`, `selfName`, `askProof`, `theme`, `lang` |
 
