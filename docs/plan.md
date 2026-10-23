@@ -62,7 +62,7 @@ A parte quitada é `min(paid[x], share[x])`. Se `paid[x] < share[x]`, a diferen�
 | --- | --- | --- |
 | Ler split e subcoleções | Rules: `auth.uid in split.uids` | Membro lê, estranho não |
 | Lançar despesa | Rules: membro, split `open`, `author` = meu memberId, validação de forma (inteiros ≥ 0, `version == 1`) | Lança com e sem permissão; split finalizado bloqueia |
-| Editar/excluir despesa | Rules: `author` ou admin, `open`, `version` incrementa em 1. Histórico por trigger | Não-autor nega; versão errada nega |
+| Editar/excluir despesa | Rules: `author` ou admin, `open`, `version` incrementa em 1 (o app compara antes e oferece "Ver a versão nova" / "Salvar a minha por cima"; por cima = regravar com a versão atual + 1). Excluir = marcar `deletedAt` (Desfazer limpa), só sem `paid` nem `pendConf`. Histórico por trigger | Não-autor nega; versão errada nega; excluir com parte paga nega (decisões 7 e 8) |
 | Marcar parte paga | Rules: `diff().affectedKeys()` ⊆ `{paid, proof, pendConf}` e só na chave `x` onde caller = x, payer ou admin; o payer nunca tem chave | Matriz de quem pode marcar a parte de quem |
 | Confirmar / "Não recebi" | Rules: só payer ou admin mexe em `pendConf`; "Não recebi" apaga `paid[x]` + `proof[x]` | Membro comum não confirma pelo outro |
 | Registrar acerto | Rules: `from` ou `to` = caller, ou admin; `open` | Terceiro não-admin nega |
@@ -179,14 +179,16 @@ Decisões: 5 ✅, 6 ✅.
   - Textos novos fora do protótipo (revisar): tela de e-mail, tela de juntar, avisos de sair sem conta, link já guardado, revogar, gerar novo código.
 
 ### Fase 5 — Despesas
-Decisões: 7, 8.
+Decisões: 7 ✅, 8 ✅.
 - Formulário de tela única com divisão inline nos 5 modos.
 - Itens: minimizar, reabrir com erro, "Ver todos (N)". Resto da compra.
 - Prévia em tempo real e mensagens de erro da spec.
 - Mais detalhes: data, tags, nota, descrição longa, recibo.
 - Transações agrupadas por dia, com busca e filtros Pessoas/Tags com contagem.
 - Detalhe da despesa com histórico, editar/excluir com `version`, Desfazer (~4 s) como ação inversa.
-- **Pronto:** testes de componente para cada regra de "não salva"; e2e lançando uma despesa por modo; screenshots × `Telas_3_Despesa`.
+- Excluir: bloqueado com parte paga ou pendência (decisão 7); é exclusão marcada (`deletedAt`), que some de listas, saldos (o `@qpq/calc` recebe só as não excluídas) e notificações; Desfazer limpa a marca.
+- Conflito de edição por `version` (decisão 8): aviso com "Ver a versão nova" ou "Salvar a minha por cima"; marcar pago/confirmar/comprovante não mexem em `version`.
+- **Pronto:** testes de componente para cada regra de "não salva"; testes de regras para versão e exclusão bloqueada; e2e lançando uma despesa por modo, excluindo com Desfazer e editando em dois navegadores ao mesmo tempo (aviso de conflito); screenshots × `Telas_3_Despesa`.
 
 ### Fase 6 — Saldo, Minha visão, pagamentos e comprovantes
 Decisão: 9.

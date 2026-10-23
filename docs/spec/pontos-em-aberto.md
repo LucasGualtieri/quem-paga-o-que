@@ -12,8 +12,8 @@ Os pontos de partida são sugestões para a conversa, não decisões tomadas. Ao
 | 4 | Último admin sair ou deixar de ser admin | Fase 3 | Sempre ao menos um admin, como a spec sugere | **Decidido** |
 | 5 | Convidado salva com conta Google que já existe no app (fora da spec) | Fase 4 | Entra na conta existente e oferece trazer os splits do aparelho | **Decidido** |
 | 6 | Validade dos links de convite e de recuperação; como revogar | Fase 4 | Sem prazo; admin gera novo código, e o dono revoga o link de recuperação em Sua conta | **Decidido** |
-| 7 | Excluir despesa com partes pagas ou pendência de confirmação; o que acontece com as notificações | Fase 5 | Bloquear até desmarcar os pagamentos, como em remover participante; nenhuma notificação fica órfã | Em aberto |
-| 8 | Duas pessoas editando a mesma despesa ao mesmo tempo | Fase 5 | Aviso de conflito por número de versão, em vez de "última gravação vence" | Em aberto |
+| 7 | Excluir despesa com partes pagas ou pendência de confirmação; o que acontece com as notificações | Fase 5 | Bloquear até desmarcar os pagamentos, como em remover participante; nenhuma notificação fica órfã | **Decidido** |
+| 8 | Duas pessoas editando a mesma despesa ao mesmo tempo | Fase 5 | Aviso de conflito por número de versão, em vez de "última gravação vence" | **Decidido** |
 | 9 | Comprovantes: onde ficam, por quanto tempo e quem vê (LGPD) | Fase 6 | Só as duas pessoas do pagamento e os admins veem; retenção a definir com quem cuida de privacidade | Em aberto |
 | 10 | Provedor de e-mail transacional e remetente | Fase 7 | Resend com domínio próprio, chave em secret das Functions | Em aberto |
 | 11 | De onde vem o nome de quem cria um split sem conta | Fase 3 | Campo "Seu nome" na tela Novo split | **Decidido** |
@@ -76,3 +76,17 @@ Spec atualizada: `03-contas-e-convidados.md`.
 - **Ao salvar a conta** (Google ou e-mail), o link de recuperação é revogado e a opção some de Sua conta: com login de verdade, um link sem senha vira só risco.
 
 Spec atualizada: `03-contas-e-convidados.md` e `04-splits-papeis-permissoes.md`.
+
+### 7. Excluir despesa com partes pagas — decidido em 23/10/2026
+
+- **Bloqueia** enquanto houver parte paga ou pagamento esperando confirmação, como em remover participante: "Esta despesa tem pagamentos marcados. Desmarque-os antes de excluir." Ninguém perde o registro de que pagou.
+- **Notificações da despesa somem da lista** quando ela é excluída; Desfazer traz de volta. Nenhuma fica órfã.
+
+Spec atualizada: `05-despesas-e-divisao.md`.
+
+### 8. Duas pessoas editando a mesma despesa — decidido em 23/10/2026
+
+- Cada despesa tem um número de versão. Ao salvar, se outra pessoa salvou antes, aparece o aviso "Beatriz alterou esta despesa enquanto você editava." com **"Ver a versão nova"** (descarta a sua edição e abre a atual) ou **"Salvar a minha por cima"**. As duas edições entram no Histórico.
+- Marcar parte paga, confirmar e anexar comprovante não contam como edição da despesa: não geram conflito e não se perdem quando alguém salva uma edição.
+
+Spec atualizada: `05-despesas-e-divisao.md`.
