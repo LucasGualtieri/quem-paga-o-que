@@ -1,0 +1,124 @@
+/*
+ * Paleta do Quem Paga O Quê? — o ÚNICO arquivo com cores do app.
+ *
+ * Trocar uma cor: mude o valor aqui (ou teste ao vivo em /#/dev/paleta e use
+ * "Copiar CSS"). Um token por linha; o comentário diz onde a cor aparece.
+ * Aprovou uma paleta nova? Atualize a tabela de tokens em
+ * docs/spec/09-design-tema-a11y-idioma-desktop.md (um teste confere os dois).
+ *
+ * Nenhum outro arquivo pode ter hex, rgb() ou hsl(): um teste falha se tiver.
+ */
+
+.theme-light {
+  --bg: #F3F3F0; /* Fundo das telas */
+  --surface: #FFFFFF; /* Cartões, listas, campos */
+  --surface2: #EAEAE6; /* Fundo de campos secundários, stepper, seletor de divisão */
+  --line: #DADAD4; /* Bordas e divisórias */
+  --text: #18181B; /* Texto principal */
+  --muted: #5D5E66; /* Texto secundário, legendas */
+  --accent: #5534E0; /* Ação principal, seleção, botão flutuante "+" de nova despesa */
+  --accent-ink: #FFFFFF; /* Texto sobre --accent */
+  --accent-soft: #ECE8FF; /* Fundo de chip selecionado, selo Admin, item não lido */
+  --pos: #0B7A43; /* A receber */
+  --pos-soft: #DFF3E7; /* Fundo de selo/ícone "a receber" */
+  --neg: #B53A08; /* Deve, erros */
+  --neg-soft: #FCE9DE; /* Fundo de selo/ícone "deve", botão Excluir */
+  --zero: #5F616B; /* Quitado, resolvido */
+  --zero-soft: #EAEAE6; /* Fundo de selo "Quitado"/"Pago" */
+  --me-soft: #F6F3FF; /* Fundo do seu cartão no Saldo e da sua linha */
+  --hatch: #C9C9D0; /* Tracejado de linhas resolvidas */
+  --sun: #FFCF3F; /* Só ilustração: "+" dos estados vazios, moeda do login */
+  --sun-ink: #3A2A00; /* Ícone/texto sobre --sun */
+  --knob: #FFFFFF; /* Bolinha do interruptor */
+  --alert: #C22F0A; /* Contador de notificações no sino */
+  --alert-ink: #FFFFFF; /* Número sobre --alert */
+
+  --av-1: #E4DEFF; /* Avatar 1: fundo */
+  --av-1-ink: #3A23A8; /* Avatar 1: inicial */
+  --av-2: #FFDDEA; /* Avatar 2: fundo */
+  --av-2-ink: #981A4C; /* Avatar 2: inicial */
+  --av-3: #D3F1EA; /* Avatar 3: fundo */
+  --av-3-ink: #0A5C52; /* Avatar 3: inicial */
+  --av-4: #FFE9C2; /* Avatar 4: fundo */
+  --av-4-ink: #734400; /* Avatar 4: inicial */
+  --av-5: #DCEBFF; /* Avatar 5: fundo */
+  --av-5-ink: #1F4E8C; /* Avatar 5: inicial */
+  --av-6: #E9F5D2; /* Avatar 6: fundo */
+  --av-6-ink: #41620F; /* Avatar 6: inicial */
+  --av-7: #F6DDFB; /* Avatar 7: fundo */
+  --av-7-ink: #7A2491; /* Avatar 7: inicial */
+
+  --cv-1: #E9E4FF; /* Capa de split 1 (fundo do emoji) */
+  --cv-2: #FFE3D6; /* Capa de split 2 */
+  --cv-3: #DCF1E4; /* Capa de split 3 */
+  --cv-4: #FFF0C4; /* Capa de split 4 */
+  --cv-5: #D8ECFF; /* Capa de split 5 */
+  --cv-6: #FFE0EE; /* Capa de split 6 */
+  --cv-7: #F3E7D3; /* Capa de split 7 */
+  --cv-8: #E2EFD6; /* Capa de split 8 */
+
+  --shadow: 0 1px 2px rgba(24, 24, 40, 0.05), 0 6px 20px rgba(24, 24, 40, 0.06); /* Sombra única dos cartões */
+  --shadow-pop: 0 16px 40px rgba(0, 0, 0, 0.2); /* Menus e listas suspensas */
+  --shadow-toast: 0 6px 18px rgba(20, 20, 40, 0.08); /* Toast */
+  --shadow-fab: 0 10px 24px rgba(85, 52, 224, 0.35); /* Botão flutuante */
+  --shadow-sun: 0 8px 20px rgba(0, 0, 0, 0.12); /* Elementos --sun das ilustrações */
+  --shadow-knob: 0 1px 3px rgba(0, 0, 0, 0.25); /* Bolinha do interruptor */
+  --scrim: rgba(16, 16, 24, 0.45); /* Fundo escurecido atrás de folhas */
+}
+
+.theme-dark {
+  --bg: #111114; /* Fundo das telas */
+  --surface: #1C1C21; /* Cartões, listas, campos */
+  --surface2: #27272E; /* Fundo de campos secundários, stepper, seletor de divisão */
+  --line: #363640; /* Bordas e divisórias */
+  --text: #F3F3F5; /* Texto principal */
+  --muted: #A6A7B2; /* Texto secundário, legendas */
+  --accent: #A08CFF; /* Ação principal, seleção, botão flutuante "+" de nova despesa */
+  --accent-ink: #140F2E; /* Texto sobre --accent */
+  --accent-soft: #2B2452; /* Fundo de chip selecionado, selo Admin, item não lido */
+  --pos: #52D38E; /* A receber */
+  --pos-soft: #14301F; /* Fundo de selo/ícone "a receber" */
+  --neg: #FF9257; /* Deve, erros */
+  --neg-soft: #3B2013; /* Fundo de selo/ícone "deve", botão Excluir */
+  --zero: #A0A1AC; /* Quitado, resolvido */
+  --zero-soft: #2A2A31; /* Fundo de selo "Quitado"/"Pago" */
+  --me-soft: #221D3A; /* Fundo do seu cartão no Saldo e da sua linha */
+  --hatch: #44444F; /* Tracejado de linhas resolvidas */
+  --sun: #FFD25A; /* Só ilustração: "+" dos estados vazios, moeda do login */
+  --sun-ink: #3A2A00; /* Ícone/texto sobre --sun */
+  --knob: #FFFFFF; /* Bolinha do interruptor */
+  --alert: #C22F0A; /* Contador de notificações no sino */
+  --alert-ink: #FFFFFF; /* Número sobre --alert */
+
+  --av-1: #3B3080; /* Avatar 1: fundo */
+  --av-1-ink: #E9E4FF; /* Avatar 1: inicial */
+  --av-2: #6A2343; /* Avatar 2: fundo */
+  --av-2-ink: #FFE1EC; /* Avatar 2: inicial */
+  --av-3: #134D45; /* Avatar 3: fundo */
+  --av-3-ink: #D5F5EE; /* Avatar 3: inicial */
+  --av-4: #5E3D0A; /* Avatar 4: fundo */
+  --av-4-ink: #FFEBC8; /* Avatar 4: inicial */
+  --av-5: #1F3F6B; /* Avatar 5: fundo */
+  --av-5-ink: #DCEBFF; /* Avatar 5: inicial */
+  --av-6: #34501A; /* Avatar 6: fundo */
+  --av-6-ink: #EAF6D4; /* Avatar 6: inicial */
+  --av-7: #57236A; /* Avatar 7: fundo */
+  --av-7-ink: #F7E0FC; /* Avatar 7: inicial */
+
+  --cv-1: #2E2753; /* Capa de split 1 (fundo do emoji) */
+  --cv-2: #45291D; /* Capa de split 2 */
+  --cv-3: #1B3A29; /* Capa de split 3 */
+  --cv-4: #43391A; /* Capa de split 4 */
+  --cv-5: #1B3550; /* Capa de split 5 */
+  --cv-6: #47202F; /* Capa de split 6 */
+  --cv-7: #3D3224; /* Capa de split 7 */
+  --cv-8: #2C3A20; /* Capa de split 8 */
+
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.22); /* Sombra única dos cartões */
+  --shadow-pop: 0 16px 40px rgba(0, 0, 0, 0.2); /* Menus e listas suspensas */
+  --shadow-toast: 0 6px 18px rgba(20, 20, 40, 0.08); /* Toast */
+  --shadow-fab: 0 10px 24px rgba(85, 52, 224, 0.35); /* Botão flutuante */
+  --shadow-sun: 0 8px 20px rgba(0, 0, 0, 0.12); /* Elementos --sun das ilustrações */
+  --shadow-knob: 0 1px 3px rgba(0, 0, 0, 0.25); /* Bolinha do interruptor */
+  --scrim: rgba(0, 0, 0, 0.6); /* Fundo escurecido atrás de folhas */
+}

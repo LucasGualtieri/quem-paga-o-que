@@ -3,18 +3,24 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "apps/*"
   ],
   "engines": {
     "node": ">=22"
   },
   "scripts": {
+    "dev": "npm run dev -w @qpq/web",
+    "build": "npm run build -w @qpq/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm test --workspaces --if-present"
+    "test": "npm test --workspaces --if-present",
+    "e2e": "npm run e2e -w @qpq/web",
+    "emulators": "firebase emulators:start --project demo-qpq"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "5.0.5",
     "typescript": "7.0.2",
-    "vitest": "5.0.5"
+    "vitest": "5.0.5",
+    "firebase-tools": "15.34.1"
   }
 }

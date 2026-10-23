@@ -1,0 +1,117 @@
+{
+  "common": {
+    "undo": "Undo",
+    "close": "Close",
+    "you": "You",
+    "all": "Everyone",
+    "less": "One share less",
+    "more": "One share more"
+  },
+  "status": {
+    "pending": "Pending",
+    "paid": "Paid",
+    "settled": "Settled",
+    "admin": "Admin",
+    "toReceive": "to receive",
+    "youOwe": "you owe"
+  },
+  "errors": {
+    "saveFailed": "Couldn't save. We put it back the way it was."
+  },
+  "prefs": {
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "toggleTheme": "Switch to {{next}} theme",
+    "language": "Language"
+  },
+  "split": {
+    "people_one": "{{count}} person",
+    "people_other": "{{count}} people",
+    "open": "In progress",
+    "done": "Finished"
+  },
+  "tx": {
+    "paidBy": "{{name}} paid",
+    "yourShare": "your share {{amount}}",
+    "outOfExpense": "Not in this expense"
+  },
+  "modes": {
+    "equal": "Equally",
+    "frac": "Shares",
+    "pct": "Percent",
+    "exact": "Exact"
+  },
+  "dev": {
+    "title": "Developer tools",
+    "notProduct": "Review screens, not part of the product.",
+    "styleSheet": "Style sheet",
+    "palette": "Palette",
+    "sections": {
+      "buttons": "Buttons",
+      "input": "Input",
+      "focus": "Focus",
+      "error": "Error",
+      "chips": "Chips · single choice (Paid by) and tags",
+      "people": "People picker · no checkbox (Split with)",
+      "itemAvatars": "Avatars per item · your name in bold",
+      "switch": "Switch",
+      "splitPicker": "Split picker",
+      "stepper": "Stepper",
+      "status": "Status",
+      "splitCard": "Split card",
+      "listItem": "List item",
+      "toast": "Success toast",
+      "sheet": "Sheet",
+      "skeleton": "Loading",
+      "optimistic": "Optimistic action"
+    },
+    "samples": {
+      "newSplit": "New split",
+      "secondary": "Secondary",
+      "ghost": "Ghost",
+      "delete": "Delete",
+      "disabled": "Disabled",
+      "placeholder": "e.g. Pizza",
+      "focusValue": "Gas",
+      "nameRequired": "Give the expense a name",
+      "tagFood": "#Food",
+      "tagDrinks": "#Drinks",
+      "splitName": "New Year with friends",
+      "bakery": "Bakery",
+      "expenseAdded": "Expense added",
+      "openSheet": "Open sheet",
+      "sheetTitle": "Attach receipt",
+      "sheetBody": "Sample sheet. Close it by tapping outside, on the X or with Esc.",
+      "showToast": "Show toast",
+      "optimisticOk": "Switch that saves",
+      "optimisticFail": "Switch the server rejects",
+      "optimisticHint": "Changes right away; the second one flips back after 1 s, with an error toast."
+    },
+    "paletteTool": {
+      "intro": "Change a color and watch the whole app change. Nothing is saved to the code: when you like it, use \"Copy CSS\" and paste it into apps/web/src/theme/tokens.css.",
+      "editing": "Editing theme",
+      "copy": "Copy CSS",
+      "copied": "CSS copied",
+      "reset": "Reset",
+      "changed": "changed",
+      "contrast": "Contrast (AA needs 4.5:1)",
+      "preview": "Preview",
+      "pass": "AA ok",
+      "fail": "below AA",
+      "on": "on",
+      "copyFallback": "Couldn't copy automatically. Select the text below and copy it.",
+      "groupBase": "Main colors",
+      "groupAvatars": "Avatars",
+      "groupCovers": "Split covers",
+      "groupEffects": "Shadows and scrim",
+      "value": "Value of {{name}}",
+      "pick": "Pick color for {{name}}"
+    },
+    "back": "Back",
+    "paletteActive": "Palette changed",
+    "sectionPalette": "01 · Palette",
+    "sectionComponents": "05 · Components",
+    "sectionInteractive": "Interactive (current theme)"
+  }
+}

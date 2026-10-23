@@ -116,6 +116,14 @@ Decisões: 1 ✅, 2 ✅. **Status: concluída.**
   - Mudar um valor em `tokens.css` (ou na tela Paleta) muda o app inteiro.
   - CI verde e Pages publicado.
   - **Requer o `support.js`** (ver `reference/LEIA-ME.md`).
+- **Status: concluída.** Notas da implementação:
+  - Telas de desenvolvimento em `/#/dev` (índice), `/#/dev/estilo` (Folha de estilo nos dois temas + toast, folha, carregando e ação otimista) e `/#/dev/paleta`. Ligadas no `vite dev` e com `VITE_DEV_TOOLS=true`; sem a variável, nem entram no bundle.
+  - **O Pages publica com as telas de desenvolvimento ligadas** até o lançamento, para revisar no celular pelo link. Desligar `VITE_DEV_TOOLS` no workflow antes de lançar.
+  - A prévia da Paleta mostra os componentes; a tela de Saldo entra na prévia na Fase 6, quando existir.
+  - Mudanças feitas na Paleta valem só no navegador de quem mexeu (localStorage) até alguém colar o "Copiar CSS" em `tokens.css`.
+  - `.firebaserc` só tem o projeto de demonstração `demo-qpq` (emuladores não precisam de projeto real). Os aliases `staging` e `prod` entram quando os projetos existirem; o emulador de Functions entra na Fase 3, junto com o código das Functions.
+  - Os emuladores exigem **Java 21+** (o `firebase-tools` 15 recusa versões anteriores). No CI sobem com Temurin 21.
+  - Texto do toast de erro do otimismo ("Não deu para salvar. Voltamos ao que estava.") não está na spec; revisar.
 
 ### Fase 3 — Splits, participantes e permissões
 Decisões: 3, 4.

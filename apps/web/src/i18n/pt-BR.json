@@ -1,0 +1,117 @@
+{
+  "common": {
+    "undo": "Desfazer",
+    "close": "Fechar",
+    "you": "Você",
+    "all": "Todos",
+    "less": "Menos uma parte",
+    "more": "Mais uma parte"
+  },
+  "status": {
+    "pending": "Pendente",
+    "paid": "Pago",
+    "settled": "Quitado",
+    "admin": "Admin",
+    "toReceive": "a receber",
+    "youOwe": "você deve"
+  },
+  "errors": {
+    "saveFailed": "Não deu para salvar. Voltamos ao que estava."
+  },
+  "prefs": {
+    "theme": "Tema",
+    "themeLight": "Claro",
+    "themeDark": "Escuro",
+    "toggleTheme": "Trocar para o tema {{next}}",
+    "language": "Idioma"
+  },
+  "split": {
+    "people_one": "{{count}} pessoa",
+    "people_other": "{{count}} pessoas",
+    "open": "Em andamento",
+    "done": "Finalizado"
+  },
+  "tx": {
+    "paidBy": "{{name}} pagou",
+    "yourShare": "sua parte {{amount}}",
+    "outOfExpense": "Fora desta despesa"
+  },
+  "modes": {
+    "equal": "Igualmente",
+    "frac": "Frações",
+    "pct": "Porcent.",
+    "exact": "Valor exato"
+  },
+  "dev": {
+    "title": "Ferramentas de desenvolvimento",
+    "notProduct": "Telas de revisão, não fazem parte do produto.",
+    "styleSheet": "Folha de estilo",
+    "palette": "Paleta",
+    "sections": {
+      "buttons": "Botões",
+      "input": "Input",
+      "focus": "Foco",
+      "error": "Erro",
+      "chips": "Chips · escolha única (Pago por) e tags",
+      "people": "Seleção de pessoas · sem checkbox (Dividir com)",
+      "itemAvatars": "Avatares por item · seu nome em negrito",
+      "switch": "Interruptor",
+      "splitPicker": "Seletor de divisão",
+      "stepper": "Stepper",
+      "status": "Status",
+      "splitCard": "Card de split",
+      "listItem": "Item de lista",
+      "toast": "Toast de sucesso",
+      "sheet": "Folha",
+      "skeleton": "Carregando",
+      "optimistic": "Ação otimista"
+    },
+    "samples": {
+      "newSplit": "Novo split",
+      "secondary": "Secundário",
+      "ghost": "Ghost",
+      "delete": "Excluir",
+      "disabled": "Desabilitado",
+      "placeholder": "Ex.: Pizza",
+      "focusValue": "Gasolina",
+      "nameRequired": "Dê um nome para a despesa",
+      "tagFood": "#Comida",
+      "tagDrinks": "#Bebidas",
+      "splitName": "Ano Novo Amigubis",
+      "bakery": "Padaria",
+      "expenseAdded": "Despesa adicionada",
+      "openSheet": "Abrir folha",
+      "sheetTitle": "Anexar comprovante",
+      "sheetBody": "Folha de exemplo. Feche tocando fora, no X ou com Esc.",
+      "showToast": "Mostrar toast",
+      "optimisticOk": "Interruptor que salva",
+      "optimisticFail": "Interruptor que o servidor recusa",
+      "optimisticHint": "Muda na hora; o segundo volta sozinho depois de 1 s, com toast de erro."
+    },
+    "paletteTool": {
+      "intro": "Mude uma cor e veja o app inteiro mudar. Nada é salvo no código: quando gostar, use \"Copiar CSS\" e cole em apps/web/src/theme/tokens.css.",
+      "editing": "Editando o tema",
+      "copy": "Copiar CSS",
+      "copied": "CSS copiado",
+      "reset": "Restaurar",
+      "changed": "alterado",
+      "contrast": "Contraste (AA pede 4,5:1)",
+      "preview": "Prévia",
+      "pass": "AA ok",
+      "fail": "abaixo de AA",
+      "on": "sobre",
+      "copyFallback": "Não deu para copiar sozinho. Selecione o texto abaixo e copie.",
+      "groupBase": "Cores principais",
+      "groupAvatars": "Avatares",
+      "groupCovers": "Capas de split",
+      "groupEffects": "Sombras e fundo escurecido",
+      "value": "Valor de {{name}}",
+      "pick": "Escolher cor de {{name}}"
+    },
+    "back": "Voltar",
+    "paletteActive": "Paleta alterada",
+    "sectionPalette": "01 · Paleta",
+    "sectionComponents": "05 · Componentes",
+    "sectionInteractive": "Interativo (tema atual)"
+  }
+}
