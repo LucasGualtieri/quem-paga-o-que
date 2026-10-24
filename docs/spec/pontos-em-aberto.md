@@ -15,7 +15,7 @@ Os pontos de partida são sugestões para a conversa, não decisões tomadas. Ao
 | 7 | Excluir despesa com partes pagas ou pendência de confirmação; o que acontece com as notificações | Fase 5 | Bloquear até desmarcar os pagamentos, como em remover participante; nenhuma notificação fica órfã | **Decidido** |
 | 8 | Duas pessoas editando a mesma despesa ao mesmo tempo | Fase 5 | Aviso de conflito por número de versão, em vez de "última gravação vence" | **Decidido** |
 | 9 | Comprovantes: onde ficam, por quanto tempo e quem vê (LGPD) | Fase 6 | Só as duas pessoas do pagamento e os admins veem; retenção a definir com quem cuida de privacidade | **Decidido** |
-| 10 | Provedor de e-mail transacional e remetente | Fase 7 | Resend com domínio próprio, chave em secret das Functions | Em aberto |
+| 10 | Provedor de e-mail transacional e remetente | Fase 7 | Resend com domínio próprio, chave em secret das Functions | **Decidido** (e-mail adiado até haver domínio) |
 | 11 | De onde vem o nome de quem cria um split sem conta | Fase 3 | Campo "Seu nome" na tela Novo split | **Decidido** |
 | 12 | Promover a admin quem ainda não entrou no split | Fase 3 | Só quem já escolheu o nome | **Decidido** |
 
@@ -100,3 +100,12 @@ Spec atualizada: `05-despesas-e-divisao.md`.
 - **Capa do split:** qualquer participante vê; fica enquanto o split existir. **Foto de perfil:** qualquer pessoa com login vê; fica até a pessoa trocar.
 
 Spec atualizada: `02-modelo-de-dados-e-calculo.md`, `04-splits-papeis-permissoes.md`, `05-despesas-e-divisao.md` e `06-saldo-pagamentos-comprovantes.md`.
+
+### 10. Provedor de e-mail e remetente — decidido em 24/10/2026
+
+- **Provedor: Resend**, chamado por uma Function, com a chave guardada em secret das Functions. Remetente num domínio próprio verificado (ex.: `avisos@<domínio>`).
+- **Ainda não há domínio:** a v1 sai **só com notificações no app**. A opção "Por e-mail" fica escondida em Sua conta até o domínio existir e ser verificado; a preferência `email` continua guardada.
+- **Quando o e-mail entrar:** cada aviso vira e-mail, mas avisos para a mesma pessoa em até 10 minutos saem juntos num só ("3 pagamentos para conferir").
+- **Conteúdo:** resumo ("Beatriz pagou R$ 40,00 pra você", despesa e split) e um botão "Ver no app" que abre o detalhe como quem chega pela notificação. **Sem a foto do comprovante** (ela fica sob "Quem vê comprovantes" e o prazo de 15 dias). Idioma da conta; rodapé dizendo como desligar em Sua conta. Convidado não recebe e-mail.
+
+Spec atualizada: `07-notificacoes.md` e `08-sua-conta-e-preferencias.md`.

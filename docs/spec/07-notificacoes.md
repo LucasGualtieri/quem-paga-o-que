@@ -15,7 +15,7 @@ A notificação principal é uma só: "Beatriz pagou R$ 40,00 pra você", enviad
 
 - **Push no celular:** só existe no app nativo. No navegador a opção nem aparece, porque web push no celular é instável (no iPhone exige instalar o site na tela inicial) e prometer o que não chega é pior que não oferecer.
 - **No app:** a lista do sino. Desligado, o sino some do cabeçalho.
-- **Por e-mail:** para o e-mail da conta; indisponível para convidado.
+- **Por e-mail:** para o e-mail da conta; indisponível para convidado. **Na v1 a opção fica escondida** até existir um domínio de remetente (decisão 10). Quando entrar: Resend, avisos da mesma pessoa em até 10 minutos agrupados num e-mail, resumo com botão "Ver no app" e sem foto do comprovante.
 - Os três vêm ligados por padrão.
 
 **Lista:** item com avatar, título, "despesa · split · com/sem comprovante" e o estado ("· confirmado", "· você contestou"). Itens não lidos têm destaque. O sino mostra a contagem (até "9+"). Abrir um item marca como lido; existe "Marcar todas como lidas".

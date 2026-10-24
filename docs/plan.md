@@ -217,7 +217,7 @@ Decisão: 9 ✅ (quem vê é escolha do split, padrão "Todo o split"; no máxim
   - Textos novos fora do protótipo (revisar): "Marcamos que o pagamento de {nome} não chegou", "{nome} pode conferir o comprovante.", "Comprovantes ficam guardados por 15 dias.", "comprovante expirado", textos de "Quem vê comprovantes", "Só os envolvidos e admins veem este comprovante.", erros de foto, linhas do Histórico de pagamento, motivos de recusa novos.
 
 ### Fase 7 — Notificações
-Decisão: 10.
+Decisão: 10 ✅ (Resend, agrupado em 10 min, resumo + botão, sem foto; **e-mail adiado até haver domínio**: a fase entrega só o app e esconde "Por e-mail").
 - Triggers das 4 situações da tabela da spec.
 - Sino com contagem (até 9+) e "Marcar todas como lidas"; o sino some com `inapp` desligado.
 - Destaque por `hlShare` (parâmetro de navegação) × pendência por `pendConf`.
