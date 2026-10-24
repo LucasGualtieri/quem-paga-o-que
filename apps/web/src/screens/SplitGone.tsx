@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router';
+import { Navigate, useNavigate } from 'react-router';
 import { Button, Icon, SkeletonCard } from '../components/index.ts';
 import { useDeletedSplit } from '../data/hooks.ts';
 import { BackLink } from './common.tsx';
@@ -7,12 +7,15 @@ import { BackLink } from './common.tsx';
 /**
  * Link de um split (ou convite) que não leva mais a lugar nenhum: explica o que aconteceu quando
  * dá para saber (excluído por um admin, ou apagado por ficar 15 dias sem ninguém).
+ * `home`: quem estava vendo o split e perdeu o acesso (saiu, foi removido, nome liberado) volta
+ * ao início, como antes; a explicação só aparece se o split foi apagado.
  */
-export function SplitGone({ splitId }: { splitId: string }) {
+export function SplitGone({ splitId, home }: { splitId: string; home?: boolean }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const tomb = useDeletedSplit(splitId);
   const data = tomb.status === 'ready' ? tomb.data : null;
+  if (home && tomb.status === 'ready' && !data) return <Navigate to="/" replace />;
   const body = !data ? t('gone.unknown') : data.cause === 'empty' ? t('gone.empty', { name: data.name }) : t('gone.byAdmin', { name: data.name, by: data.byName ?? '' });
   return (
     <main className="page">

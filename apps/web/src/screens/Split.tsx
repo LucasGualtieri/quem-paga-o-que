@@ -122,10 +122,14 @@ export default function Split() {
   const [deleting, setDeleting] = useState(false);
   const run = useOptimisticAction();
 
+  // Já mostrou este split: perder o acesso depois volta ao início (salvo se ele foi apagado).
+  const seen = useRef<string | null>(null);
+  if (result.status === 'ready') seen.current = id;
+
   const current = TABS.find((x) => x.path === (tab ? `/${tab}` : '')) ?? TABS[0]!;
 
   // Split apagado, link errado ou de quem não está nele: explica em vez de só voltar ao início.
-  if (result.status === 'denied' && !pending) return <SplitGone splitId={id} />;
+  if (result.status === 'denied' && !pending) return <SplitGone splitId={id} home={seen.current === id} />;
   // A aba Saldo virou parte da Minha visão (links antigos e avisos já lidos).
   if (tab === 'saldo') return <Navigate to={`/s/${id}/eu`} replace />;
 

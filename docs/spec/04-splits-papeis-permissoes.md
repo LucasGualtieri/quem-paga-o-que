@@ -40,7 +40,7 @@ Cada split tem dois papéis: **admin** (pode haver vários; quem cria é admin) 
 
 **Split sem ninguém é apagado sozinho** (decidido em 24/10/2026): quando a última pessoa ligada a um nome sai, começa a contagem; depois de **15 dias** sem ninguém entrar, o split é apagado como acima (sem aviso, porque não sobra ninguém). Se alguém entrar pelo convite antes, a contagem para.
 
-**Link que não leva a lugar nenhum:** link de split ou convite de um split apagado abre a tela "Este split não existe mais", que diz o que aconteceu ("Lucas excluiu “Churras de sábado”…" ou "ficou 15 dias sem ninguém e foi apagado automaticamente"). Link errado, ou de um split em que a pessoa não está, mostra "Não encontramos este split". As duas têm "Criar um split" e "Ir para o início".
+**Link que não leva a lugar nenhum:** link de split ou convite de um split apagado abre a tela "Este split não existe mais", que diz o que aconteceu ("Lucas excluiu “Churras de sábado”…" ou "ficou 15 dias sem ninguém e foi apagado automaticamente"). Link errado, ou de um split em que a pessoa não está, mostra "Não encontramos este split". As duas têm "Criar um split" e "Ir para o início". Quem estava com o split aberto e perdeu o acesso (saiu, foi removido ou teve o nome liberado) volta ao início, como antes.
 
 **Split finalizado:**
 
