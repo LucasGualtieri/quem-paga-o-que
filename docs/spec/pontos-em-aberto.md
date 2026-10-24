@@ -109,3 +109,7 @@ Spec atualizada: `02-modelo-de-dados-e-calculo.md`, `04-splits-papeis-permissoes
 - **Conteúdo:** resumo ("Beatriz pagou R$ 40,00 pra você", despesa e split) e um botão "Ver no app" que abre o detalhe como quem chega pela notificação. **Sem a foto do comprovante** (ela fica sob "Quem vê comprovantes" e o prazo de 15 dias). Idioma da conta; rodapé dizendo como desligar em Sua conta. Convidado não recebe e-mail.
 
 Spec atualizada: `07-notificacoes.md` e `08-sua-conta-e-preferencias.md`.
+
+### 4 (revista). Último admin sai ou deixa de ser admin — 24/10/2026
+
+Substitui o "último fica travado" da decisão 4. O último admin pode sair (com saldo zero) ou deixar de ser admin: o papel passa para quem tem a menor ordem de entrada entre os que já escolheram o nome, e a folha avisa antes. Sem ninguém para herdar, o split fica sem admin e a próxima pessoa que entrar e escolher um nome vira admin. Spec atualizada: `04-splits-papeis-permissoes.md`.

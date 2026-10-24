@@ -107,10 +107,18 @@ export function memberOf(split: SplitData, uid: string): [string, Member] | null
   return Object.entries(split.members).find(([, m]) => m.uid === uid) ?? null;
 }
 
-/** Admins ligados a alguém, fora `exceptId`. "Sempre ao menos um admin" (decisão 4). */
-export function otherLinkedAdmins(split: SplitData, exceptId: string): number {
-  return Object.entries(split.members).filter(([id, m]) => id !== exceptId && m.admin && m.uid).length;
+/**
+ * Último admin saindo ou deixando de ser admin (decisão 4, revista em 24/10/2026): o papel passa
+ * para quem tem a menor ordem de entrada entre os que já escolheram o nome. Sem ninguém, o split
+ * fica sem admin até a próxima pessoa entrar (ver `joinSplit`).
+ */
+export function passAdmin(members: Record<string, Member>, leavingId: string): Record<string, Member> {
+  const others = Object.entries(members).filter(([id, m]) => id !== leavingId && m.uid);
+  if (others.some(([, m]) => m.admin)) return members;
+  const heir = others.sort(([, a], [, b]) => a.joinOrder - b.joinOrder)[0];
+  return heir ? { ...members, [heir[0]]: { ...heir[1], admin: true } } : members;
 }
+
 
 export async function loadSplit(tx: Transaction, splitId: unknown): Promise<{ ref: DocumentReference; split: SplitData }> {
   const id = text(splitId);

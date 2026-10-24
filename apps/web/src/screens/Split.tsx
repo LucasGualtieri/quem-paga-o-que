@@ -6,7 +6,7 @@ import { Button, Icon, Sheet, SkeletonCard, useToast, type IconName } from '../c
 import { api, detailsOf } from '../data/api.ts';
 import { useMoney, useSplit } from '../data/hooks.ts';
 import { hideSplit, pendingJoins } from '../data/local.ts';
-import { applyPatches, leaveBlock, membersInOrder, myMember, type ExpenseDoc, type Member, type MemberPatch, type Money, type PaymentDoc, type SplitDoc } from '../data/model.ts';
+import { adminHandover, applyPatches, leaveBlock, membersInOrder, myMember, type ExpenseDoc, type Member, type MemberPatch, type Money, type PaymentDoc, type SplitDoc } from '../data/model.ts';
 import { useSession } from '../data/session.ts';
 import { useOptimisticAction } from '../lib/optimistic.ts';
 import { setTheme, useTheme } from '../theme/theme.ts';
@@ -30,7 +30,7 @@ const TABS: Array<{ key: string; path: string; icon: IconName; label: string }> 
   { key: 'pessoas', path: '/pessoas', icon: 'people', label: 'split.tabs.ppl' },
 ];
 
-type Patch = { key: number; patch: MemberPatch; confirmed: boolean };
+type Patch = { key: number; patch: MemberPatch[]; confirmed: boolean };
 
 /** Mudanças otimistas em participantes: valem na hora e saem quando o snapshot do servidor chega. */
 function usePatches(split: SplitDoc | null): [SplitDoc | null, PeopleAction] {
@@ -49,7 +49,7 @@ function usePatches(split: SplitDoc | null): [SplitDoc | null, PeopleAction] {
       const key = ++seq.current;
       void run({
         apply: () => {
-          setPatches((ps) => [...ps, { key, patch, confirmed: false }]);
+          setPatches((ps) => [...ps, { key, patch: Array.isArray(patch) ? patch : [patch], confirmed: false }]);
           return () => setPatches((ps) => ps.filter((p) => p.key !== key));
         },
         commit: async () => {
@@ -63,7 +63,7 @@ function usePatches(split: SplitDoc | null): [SplitDoc | null, PeopleAction] {
     [run, toast, reasonText],
   );
 
-  return [split ? applyPatches(split, patches.map((p) => p.patch)) : null, act];
+  return [split ? applyPatches(split, patches.flatMap((p) => p.patch)) : null, act];
 }
 
 /** Finalizar/Reabrir otimista: o status muda na hora; o snapshot do servidor vence quando chega. */
@@ -131,6 +131,8 @@ export default function Split() {
 
   const count = view ? membersInOrder(view).length : 0;
   const block = view && me ? leaveBlock(view, money, me.id) : null;
+  // Último admin saindo: avisa para quem o papel vai (decisão 4, revista).
+  const handover = view && me ? adminHandover(view, me.id) : null;
   const isOpen = view?.status !== 'done';
   const isAdmin = !!me?.admin;
 
@@ -289,10 +291,18 @@ export default function Split() {
         {block ? (
           <div className="alert" role="alert">
             <Icon name="alert" size="sm" />
-            <span>{block.reason === 'last-admin' ? t('blocks.lastAdmin') : t('blocks.leaveBalance')}</span>
+            <span>{t('blocks.leaveBalance')}</span>
           </div>
         ) : (
-          <p className="muted">{t('leave.body')}</p>
+          <>
+            <p className="muted">{t('leave.body')}</p>
+            {handover && (
+              <div className="info">
+                <Icon name="shield" />
+                <span>{handover.heir ? t('handover.leaveHeir', { name: handover.heir.name }) : t('handover.leaveNext')}</span>
+              </div>
+            )}
+          </>
         )}
         <div className="sheet-acts">
           {!block && (

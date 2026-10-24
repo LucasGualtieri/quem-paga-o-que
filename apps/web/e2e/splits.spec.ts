@@ -75,9 +75,11 @@ test('admin promove, deixa de ser admin, libera nome e remove; membro sai do spl
   await lucas.getByRole('link', { name: 'Ir para o split' }).click();
   await lucas.getByRole('link', { name: /Pessoas/ }).click();
 
-  // Último admin não sai do papel.
+  // Último admin: a folha avisa para quem o papel vai (decisão 4, revista); cancelar não muda nada.
   await lucas.getByRole('button', { name: 'Deixar de ser admin' }).click();
-  await expect(lucas.getByRole('alert')).toContainText('Promova outra pessoa a admin antes.');
+  await expect(lucas.getByRole('dialog', { name: 'Deixar de ser admin?' })).toContainText('Beatriz vira admin no seu lugar.');
+  await shot(lucas, 'deixar-de-ser-admin');
+  await lucas.getByRole('dialog').getByRole('button', { name: 'Cancelar' }).click();
 
   // Promover é otimista: o selo muda na hora.
   const biaRow = lucas.locator('.row2', { hasText: 'Beatriz' });
@@ -101,11 +103,12 @@ test('admin promove, deixa de ser admin, libera nome e remove; membro sai do spl
   await expect(toast(bia)).toContainText('O nome Lucas ficou livre');
   await expect(lucas.getByRole('heading', { name: 'Meus splits' })).toBeVisible();
 
-  // Beatriz é a única admin: não consegue sair.
+  // Beatriz é a única admin e ninguém mais entrou: pode sair, e o próximo que entrar vira admin.
   await bia.getByRole('button', { name: 'Mais opções' }).click();
   await bia.getByRole('menuitem', { name: 'Sair do split' }).click();
-  await expect(bia.getByRole('dialog')).toContainText('Promova outra pessoa a admin antes.');
-  await bia.keyboard.press('Escape');
+  await expect(bia.getByRole('dialog')).toContainText('a próxima pessoa que entrar no split vira admin');
+  await bia.getByRole('dialog').getByRole('button', { name: 'Sair do split' }).click();
+  await expect(bia.getByRole('heading', { name: 'Meus splits' })).toBeVisible();
 });
 
 test('membro sai do split: some da home na hora', async ({ browser }) => {

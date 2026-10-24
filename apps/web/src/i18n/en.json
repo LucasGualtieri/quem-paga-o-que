@@ -720,5 +720,14 @@
     "banner": "Closed on {{date}}",
     "lock": "Split is closed: reopen to edit.",
     "pair": "{{from}} → {{to}}"
+  },
+  "handover": {
+    "leaveHeir": "You’re the last admin. When you leave, {{name}} becomes admin.",
+    "leaveNext": "You’re the last admin and nobody else has joined yet. When you leave, the next person to join becomes admin.",
+    "stepT": "Stop being admin?",
+    "stepHeir": "You’re the last admin: {{name}} becomes admin instead.",
+    "stepNext": "You’re the last admin and nobody else has joined yet: the next person to join becomes admin.",
+    "done": "{{name}} is now an admin",
+    "doneNone": "You’re no longer an admin"
   }
 }

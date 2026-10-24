@@ -6,13 +6,14 @@ import { useProfile } from '../data/hooks.ts';
 import { useSession } from '../data/session.ts';
 import { useOptimisticAction, useOptimisticValue } from '../lib/optimistic.ts';
 import type { ProofVisibility } from '@qpq/shared';
-import { adminContact, balances, membersInOrder, promoteBlock, removeBlock, type Member, type MemberPatch, type Money, type SplitDoc } from '../data/model.ts';
+import { adminContact, adminHandover, balances, membersInOrder, promoteBlock, removeBlock, type Member, type MemberPatch, type Money, type SplitDoc } from '../data/model.ts';
 import { useLang } from '../i18n/index.ts';
 import { formatCents } from '../lib/money.ts';
 import { InviteBox } from './Created.tsx';
 import { useReasonText } from './reasons.ts';
 
-export type PeopleAction = (patch: MemberPatch, commit: () => Promise<unknown>, done?: string) => void;
+/** Uma ou mais mudanças em participantes (ex.: deixar de ser admin e o herdeiro virar admin). */
+export type PeopleAction = (patch: MemberPatch | MemberPatch[], commit: () => Promise<unknown>, done?: string) => void;
 
 /** Aba Pessoas: admin gerencia; membro vê o cadeado e "fale com…" (spec 04, decisões 3 e 4). */
 export function PeopleTab({ split, money, me, act }: { split: SplitDoc; money: Money; me: Member; act: PeopleAction }) {
@@ -60,6 +61,17 @@ export function PeopleTab({ split, money, me, act }: { split: SplitDoc; money: M
     if (!b) return false;
     setMsg({ id: m.id, text: reasonText({ reason: b.reason, name: m.name, ...(b.amount !== undefined ? { amount: b.amount } : {}) }) });
     return true;
+  };
+
+  const [steppingDown, setSteppingDown] = useState(false);
+  const handover = adminHandover(split, me.id);
+  /** Deixar de ser admin; sendo o último, o papel passa para quem entrou primeiro (decisão 4). */
+  const stepDown = () => {
+    setSteppingDown(false);
+    setMsg(null);
+    const patches: MemberPatch[] = [{ memberId: me.id, change: { admin: false } }];
+    if (handover?.heir) patches.push({ memberId: handover.heir.id, change: { admin: true } });
+    act(patches, () => api.setAdmin({ splitId: split.id, memberId: me.id, admin: false }), handover?.heir ? t('handover.done', { name: handover.heir.name }) : t('handover.doneNone'));
   };
 
   const setAdmin = (m: Member, admin: boolean) => {
@@ -163,7 +175,7 @@ export function PeopleTab({ split, money, me, act }: { split: SplitDoc; money: M
                 )}
                 {isAdmin && mine && (
                   <div className="acts">
-                    <Button variant="secondary" size="sm" onClick={() => setAdmin(m, false)}>
+                    <Button variant="secondary" size="sm" onClick={() => (handover ? setSteppingDown(true) : setAdmin(m, false))}>
                       {t('people.stepDown')}
                     </Button>
                   </div>
@@ -204,6 +216,18 @@ export function PeopleTab({ split, money, me, act }: { split: SplitDoc; money: M
           </p>
         )}
       </section>
+
+      <Sheet open={steppingDown} title={t('handover.stepT')} onClose={() => setSteppingDown(false)}>
+        <p className="muted">{handover?.heir ? t('handover.stepHeir', { name: handover.heir.name }) : t('handover.stepNext')}</p>
+        <div className="sheet-acts">
+          <Button block onClick={stepDown}>
+            {t('people.stepDown')}
+          </Button>
+          <Button variant="ghost" block onClick={() => setSteppingDown(false)}>
+            {t('common.cancel')}
+          </Button>
+        </div>
+      </Sheet>
 
       <Sheet open={newCode} title={t('invite.confirmT')} onClose={() => setNewCode(false)}>
         <p className="muted">{t('invite.confirmB')}</p>

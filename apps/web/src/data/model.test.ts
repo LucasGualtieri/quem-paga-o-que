@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { adminContact, balances, leaveBlock, membersInOrder, myMember, promoteBlock, removeBlock, type SplitDoc } from './model.ts';
+import { adminContact, adminHandover, balances, leaveBlock, membersInOrder, myMember, promoteBlock, removeBlock, type SplitDoc } from './model.ts';
 
 const split: SplitDoc = {
   id: 's1',
@@ -38,17 +38,26 @@ describe('model', () => {
     expect(removeBlock(split, noMoney, 'm3')).toBeNull();
   });
 
-  it('sair: saldo zero e nunca o último admin', () => {
-    expect(leaveBlock(split, noMoney, 'm1')).toEqual({ reason: 'last-admin' });
+  it('sair: só com saldo zero; o último admin também sai (o papel passa adiante)', () => {
+    expect(leaveBlock(split, noMoney, 'm1')).toBeNull();
     expect(leaveBlock(split, noMoney, 'm2')).toBeNull();
     const owing = { expenses: [{ amount: 3000, payer: 'm1', members: ['m1', 'm2'], mode: 'equal' as const }], payments: [] };
     expect(leaveBlock(split, owing, 'm2')).toEqual({ reason: 'balance-not-zero', amount: -1500 });
   });
 
-  it('tornar admin: só quem já entrou; deixar de ser: nunca o último', () => {
+  it('tornar admin: só quem já entrou; deixar de ser admin, sempre', () => {
     expect(promoteBlock(split, 'm3', true)).toEqual({ reason: 'not-joined' });
     expect(promoteBlock(split, 'm2', true)).toBeNull();
-    expect(promoteBlock(split, 'm1', false)).toEqual({ reason: 'last-admin' });
+    expect(promoteBlock(split, 'm1', false)).toBeNull();
+  });
+
+  it('último admin: o papel vai para quem entrou primeiro; sem ninguém, para o próximo que entrar', () => {
+    expect(adminHandover(split, 'm1')).toEqual({ heir: expect.objectContaining({ id: 'm2' }) });
+    expect(adminHandover(split, 'm2')).toBeNull();
+    const alone = { ...split, members: { ...split.members, m2: { ...split.members.m2!, uid: null } } };
+    expect(adminHandover(alone, 'm1')).toEqual({ heir: null });
+    const twoAdmins = { ...split, members: { ...split.members, m2: { ...split.members.m2!, admin: true } } };
+    expect(adminHandover(twoAdmins, 'm1')).toBeNull();
   });
 
   it('"fale com…" conforme a quantidade de admins (spec 04)', () => {

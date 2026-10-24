@@ -150,12 +150,39 @@ describe('setAdmin (decisão 4 e Fase 3)', () => {
     expect((await splitDoc(splitId)).adminUids).toEqual([lucas.uid]);
   });
 
-  it('último admin não deixa de ser admin; com outro admin, deixa', async () => {
-    const { lucas, splitId, beatriz, eu } = await scenario();
-    expect(await reasonOf(lucas.call('setAdmin', { splitId, memberId: eu, admin: false }))).toBe('last-admin');
-    await lucas.call('setAdmin', { splitId, memberId: beatriz, admin: true });
+  it('último admin deixa de ser admin: o papel passa para quem entrou primeiro (decisão 4, revista)', async () => {
+    const { lucas, bia, splitId, beatriz, eu } = await scenario();
     await lucas.call('setAdmin', { splitId, memberId: eu, admin: false });
-    expect((await splitDoc(splitId)).members[eu]?.admin).toBe(false);
+    const s = await splitDoc(splitId);
+    expect(s.members[eu]?.admin).toBe(false);
+    expect(s.members[beatriz]?.admin).toBe(true);
+    expect(s.adminUids).toEqual([bia.uid]);
+  });
+
+  it('com outro admin, deixar de ser admin não passa o papel para mais ninguém', async () => {
+    const { lucas, splitId, beatriz, eu, catarina, code } = await scenario();
+    const cat = await newUser();
+    await join(cat, { code, memberId: catarina });
+    await lucas.call('setAdmin', { splitId, memberId: catarina, admin: true });
+    await lucas.call('setAdmin', { splitId, memberId: eu, admin: false });
+    const s = await splitDoc(splitId);
+    expect(s.members[beatriz]?.admin).toBe(false);
+    expect(s.adminUids).toEqual([cat.uid]);
+  });
+
+  it('sem ninguém para herdar: o split fica sem admin e o próximo que entrar vira admin', async () => {
+    const lucas = await newUser();
+    const { splitId, code } = await createSplit(lucas);
+    const eu = await memberIdByName(splitId, 'Lucas');
+    await lucas.call('setAdmin', { splitId, memberId: eu, admin: false });
+    expect((await splitDoc(splitId)).adminUids).toEqual([]);
+    const bia = await newUser();
+    await join(bia, { code, memberId: await memberIdByName(splitId, 'Beatriz') });
+    expect((await splitDoc(splitId)).adminUids).toEqual([bia.uid]);
+    // Quem chega depois, já com admin, entra como membro.
+    const cat = await newUser();
+    await join(cat, { code, memberId: await memberIdByName(splitId, 'Catarina') });
+    expect((await splitDoc(splitId)).adminUids).toEqual([bia.uid]);
   });
 });
 
@@ -204,11 +231,24 @@ describe('leaveSplit (decisão 4)', () => {
     expect(await reasonOf(bia.call('leaveSplit', { splitId }))).toBeNull();
   });
 
-  it('último admin não sai; com outro admin, sai', async () => {
-    const { lucas, splitId, beatriz } = await scenario();
-    expect(await reasonOf(lucas.call('leaveSplit', { splitId }))).toBe('last-admin');
-    await lucas.call('setAdmin', { splitId, memberId: beatriz, admin: true });
-    expect(await reasonOf(lucas.call('leaveSplit', { splitId }))).toBeNull();
+  it('último admin sai: o papel passa para quem entrou primeiro entre os que ficam', async () => {
+    const { lucas, bia, splitId, beatriz, eu } = await scenario();
+    await lucas.call('leaveSplit', { splitId });
+    const s = await splitDoc(splitId);
+    expect(s.members[eu]).toMatchObject({ uid: null, admin: false });
+    expect(s.members[beatriz]?.admin).toBe(true);
+    expect(s.adminUids).toEqual([bia.uid]);
+  });
+
+  it('último admin sai sem ninguém mais no split: o próximo que entrar vira admin', async () => {
+    const lucas = await newUser();
+    const { splitId, code } = await createSplit(lucas);
+    await lucas.call('leaveSplit', { splitId });
+    expect((await splitDoc(splitId)).adminUids).toEqual([]);
+    const cat = await newUser();
+    await join(cat, { code, newName: 'Fellipe' });
+    const s = await splitDoc(splitId);
+    expect(s.adminUids).toEqual([cat.uid]);
   });
 
   it('quem não está no split', async () => {

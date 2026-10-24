@@ -720,5 +720,14 @@
     "banner": "Finalizado em {{date}}",
     "lock": "Split finalizado: reabra para editar.",
     "pair": "{{from}} → {{to}}"
+  },
+  "handover": {
+    "leaveHeir": "Você é o último admin. Ao sair, {{name}} vira admin.",
+    "leaveNext": "Você é o último admin e ninguém mais entrou ainda. Ao sair, a próxima pessoa que entrar no split vira admin.",
+    "stepT": "Deixar de ser admin?",
+    "stepHeir": "Você é o último admin: {{name}} vira admin no seu lugar.",
+    "stepNext": "Você é o último admin e ninguém mais entrou ainda: a próxima pessoa que entrar no split vira admin.",
+    "done": "{{name}} agora é admin",
+    "doneNone": "Você deixou de ser admin"
   }
 }

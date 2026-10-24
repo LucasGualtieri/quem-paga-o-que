@@ -27,7 +27,7 @@ import {
   mirrors,
   newId,
   opts,
-  otherLinkedAdmins,
+  passAdmin,
   readMoney,
   requireAdmin,
   requireMember,
@@ -162,6 +162,8 @@ export const joinSplit = onCall(opts, async (req): Promise<JoinSplitResponse> =>
       memberId = newId();
       members[memberId] = { name, nameKey: key, uid, admin: false, joinOrder: nextJoinOrder++, joinedAt: now, isNew: true };
     }
+    // Split sem admin (o último saiu sem ninguém para herdar): quem entra vira admin (decisão 4).
+    if (!Object.values(members).some((m) => m.admin && m.uid)) members[memberId] = { ...members[memberId]!, admin: true };
     tx.update(ref, { ...mirrors(members), nextJoinOrder });
     return { splitId: ref.id, memberId };
   });
@@ -177,8 +179,9 @@ export const setAdmin = onCall(opts, async (req) => {
     const id = text(data.memberId);
     const m = target(split, id);
     if (data.admin && !m.uid) fail('not-joined', { name: m.name });
-    if (!data.admin && otherLinkedAdmins(split, id) === 0) fail('last-admin');
-    tx.update(ref, mirrors({ ...split.members, [id]: { ...m, admin: data.admin as boolean } }));
+    const members = { ...split.members, [id]: { ...m, admin: data.admin as boolean } };
+    // Deixar de ser admin sendo o último: o papel passa para quem entrou primeiro (decisão 4).
+    tx.update(ref, mirrors(data.admin ? members : passAdmin(members, id)));
   });
   return { ok: true };
 });
@@ -209,9 +212,9 @@ export const leaveSplit = onCall(opts, async (req) => {
     const net = netOf(split, money)[id] ?? 0;
     // Sem nome: o aviso é para a própria pessoa ("Quite suas contas antes de sair").
     if (net !== 0) fail('balance-not-zero', { amount: net });
-    if (m.admin && otherLinkedAdmins(split, id) === 0) fail('last-admin');
-    // Decisão 4: sair desvincula; o nome, as despesas e o histórico ficam.
-    tx.update(ref, mirrors({ ...split.members, [id]: { ...m, uid: null, admin: false, joinedAt: null } }));
+    // Decisão 4: sair desvincula; o nome, as despesas e o histórico ficam. Sendo o último
+    // admin, o papel passa para quem entrou primeiro entre os que ficam.
+    tx.update(ref, mirrors(passAdmin({ ...split.members, [id]: { ...m, uid: null, admin: false, joinedAt: null } }, id)));
   });
   return { ok: true };
 });

@@ -95,15 +95,24 @@ export function removeBlock(split: SplitDoc, money: Money, memberId: MemberId): 
 export function leaveBlock(split: SplitDoc, money: Money, memberId: MemberId): Block | null {
   const net = balances(split, money)[memberId] ?? 0;
   if (net !== 0) return { reason: 'balance-not-zero', amount: net };
-  if (split.members[memberId]?.admin && linkedAdminsExcept(split, memberId) === 0) return { reason: 'last-admin' };
   return null;
 }
 
 export function promoteBlock(split: SplitDoc, memberId: MemberId, admin: boolean): Block | null {
   const m = split.members[memberId];
   if (admin && !m?.uid) return { reason: 'not-joined' };
-  if (!admin && linkedAdminsExcept(split, memberId) === 0) return { reason: 'last-admin' };
   return null;
+}
+
+/**
+ * Último admin saindo ou deixando de ser admin (decisão 4, revista): quem herda o papel. `null` =
+ * não há o que passar (outro admin continua). `{ heir: null }` = ninguém para herdar ainda; o
+ * próximo que entrar vira admin. Repete a regra do servidor (functions/src/common.ts, passAdmin).
+ */
+export function adminHandover(split: SplitDoc, memberId: MemberId): { heir: Member | null } | null {
+  if (!split.members[memberId]?.admin || linkedAdminsExcept(split, memberId) > 0) return null;
+  const heir = membersInOrder(split).find((m) => m.id !== memberId && m.uid) ?? null;
+  return { heir };
 }
 
 type T = (key: string, opts?: Record<string, unknown>) => string;
