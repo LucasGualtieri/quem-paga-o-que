@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { balanceView, myView, pendingChecks } from './balance.ts';
+import { pairsView, pendingChecks } from './balance.ts';
 import type { ExpenseDoc, PaymentDoc, SplitDoc } from './model.ts';
 
 const split: SplitDoc = {
@@ -12,9 +12,9 @@ const split: SplitDoc = {
   members: {
     m1: { name: 'Lucas', nameKey: 'lucas', uid: 'u1', admin: true, joinOrder: 0, isNew: false },
     m2: { name: 'Beatriz', nameKey: 'beatriz', uid: 'u2', admin: false, joinOrder: 1, isNew: false },
-    m3: { name: 'Catarina', nameKey: 'catarina', uid: 'u3', admin: false, joinOrder: 2, isNew: false },
+    m3: { name: 'Catarina', nameKey: 'catarina', uid: null, admin: false, joinOrder: 2, isNew: false },
   },
-  uids: ['u1', 'u2', 'u3'],
+  uids: ['u1', 'u2'],
   adminUids: ['u1'],
 };
 
@@ -40,127 +40,91 @@ const exp = (id: string, over: Partial<ExpenseDoc>): ExpenseDoc => ({
   paySeq: 0,
   ...over,
 });
+const pay = (id: string, from: string, to: string, amount: number, t: number, extra: Partial<PaymentDoc> = {}): PaymentDoc => ({ id, from, to, amount, by: from, when: new Date(t), proof: null, ...extra });
 
-// Pizza R$ 9,00 paga por Lucas entre os três (3,00 cada); Uber R$ 2,00 paga por Beatriz com Lucas (1,00 cada).
-const pizza = exp('pizza', { amount: 900, payer: 'm1', members: ['m1', 'm2', 'm3'], date: '2026-12-28' });
-const uber = exp('uber', { amount: 200, payer: 'm2', members: ['m1', 'm2'], date: '2026-12-29' });
-const pay = (id: string, from: string, to: string, amount: number, t: number): PaymentDoc => ({ id, from, to, amount, by: from, when: new Date(t), proof: null });
+// Pizza R$ 60,00 paga pela Beatriz entre os dois (Lucas devia R$ 30,00); Gasolina R$ 40,00 paga pelo Lucas (Beatriz devia R$ 20,00).
+const pizza = exp('pizza', { amount: 6000, payer: 'm2', members: ['m1', 'm2'], date: '2026-12-27' });
+const gasolina = exp('gasolina', { amount: 4000, payer: 'm1', members: ['m1', 'm2'], date: '2026-12-28' });
+// Mercado R$ 30,00 pago pelo Lucas entre os três: Catarina deve R$ 10,00.
+const mercado = exp('mercado', { amount: 3000, payer: 'm1', members: ['m1', 'm2', 'm3'], date: '2026-12-29' });
 
-describe('balanceView (aba Saldo)', () => {
-  it('seu cartão primeiro, os outros pelo tamanho do saldo; linhas com a dívida real do par', () => {
-    const v = balanceView(split, [pizza, uber], [], 'm1');
-    expect(v.mine).toBe(500);
-    expect(v.cards.map((c) => [c.id, c.net])).toEqual([
-      ['m1', 500],
-      ['m3', -300],
-      ['m2', -200],
+describe('pairsView (Minha visão)', () => {
+  it('um cartão por pessoa com o saldo do par e as despesas que o formam', () => {
+    const v = pairsView(split, [pizza, gasolina], [], 'm1');
+    expect(v.mine).toBe(-1000);
+    const [bia, cat] = v.cards;
+    expect(bia).toMatchObject({ other: 'm2', status: 'owe', amount: 1000, net: -1000, toConfirm: 0 });
+    expect(bia!.entries.map((e) => (e.kind === 'share' ? [e.expense.id, e.debtor, e.share, e.state] : e.kind))).toEqual([
+      ['pizza', 'm1', 3000, 'open'],
+      ['gasolina', 'm2', 2000, 'offset'],
     ]);
-    const mine = v.cards[0]!;
-    expect(mine.lines).toEqual([
-      { kind: 'recv', from: 'm2', to: 'm1', other: 'm2', amount: 200 },
-      { kind: 'recv', from: 'm3', to: 'm1', other: 'm3', amount: 300 },
+    // Quem não tem nada com você aparece quitado, por último.
+    expect(cat).toMatchObject({ other: 'm3', status: 'zero', amount: 0, entries: [] });
+  });
+
+  it('ordem: o que eu devo, o que me devem (maiores primeiro), quitados por último', () => {
+    // Uber R$ 60,00 pago pela Catarina entre ela e o Lucas: com o Mercado, Lucas deve R$ 20,00 a ela.
+    const uber = exp('uber', { amount: 6000, payer: 'm3', members: ['m1', 'm3'] });
+    expect(pairsView(split, [pizza, gasolina, mercado, uber], [], 'm1').cards.map((c) => [c.other, c.status, c.amount])).toEqual([
+      ['m3', 'owe', 2000],
+      ['m2', 'zero', 0],
     ]);
-    expect([mine.owes, mine.gets, mine.done]).toEqual([0, 2, 0]);
-    expect(v.cards[2]!.lines).toEqual([{ kind: 'owe', from: 'm2', to: 'm1', other: 'm1', amount: 200 }]);
-  });
-
-  it('acerto vira linha resolvida no cartão das duas pessoas e abate a dívida', () => {
-    const p = pay('p1', 'm3', 'm1', 300, 1);
-    const v = balanceView(split, [pizza, uber], [p], 'm1');
-    expect(v.mine).toBe(200);
-    const m3 = v.cards.find((c) => c.id === 'm3')!;
-    expect(m3.lines).toEqual([{ kind: 'done', payment: p, other: 'm1', paidOut: true }]);
-    expect([m3.net, m3.owes, m3.gets, m3.done]).toEqual([0, 0, 0, 1]);
-    expect(v.cards[0]!.lines.at(-1)).toEqual({ kind: 'done', payment: p, other: 'm3', paidOut: false });
-    // Cartões em ordem estável quando o saldo empata (ordem de entrada).
-    expect(balanceView(split, [], [], 'm2').cards.map((c) => c.id)).toEqual(['m2', 'm1', 'm3']);
-  });
-
-  it('acertos aparecem pela ordem em que foram feitos (o que ainda não tem hora, por último)', () => {
-    const a = pay('a', 'm2', 'm1', 100, 5);
-    const b = { ...pay('b', 'm2', 'm1', 50, 0), when: null };
-    const c = pay('c', 'm2', 'm1', 50, 1);
-    const lines = balanceView(split, [pizza], [a, b, c], 'm1').cards[0]!.lines.filter((l) => l.kind === 'done');
-    expect(lines.map((l) => (l.kind === 'done' ? l.payment.id : ''))).toEqual(['c', 'a', 'b']);
-  });
-
-  it('parte paga vira linha resolvida no lugar da dívida, no cartão das duas pessoas', () => {
-    // Pizza: Beatriz (m2) e Catarina (m3) devem R$ 3,00 cada a Lucas. Beatriz paga a parte dela.
-    const paid = { ...pizza, paid: { m2: 300 }, paidAt: { m2: 1000 } };
-    const v = balanceView(split, [paid], [], 'm1');
-    const mine = v.cards[0]!;
-    // A linha da Beatriz continua antes da Catarina (ordem de entrada), agora resolvida.
-    expect(mine.lines.map((l) => [l.kind, l.other])).toEqual([
-      ['shareDone', 'm2'],
-      ['recv', 'm3'],
+    // Sem o Uber: Catarina deve R$ 10,00; Beatriz zerou (Pizza − Gasolina − Mercado).
+    expect(pairsView(split, [pizza, gasolina, mercado], [], 'm1').cards.map((c) => [c.other, c.status, c.amount])).toEqual([
+      ['m3', 'owed', 1000],
+      ['m2', 'zero', 0],
     ]);
-    expect(mine.lines[0]).toEqual({ kind: 'shareDone', expense: paid, memberId: 'm2', other: 'm2', paidOut: false, amount: 300, at: new Date(1000) });
-    expect([mine.gets, mine.done]).toEqual([1, 1]);
-    const bia = v.cards.find((c) => c.id === 'm2')!;
-    expect(bia.lines).toEqual([{ kind: 'shareDone', expense: paid, memberId: 'm2', other: 'm1', paidOut: true, amount: 300, at: new Date(1000) }]);
-  });
-
-  it('pago em parte: o que falta fica pendente e o pago aparece logo abaixo, com a mesma pessoa', () => {
-    const partial = { ...pizza, paid: { m3: 100 } };
-    const lines = balanceView(split, [partial], [], 'm1').cards[0]!.lines;
-    expect(lines.map((l) => [l.kind, l.other, l.kind === 'shareDone' || l.kind === 'recv' ? l.amount : 0])).toEqual([
-      ['recv', 'm2', 300],
-      ['recv', 'm3', 200],
-      ['shareDone', 'm3', 100],
+    // Dois a receber: o maior primeiro.
+    const viagem = exp('viagem', { amount: 9000, payer: 'm1', members: ['m1', 'm2', 'm3'] });
+    const almoco = exp('almoco', { amount: 2000, payer: 'm1', members: ['m1', 'm2'] });
+    expect(pairsView(split, [viagem, almoco], [], 'm1').cards.map((c) => [c.other, c.amount])).toEqual([
+      ['m2', 4000],
+      ['m3', 3000],
     ]);
-    // Sem hora gravada (pagamento antigo): sem data na linha.
-    expect(lines[2]).toMatchObject({ at: null });
   });
 
-  it('quem não está no split vê só os cartões dos outros', () => {
-    expect(balanceView(split, [], [], 'm9').cards.map((c) => c.id)).toEqual(['m1', 'm2', 'm3']);
-  });
-});
+  it('pagar a parte deixa a entrada paga; acerto entra como pagamento e zera o par', () => {
+    const paid = { ...pizza, paid: { m1: 3000 }, paidAt: { m1: 5 } };
+    const v = pairsView(split, [paid, gasolina], [], 'm1');
+    expect(v.cards[0]).toMatchObject({ other: 'm2', status: 'owed', amount: 2000 });
+    expect(v.cards[0]!.entries[0]).toMatchObject({ kind: 'share', state: 'paid', due: 0, paidAt: new Date(5) });
+    expect(v.cards[0]!.entries[1]).toMatchObject({ kind: 'share', state: 'open' });
 
-describe('myView (aba Minha visão)', () => {
-  it('Devo, Já paguei e A receber; a linha fica no lugar com o estado', () => {
-    const v = myView(split, [pizza, uber], [], 'm1');
-    expect(v.owe).toEqual([{ kind: 'share', expense: uber, share: 100, due: 100, state: 'pend' }]);
-    expect(v.recv.map((r) => [r.memberId, r.due, r.state])).toEqual([
-      ['m2', 300, 'pend'],
-      ['m3', 300, 'pend'],
+    const p = pay('p1', 'm1', 'm2', 1000, Date.parse('2026-12-30T10:00:00'));
+    const settled = pairsView(split, [pizza, gasolina], [p], 'm1').cards.find((c) => c.other === 'm2')!;
+    expect(settled).toMatchObject({ status: 'zero', amount: 0 });
+    expect(settled.entries.map((e) => e.kind)).toEqual(['share', 'share', 'payment']);
+    expect(settled.entries[2]).toEqual({ kind: 'payment', payment: p, out: true });
+    // Saldo zerado pelo acerto: as partes não pagas ficam compensadas.
+    expect(settled.entries.slice(0, 2).map((e) => (e.kind === 'share' ? e.state : ''))).toEqual(['offset', 'offset']);
+  });
+
+  it('para conferir: parte marcada pela pessoa e acerto que ela registrou para mim', () => {
+    const marked = { ...gasolina, paid: { m2: 2000 }, pendConf: { m2: true } };
+    const v = pairsView(split, [marked], [pay('p1', 'm2', 'm1', 500, 1, { pendConf: true })], 'm1');
+    expect(v.cards[0]).toMatchObject({ other: 'm2', toConfirm: 2 });
+    expect(v.cards[0]!.entries.find((e) => e.kind === 'share')).toMatchObject({ pending: true, state: 'paid' });
+    // Para quem marcou, nada a conferir.
+    expect(pairsView(split, [marked], [pay('p1', 'm2', 'm1', 500, 1, { pendConf: true })], 'm2').cards[0]).toMatchObject({ other: 'm1', toConfirm: 0 });
+  });
+
+  it('acerto sem hora (acabou de ser feito) vai para o fim; ver como outra pessoa', () => {
+    const now = { ...pay('p2', 'm2', 'm1', 100, 0), when: null };
+    const v = pairsView(split, [pizza], [now], 'm1');
+    expect(v.cards[0]!.entries.at(-1)).toMatchObject({ kind: 'payment', out: false });
+    // Admin vendo como Beatriz: os cartões dela, inclusive o par com a Catarina.
+    const asBia = pairsView(split, [mercado], [], 'm2');
+    expect(asBia.mine).toBe(-1000);
+    expect(asBia.cards.map((c) => [c.other, c.status])).toEqual([
+      ['m1', 'owe'],
+      ['m3', 'zero'],
     ]);
-    expect(v.totals).toEqual({ owe: 100, paid: 0, recv: 600 });
-
-    const paid = myView(split, [{ ...pizza, paid: { m2: 300, m3: 100 } }, { ...uber, paid: { m1: 100 } }], [], 'm1');
-    expect(paid.owe[0]).toMatchObject({ state: 'paid', due: 0 });
-    // Parte paga em parte (a despesa mudou de valor depois): o que falta volta a pendente (decisão 2).
-    expect(paid.recv.map((r) => [r.memberId, r.due, r.state])).toEqual([
-      ['m2', 0, 'paid'],
-      ['m3', 200, 'pend'],
-    ]);
-    expect(paid.totals).toEqual({ owe: 0, paid: 100, recv: 200 });
-  });
-
-  it('saldo zerado por acerto: as partes que restam ficam "Quitado no acerto"; o acerto entra em Já paguei', () => {
-    const p = pay('p1', 'm3', 'm1', 300, 1);
-    const v = myView(split, [pizza, uber], [p], 'm3');
-    expect(v.owe).toEqual([
-      { kind: 'share', expense: pizza, share: 300, due: 300, state: 'via' },
-      { kind: 'payment', payment: p },
-    ]);
-    expect(v.totals).toEqual({ owe: 0, paid: 300, recv: 0 });
-    // Do lado de quem recebeu: o que faltava de Catarina também foi quitado no acerto, se o saldo zerou.
-    const lucas = myView(split, [pizza], [p, pay('p2', 'm2', 'm1', 300, 2)], 'm1');
-    expect(lucas.recv.map((r) => r.state)).toEqual(['via', 'via']);
-    expect(lucas.totals.recv).toBe(0);
-  });
-
-  it('despesas mais recentes primeiro', () => {
-    const later = exp('later', { amount: 300, payer: 'm2', members: ['m1', 'm2', 'm3'], date: '2026-12-30' });
-    const v = myView(split, [uber, later], [], 'm1');
-    expect(v.owe.map((i) => (i.kind === 'share' ? i.expense.id : ''))).toEqual(['later', 'uber']);
   });
 });
 
 describe('pendingChecks ("1 pagamento p/ conferir")', () => {
   it('conta só as partes pagas que esperam confirmação', () => {
-    expect(pendingChecks({ ...pizza, paid: { m2: 300 }, pendConf: { m2: true, m3: true } })).toBe(1);
+    expect(pendingChecks({ ...pizza, paid: { m1: 300 }, pendConf: { m1: true, m3: true } })).toBe(1);
     expect(pendingChecks(pizza)).toBe(0);
   });
 });

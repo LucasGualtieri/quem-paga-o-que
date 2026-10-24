@@ -19,7 +19,9 @@ async function setup(browser: Parameters<typeof guest>[0]) {
 
   const bia = await joinAs(browser, code, 'Beatriz');
   await tab(bia, 'Minha visão').click();
-  await bia.locator('.row2', { hasText: 'Pizza' }).getByRole('button', { name: 'Marcar como pago' }).click();
+  const card = bia.locator('.pcard', { has: bia.locator('.pchead .ttl', { hasText: 'Lucas' }) });
+  await card.locator('.pchead').click();
+  await card.locator('.pcentry', { hasText: 'Pizza' }).getByRole('button', { name: 'Marcar como pago' }).click();
   await expect(toast(bia)).toContainText('Pagamento registrado · avisamos Lucas');
   return { lucas, bia };
 }

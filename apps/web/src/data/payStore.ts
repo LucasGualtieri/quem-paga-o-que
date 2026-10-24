@@ -25,13 +25,14 @@ export interface ShareOp {
   minPaySeq?: number;
 }
 
-/** Acerto novo (`doc`), desfeito (`doc: null`) ou com comprovante anexado (`proof`). */
+/** Acerto novo (`doc`), desfeito (`doc: null`), com comprovante anexado (`proof`) ou confirmado por quem recebe (`confirmed`). */
 export interface PaymentOp {
   kind: 'payment';
   splitId: string;
   id: string;
   doc?: PaymentDoc | null;
   proof?: ProofInfo;
+  confirmed?: true;
   /** O servidor respondeu; `created: false` = nada a acertar, o acerto otimista some. No comprovante, `created` não importa. */
   settled?: { created: boolean };
 }
@@ -89,6 +90,7 @@ function shareDone(op: ShareOp, server: ExpenseDoc | undefined): boolean {
 function paymentDone(op: PaymentOp, server: PaymentDoc | undefined): boolean {
   if (op.doc === null) return !!op.settled && !server;
   if (op.doc) return !!server || (!!op.settled && !op.settled.created);
+  if (op.confirmed) return !server?.pendConf;
   // Comprovante: some quando o servidor já tem um, ou se o acerto deixou de existir.
   return !!server?.proof || (!!op.settled && !server);
 }
@@ -132,6 +134,7 @@ export function applyPaymentOps(splitId: string, payments: readonly PaymentDoc[]
     if (o.doc === null) byId.delete(o.id);
     else if (o.doc) byId.set(o.id, o.doc);
     else if (server && o.proof) byId.set(o.id, { ...server, proof: o.proof });
+    else if (server && o.confirmed) byId.set(o.id, { ...server, pendConf: false });
   }
   return [...byId.values()];
 }

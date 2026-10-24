@@ -15,7 +15,7 @@ Valores são sempre **inteiros em centavos**; só a tela formata em R$. Saldo nu
 **Existem dois jeitos de quitar, e os dois coexistem:**
 
 1. **Parte de uma despesa** (`paid[pessoa]` = centavos pagos, igual à parte no momento em que foi marcada): feito em Minha visão ou no detalhe da despesa. Tira aquela parte da dívida.
-2. **Pagamento de acerto** (registro em `payments`): feito nos cartões da aba Saldo. Abate um valor entre duas pessoas sem apontar despesa.
+2. **Pagamento de acerto** (registro em `payments`): feito nos cartões por pessoa da Minha visão (o saldo do par de uma vez). Abate um valor entre duas pessoas sem apontar despesa.
 
 **Cálculo (`shares` e `ledger` no Main):**
 
@@ -25,7 +25,7 @@ Valores são sempre **inteiros em centavos**; só a tela formata em R$. Saldo nu
    - Valor exato: cada um informa o seu; só vale salvar se a soma bater com o total.
    - Por itens: cada item é dividido entre quem consumiu, no modo do item; o que sobra (total menos itens) vai para o "Resto da compra", no modo do resto.
 2. Dívida bruta `P[a][b]`: soma, nas despesas pagas por `b`, de `parte[a] − paid[a]` (o que falta de cada parte); menos os pagamentos de acerto de `a` para `b`. Se `paid[a]` passar da parte (a despesa foi editada para menos), o excedente vira crédito: entra em `P[b][a]`.
-3. Dívida líquida do par `M[a][b] = max(0, P[a][b] − P[b][a])`: é o que aparece nos cartões da aba Saldo.
+3. Dívida líquida do par `M[a][b] = max(0, P[a][b] − P[b][a])`: é o que aparece em cada cartão da Minha visão.
 4. Saldo de cada pessoa `net`: soma do que tem a receber menos o que deve. É o número grande do topo e o de cada cartão.
 5. Sugestão simplificada `sug` (maiores devedores pagam aos maiores credores): usada **apenas** no resumo da tela Finalizar split. Veja Decisões para o motivo.
 

@@ -7,7 +7,9 @@ Cada split tem dois papéis: **admin** (pode haver vários; quem cria é admin) 
 | Lançar despesa | Qualquer participante | Pode lançar despesa paga por outra pessoa (campo "Pago por"). |
 | Editar ou excluir despesa | Quem lançou (`author`) ou admin | Os outros veem "Só X (quem lançou) ou um admin pode editar". Toda edição entra no histórico. |
 | Marcar uma parte de despesa como paga | A própria pessoa, quem pagou a despesa ou admin | Quem pagou nunca tem parte a marcar. |
-| Registrar acerto nos cartões do Saldo | Quem está na linha (deve ou recebe) ou admin | Vale em qualquer cartão, não só no seu. |
+| Registrar acerto nos cartões da Minha visão | Quem está no par (deve ou recebe) ou admin | Admin registra por qualquer pessoa com "Ver como". |
+| Confirmar acerto ou "Não recebi" | Quem recebe ou admin | Acerto registrado por quem recebe já nasce confirmado. |
+| Ver a Minha visão de outra pessoa ("Ver como") | Só admin | Os outros só veem os pares com eles. |
 | Desfazer acerto registrado | As duas pessoas do acerto ou admin |  |
 | Anexar comprovante depois | As duas pessoas do pagamento (na parte de despesa, também admin) | Só enquanto não houver comprovante. |
 | Convidar, promover, tirar admin, remover | Só admin. "Tornar admin" só aparece para quem já entrou (escolheu o nome) | Membro vê a aba Pessoas com cadeado e o texto "fale com…" (abaixo). Admin age sobre os outros; sobre si mesmo, ver "Deixar de ser admin". |

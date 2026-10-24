@@ -1,4 +1,4 @@
-/* Fase 6: Saldo, Minha visão, pagamentos e comprovantes (layout de reference/design/Main.dc.html). */
+/* Fase 6: Minha visão, pagamentos e comprovantes (layout de reference/design/Main.dc.html). */
 
 /* Seu saldo: o número troca com um fade curto subindo 4 px (spec 06). */
 .flashA .num {
@@ -32,9 +32,6 @@
   border-radius: 18px;
   box-shadow: var(--shadow);
   overflow: hidden;
-}
-.pcard.me {
-  background: var(--me-soft);
 }
 .pchead {
   display: flex;
@@ -130,36 +127,100 @@
   border-top: 1px solid var(--line);
 }
 
-/* Minha visão */
-.stats3 {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+/* Minha visão: ações do cartão, acertos para conferir, partes e "Ver como" */
+.pcard.zero {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--line);
 }
-.stat {
-  background: var(--surface);
-  border-radius: 16px;
-  box-shadow: var(--shadow);
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
+.pcard.zero .pchead .av {
+  opacity: 0.7;
 }
-.stat .v {
-  font: 800 16px 'Figtree', sans-serif;
-  font-variant-numeric: tabular-nums;
-}
-.stat .lbl {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font: 800 12px 'Figtree', sans-serif;
+.pcard.zero .pchead .ttl {
   color: var(--muted);
 }
-.row2 .acts.split {
-  justify-content: space-between;
-  row-gap: 6px;
+.zerotag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px 3px 8px;
+  border-radius: 999px;
+  background: var(--zero-soft);
+  color: var(--zero);
+  font: 800 12.5px 'Figtree', sans-serif;
+}
+.pcmain {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 14px 12px;
+}
+.pcpend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 14px 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+.pcpend .cap {
+  flex: 1 1 160px;
+  color: var(--text);
+  font-weight: 700;
+}
+.pcentry .pcact {
+  gap: 8px;
+}
+.viewas {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.viewas-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.viewas-field .cap {
+  font-weight: 700;
+  flex: none;
+}
+.viewas-sel {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+.viewas-sel .ic {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+.viewas-field select {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  border: 0;
+  border-radius: 12px;
+  padding: 0 36px 0 12px;
+  appearance: none;
+  -webkit-appearance: none;
+  color: var(--text);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1.5px var(--line);
+  font-weight: 700;
+}
+.viewas-field select:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+.banner.viewbanner {
+  margin: 0;
 }
 .actgrp {
   display: flex;

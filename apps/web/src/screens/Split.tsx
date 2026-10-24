@@ -13,7 +13,6 @@ import { setTheme, useTheme } from '../theme/theme.ts';
 import { useLang } from '../i18n/index.ts';
 import { dayMonth } from '../lib/dates.ts';
 import { FinalizeSheet } from './FinalizeSheet.tsx';
-import { BalanceTab } from './BalanceTab.tsx';
 import { appBase, copyText, useWho } from './common.tsx';
 import { MyViewTab } from './MyViewTab.tsx';
 import { usePayFlow } from './PaySheet.tsx';
@@ -26,7 +25,6 @@ import { useReasonText } from './reasons.ts';
 const TABS: Array<{ key: string; path: string; icon: IconName; label: string }> = [
   { key: 'tx', path: '', icon: 'receipt', label: 'split.tabs.tx' },
   { key: 'eu', path: '/eu', icon: 'user', label: 'split.tabs.me' },
-  { key: 'saldo', path: '/saldo', icon: 'swap', label: 'split.tabs.sal' },
   { key: 'pessoas', path: '/pessoas', icon: 'people', label: 'split.tabs.ppl' },
 ];
 
@@ -79,13 +77,13 @@ function useStatus(split: SplitDoc | null): [SplitDoc | null, (status: 'open' | 
   return [split && override ? { ...split, ...override } : split, set];
 }
 
-/** Saldo e Minha visão, com as folhas de pagamento e de comprovante. */
-function MoneyTab({ tab, split, me, expenses, payments }: { tab: 'saldo' | 'eu'; split: SplitDoc; me: Member; expenses: readonly ExpenseDoc[]; payments: readonly PaymentDoc[] }) {
+/** Minha visão, com as folhas de pagamento e de comprovante. */
+function MoneyTab({ split, me, expenses, payments }: { split: SplitDoc; me: Member; expenses: readonly ExpenseDoc[]; payments: readonly PaymentDoc[] }) {
   const who = useWho(split, me);
   const { flow, sheets } = usePayFlow(split, me, who);
   return (
     <>
-      {tab === 'saldo' ? <BalanceTab split={split} me={me} expenses={expenses} payments={payments} flow={flow} /> : <MyViewTab split={split} me={me} expenses={expenses} payments={payments} flow={flow} />}
+      <MyViewTab split={split} me={me} expenses={expenses} payments={payments} flow={flow} />
       {sheets}
     </>
   );
@@ -125,6 +123,8 @@ export default function Split() {
   const current = TABS.find((x) => x.path === (tab ? `/${tab}` : '')) ?? TABS[0]!;
 
   if (result.status === 'denied' && !pending) return <Navigate to="/" replace />;
+  // A aba Saldo virou parte da Minha visão (links antigos e avisos já lidos).
+  if (tab === 'saldo') return <Navigate to={`/s/${id}/eu`} replace />;
 
   const me = view && uid ? myMember(view, uid) : null;
   if (view && uid && !me && !pending) return <Navigate to="/" replace />;
@@ -173,7 +173,7 @@ export default function Split() {
     void run({
       apply: () => {
         const undo = setStatus(status);
-        if (status === 'done') void navigate(`/s/${id}/saldo`, { replace: true });
+        if (status === 'done') void navigate(`/s/${id}/eu`, { replace: true });
         return undo;
       },
       commit: async () => {
@@ -282,7 +282,7 @@ export default function Split() {
     ) : current.key === 'tx' ? (
       txTab
     ) : (
-      <MoneyTab tab={current.key === 'saldo' ? 'saldo' : 'eu'} split={view} me={me} expenses={money.expenses} payments={money.payments} />
+      <MoneyTab split={view} me={me} expenses={money.expenses} payments={money.payments} />
     );
 
   const sheets = (

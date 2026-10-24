@@ -242,8 +242,16 @@ Decisão: 10 ✅ (Resend, agrupado em 10 min, resumo + botão, sem foto; **e-mai
   - App: "Finalizar split" e "Reabrir" no menu (desabilitados para membro, com "só admin"), folha com o resumo `sug` e "Finalizar mesmo assim", aviso "Finalizado em …" com Reabrir (admin), tudo otimista. Home e barra lateral mostram "Finalizado em …". "Sua conta" entrou no menu do split, como a spec pede.
   - Desktop: o layout de duas colunas do `Desktop.dc.html` chegou a ser feito e foi **descartado** a pedido do Lucas (muita informação na tela, duas UIs para aprender e manter). No desktop vale a mesma UI do celular, numa coluna centralizada de até 560 px; um e2e confere que em 1440 px é a mesma tela, sem rolagem horizontal.
   - Acessibilidade: e2e com axe nas telas do produto (home, abas do split, notificações, conta), nos dois temas e nas duas larguras, sem violações sérias. `prefers-reduced-motion` desliga as animações novas.
-  - A prévia de Saldo entrou na tela Paleta (`dev/SaldoPreview.tsx`).
+  - A prévia de Saldo entrou na tela Paleta (hoje `dev/MyViewPreview.tsx`, a prévia da Minha visão).
   - Textos novos fora do protótipo (revisar): "Os comprovantes deste split são apagados ao finalizar."
+
+### Ajustes finos depois da Fase 8 (24/10/2026)
+- **Primeira leva:** sem realce de toque no Android, tagline nova, linha paga fica no lugar.
+- **Segunda leva:**
+  - Último admin pode sair (com saldo zero) ou deixar de ser admin; o papel passa para quem entrou primeiro entre os que já escolheram o nome, ou para a próxima pessoa que entrar (decisão 4 revista).
+  - Chave Pix no perfil (uma por pessoa, convidado também), vista só por quem divide um split com a pessoa; "Copiar Pix" gera o Pix copia e cola com o valor.
+  - Ícone ou emoji em despesas e itens (seletor com abas Ícones e Emoji, busca, "Remover" volta ao automático pela tag).
+  - **Aba Saldo saiu; a Minha visão virou o lugar do dinheiro** (spec 06): seu saldo, um cartão por pessoa com o saldo do par (devo / me deve / quitado), "Marcar como pago" do par num acerto só, Copiar Pix, "Recebi", e o cartão aberto lista despesas e acertos. Acertos agora têm confirmação de quem recebe (Confirmar / "Não recebi", Functions `confirmPayment` e `disputePayment`). Admin vê como qualquer pessoa ("Ver como").
 
 ## 5. Ações que só o Lucas pode fazer
 

@@ -44,7 +44,7 @@ type T = (key: string, opts?: Record<string, unknown>) => string;
 export interface NotificationView {
   title: string;
   sub: string;
-  /** Para onde o item leva: o detalhe da despesa (com destaque) ou o Saldo do split. */
+  /** Para onde o item leva: o detalhe da despesa (com destaque) ou a Minha visão do split. */
   to: string;
 }
 
@@ -58,7 +58,7 @@ export function viewOf(n: NotificationDoc, t: T, name: (id: string | null) => st
   const what = n.expName ?? t('notif.settle');
   const proof = n.hasProof ? t('notif.withProof') : t('notif.noProof');
   const state = n.status === 'confirmed' ? t('notif.confirmed') : n.status === 'disputed' ? t('notif.youDisputed') : '';
-  const to = n.expId ? `/s/${n.splitId}/despesa/${n.expId}?n=${n.id}` : `/s/${n.splitId}/saldo`;
+  const to = n.expId ? `/s/${n.splitId}/despesa/${n.expId}?n=${n.id}` : `/s/${n.splitId}/eu`;
   switch (n.kind) {
     case 'paid':
       return { title: t('notif.paid', { name: from, amount }), sub: `${what} · ${n.splitName} · ${proof}${state}`, to };
@@ -72,7 +72,7 @@ export function viewOf(n: NotificationDoc, t: T, name: (id: string | null) => st
           : iReceived
             ? t('notif.adminPaid', { name: from, who: name(n.payFrom), amount })
             : t('notif.adminReceived', { name: from, who: name(n.payTo), amount });
-      return { title, sub: `${t('notif.settle')} · ${n.splitName}`, to };
+      return { title, sub: `${t('notif.settle')} · ${n.splitName}${state}`, to };
     }
     case 'proof':
       return { title: t('notif.proof', { name: from }), sub: `${what} · ${n.splitName} · ${amount}`, to };

@@ -1,59 +1,69 @@
-import type { ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Badge, Button, Icon, type Tone } from '../components/index.ts';
-import { myView, type ShareState } from '../data/balance.ts';
-import type { ExpenseDoc, Member, PaymentDoc, SplitDoc } from '../data/model.ts';
+import { Avatar, avatarColor, Button, Icon } from '../components/index.ts';
+import { pairsView, type PairCard, type PairEntry } from '../data/balance.ts';
+import { canSeeProof, membersInOrder, type ExpenseDoc, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
 import { useLang } from '../i18n/index.ts';
-import { dateOf, dayMonth } from '../lib/dates.ts';
+import { dateOf, dayMonth, shortDayTime } from '../lib/dates.ts';
 import { formatCents } from '../lib/money.ts';
-import { useWhen } from './BalanceTab.tsx';
-import { EmptyArt, TagIcon } from './common.tsx';
+import { EmptyArt, useBalanceView, useWho } from './common.tsx';
+import { EntryIconView } from './EntryIcon.tsx';
 import type { usePayFlow } from './PaySheet.tsx';
+import { CopyPixButton } from './Pix.tsx';
 
 type Flow = ReturnType<typeof usePayFlow>['flow'];
 
-interface RowProps {
-  tags: readonly string[];
-  name: string;
-  sub: string;
-  amount: string;
-  amountTone: Tone;
-  badge: { tone: Tone; icon: 'clock' | 'check'; text: string };
-  actions?: ReactNode;
-}
-
-function Row({ tags, name, sub, amount, amountTone, badge, actions }: RowProps) {
-  return (
-    <div className="row2">
-      <div className="top">
-        <TagIcon tags={tags} />
-        <span className="mid">
-          <span className="ttl">{name}</span>
-          <span className="cap trunc">{sub}</span>
-        </span>
-        <span className={`amt strong ${amountTone}`} style={{ fontSize: 15.5 }}>
-          {amount}
-        </span>
-      </div>
-      <div className="acts split">
-        <Badge tone={badge.tone} icon={badge.icon}>
-          {badge.text}
-        </Badge>
-        <span className="actgrp">{actions}</span>
-      </div>
-    </div>
-  );
-}
-
-/** Aba Minha visão: Devo / Já paguei / A receber; cada linha fica no lugar e troca o selo (spec 06). */
-export function MyViewTab({ split, me, expenses, payments, flow }: { split: SplitDoc; me: Member; expenses: readonly ExpenseDoc[]; payments: readonly PaymentDoc[]; flow: Flow }) {
+/** "Resolvido · agora": hora do acerto (há menos de 1 minuto, "agora"). */
+function useWhen() {
   const { t } = useTranslation();
   const lang = useLang();
+  return (d: Date | null) => (!d || Date.now() - d.getTime() < 60_000 ? t('pay.now') : shortDayTime(d, lang));
+}
+
+/** Troca discreta do número: alterna a classe para o fade de 4 px rodar de novo (spec 06). */
+function useFlash(value: number): string {
+  const [cls, setCls] = useState('');
+  const last = useRef(value);
+  useEffect(() => {
+    if (last.current === value) return;
+    last.current = value;
+    setCls((c) => (c === 'flashA' ? 'flashB' : 'flashA'));
+  }, [value]);
+  return cls;
+}
+
+interface Props {
+  split: SplitDoc;
+  me: Member;
+  expenses: readonly ExpenseDoc[];
+  payments: readonly PaymentDoc[];
+  flow: Flow;
+}
+
+/**
+ * Minha visão (spec 06): seu saldo e um cartão por pessoa com o saldo do par. Devo: Copiar Pix
+ * e Marcar como pago (o saldo do par, num acerto); me devem: Recebi; quitado, neutro. Aberto, o
+ * cartão lista as despesas e os acertos que formam o saldo. Admin vê como qualquer pessoa.
+ */
+export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
+  const { t } = useTranslation();
+  const lang = useLang();
+  const who = useWho(split, me);
   const when = useWhen();
-  const fmt = (c: number) => formatCents(c, lang);
+  const view = useBalanceView();
+  const [chosen, setChosen] = useState(me.id);
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const viewer = me.admin && split.members[chosen] ? chosen : me.id;
+  const self = viewer === me.id;
+  const v = pairsView(split, expenses, payments, viewer);
+  const flash = useFlash(v.mine);
   const isOpen = split.status === 'open';
+  const fmt = (c: number) => formatCents(c, lang);
+  const signed = (c: number) => formatCents(c, lang, { signed: true });
   const nameOf = (id: string) => split.members[id]?.name ?? '?';
-  const day = (e: ExpenseDoc) => dayMonth(dateOf(e.date), lang);
+  const colorOf = (id: string) => avatarColor(split.members[id]?.joinOrder ?? 0);
+  // "você devia…" só quando é a própria pessoa e ela prefere "Você" ao nome.
+  const asYou = self && who(me.id) !== nameOf(me.id);
 
   if (expenses.length === 0 && payments.length === 0) {
     return (
@@ -66,150 +76,234 @@ export function MyViewTab({ split, me, expenses, payments, flow }: { split: Spli
     );
   }
 
-  const v = myView(split, expenses, payments, me.id);
-  const badge = (s: ShareState, recv = false): RowProps['badge'] =>
-    s === 'pend'
-      ? { tone: recv ? 'pos' : 'neg', icon: 'clock', text: recv ? t('my.bRecv') : t('my.bPend') }
-      : s === 'via'
-        ? { tone: 'zero', icon: 'check', text: t('my.bVia') }
-        : { tone: 'zero', icon: 'check', text: recv ? t('my.bRecvd') : t('my.bPaid') };
+  const debtText = (debtor: string, creditor: string) =>
+    asYou ? (debtor === viewer ? t('my.eOwe', { name: nameOf(creditor) }) : t('my.eOwed', { name: nameOf(debtor) })) : t('my.eGen', { from: nameOf(debtor), to: nameOf(creditor) });
+  const paidText = (from: string, to: string) =>
+    asYou ? (from === viewer ? t('my.ePaidOut', { name: nameOf(to) }) : t('my.ePaidIn', { name: nameOf(from) })) : t('my.ePaidGen', { from: nameOf(from), to: nameOf(to) });
+  const proofNote = (proof: { path: string | null } | null | undefined) => (proof ? (proof.path ? t('my.withProof') : t('my.expired')) : '');
 
-  const sendProof = (onClick: () => void) => (
-    <Button size="sm" variant="ghost" icon={<Icon name="camera" size="sm" />} onClick={onClick}>
-      {t('pay.sendProof')}
-    </Button>
-  );
-  const act = (label: string, primary: boolean, onClick: () => void) => (
-    <Button size="sm" variant={primary ? 'primary' : 'secondary'} onClick={onClick}>
+  const caption = (c: PairCard) => {
+    const base =
+      c.status === 'zero' ? t('my.cZero') : self ? (c.status === 'owe' ? t('my.cOwe') : t('my.cOwed')) : c.status === 'owe' ? t('my.cOweOf', { name: nameOf(viewer) }) : t('my.cOwedOf', { name: nameOf(viewer) });
+    return c.toConfirm ? `${base} · ${t('my.toConfirm', { count: c.toConfirm })}` : base;
+  };
+
+  const small = (label: string, onClick: () => void, variant: 'primary' | 'secondary' | 'ghost' = 'secondary') => (
+    <Button size="sm" variant={variant} onClick={onClick}>
       {label}
     </Button>
   );
 
-  const pendingOwe = v.owe.filter((i) => i.kind === 'share' && i.state === 'pend').length;
-  const sections = [
-    {
-      key: 'owe',
-      title: t('my.oweT'),
-      count: pendingOwe ? t('my.pending', { count: pendingOwe }) : v.owe.length ? t('my.allPaid') : '',
-      rows: v.owe.map((i) => {
-        if (i.kind === 'payment') {
-          const p: PaymentDoc = i.payment;
-          return (
-            <Row
-              key={`p-${p.id}`}
-              tags={['other']}
-              name={t('my.settle')}
-              sub={t('my.settleTo', { name: nameOf(p.to), when: when(p.when) })}
-              amount={formatCents(-p.amount, lang, { signed: true })}
-              amountTone="zero"
-              badge={badge('paid')}
-              actions={
-                isOpen && (
-                  <>
-                    {!p.proof && sendProof(() => flow.attachPayment(p))}
-                    {act(t('common.undo'), false, () => flow.undoPayment(p))}
-                  </>
-                )
-              }
-            />
-          );
-        }
-        const e = i.expense;
-        return (
-          <Row
-            key={`o-${e.id}`}
-            tags={e.tags}
-            name={e.name}
-            sub={t('my.to', { name: nameOf(e.payer), date: day(e) })}
-            amount={formatCents(-(i.state === 'pend' ? i.due : i.share), lang, { signed: true })}
-            amountTone={i.state === 'pend' ? 'neg' : 'zero'}
-            badge={badge(i.state)}
-            actions={
-              isOpen &&
-              i.state !== 'via' &&
-              (i.state === 'paid' ? (
-                <>
-                  {!e.proof[me.id] && sendProof(() => flow.attachShare(e, me.id))}
-                  {act(t('common.undo'), false, () => flow.unmark(e, me.id))}
-                </>
-              ) : (
-                act(t('pay.markPaid'), true, () => flow.markShare(e, me.id))
-              ))
-            }
-          />
-        );
-      }),
-    },
-    {
-      key: 'recv',
-      title: t('my.recvT'),
-      count: v.recv.length ? String(v.recv.length) : '',
-      rows: v.recv.map((i) => (
-        <Row
-          key={`r-${i.expense.id}-${i.memberId}`}
-          tags={i.expense.tags}
-          name={i.expense.name}
-          sub={t('my.from', { name: nameOf(i.memberId), date: day(i.expense) })}
-          amount={formatCents(i.state === 'pend' ? i.due : i.share, lang, { signed: true })}
-          amountTone={i.state === 'pend' ? 'pos' : 'zero'}
-          badge={badge(i.state, true)}
-          actions={
-            isOpen &&
-            i.state !== 'via' &&
-            (i.state === 'paid' ? (
-              <>
-                {!i.expense.proof[i.memberId] && sendProof(() => flow.attachShare(i.expense, i.memberId))}
-                {act(t('common.undo'), false, () => flow.unmark(i.expense, i.memberId))}
-              </>
-            ) : (
-              act(t('pay.gotIt'), false, () => flow.markShare(i.expense, i.memberId))
-            ))
-          }
-        />
-      )),
-    },
-  ];
+  /** Linha resolvida (cinza, tracejada): câmera para ver ou enviar comprovante, e Desfazer. */
+  const resolved = (key: string, icon: ReactNode, title: string, note: string, amount: number, camera: { view: boolean; onClick: () => void } | null, onUndo: (() => void) | null, acts?: ReactNode) => (
+    <div key={key} className="pcentry done">
+      <div className="pcline done">
+        {icon}
+        <span className="mid">
+          <span className="ttl">{title}</span>
+          <span className="cap" style={{ whiteSpace: 'normal' }}>
+            {note}
+          </span>
+        </span>
+        <span className="side">
+          <span className="amt strong">{fmt(amount)}</span>
+          <span className="sideacts">
+            {camera && (
+              <button type="button" className="iconbtn" aria-label={camera.view ? t('pay.seeProof') : t('pay.sendProof')} title={camera.view ? t('pay.seeProof') : t('pay.sendProof')} onClick={camera.onClick}>
+                <Icon name="camera" size="sm" />
+              </button>
+            )}
+            {onUndo && (
+              <button type="button" className="linkbtn" style={{ fontSize: 13 }} onClick={onUndo}>
+                {t('common.undo')}
+              </button>
+            )}
+          </span>
+        </span>
+      </div>
+      {acts && <div className="pcact">{acts}</div>}
+    </div>
+  );
+
+  const entry = (c: PairCard, x: PairEntry) => {
+    if (x.kind === 'payment') {
+      // Acerto: só as duas pessoas anexam; as duas ou admin desfazem (spec 04).
+      const p = x.payment;
+      const party = p.from === me.id || p.to === me.id;
+      const camera = p.proof?.path ? { view: true, onClick: () => flow.viewProof({ proof: p.proof!, from: p.from, to: p.to, amount: p.amount, what: t('my.settle') }) } : isOpen && !p.proof && party ? { view: false, onClick: () => flow.attachPayment(p) } : null;
+      const waiting = p.pendConf ? ` · ${t('my.waiting', { name: nameOf(p.to) })}` : '';
+      const icon = (
+        <span className="dir zero" aria-hidden="true">
+          <Icon name="swap" size="sm" />
+        </span>
+      );
+      return resolved(`p-${p.id}`, icon, t('my.settle'), `${paidText(p.from, p.to)} · ${when(p.when)}${proofNote(p.proof)}${waiting}`, p.amount, camera, isOpen ? () => flow.undoPayment(p) : null);
+    }
+    const e = x.expense;
+    const icon = <EntryIconView icon={e.icon} fallback={{ tags: e.tags }} size="sm" />;
+    const day = dayMonth(dateOf(e.date), lang);
+    if (x.state === 'paid') {
+      // Parte paga: as duas pessoas ou admin desfazem e anexam (spec 04).
+      const proof = e.proof[x.debtor];
+      const camera = proof?.path && canSeeProof(split, me, x.debtor, x.creditor) ? { view: true, onClick: () => flow.viewProof({ proof, from: x.debtor, to: x.creditor, amount: x.share, what: e.name }) } : isOpen && !proof ? { view: false, onClick: () => flow.attachShare(e, x.debtor) } : null;
+      const wait = x.pending ? ` · ${x.creditor === viewer ? t('my.marked', { name: nameOf(x.debtor) }) : t('my.waiting', { name: nameOf(x.creditor) })}` : '';
+      const acts =
+        isOpen && x.pending && x.creditor === viewer ? (
+          <>
+            {small(t('pay.notRecv'), () => flow.dispute(e, x.debtor), 'ghost')}
+            {small(t('pay.confirmShort'), () => flow.confirm(e, x.debtor), 'primary')}
+          </>
+        ) : undefined;
+      return resolved(`s-${e.id}`, icon, e.name, `${paidText(x.debtor, x.creditor)} · ${x.paidAt ? when(x.paidAt) : day}${proofNote(proof)}${wait}`, x.share, camera, isOpen ? () => flow.unmark(e, x.debtor) : null, acts);
+    }
+    const owe = x.debtor === viewer;
+    const tone = x.state === 'offset' ? 'zero' : owe ? 'neg' : 'pos';
+    return (
+      <div key={`s-${e.id}`} className="pcentry">
+        <div className="pcline">
+          {icon}
+          <span className="mid">
+            <span className="ttl">{e.name}</span>
+            <span className="cap" style={{ whiteSpace: 'normal' }}>
+              {debtText(x.debtor, x.creditor)} · {day}
+              {x.state === 'offset' && ` · ${t('my.offset')}`}
+            </span>
+          </span>
+          <span className="side">
+            <span className={`amt strong ${tone}`}>{signed(owe ? -x.due : x.due)}</span>
+          </span>
+        </div>
+        {isOpen && x.state === 'open' && <div className="pcact">{owe ? small(t('pay.markPaid'), () => flow.markShare(e, viewer)) : small(t('pay.gotIt'), () => flow.markShare(e, c.other))}</div>}
+      </div>
+    );
+  };
+
+  const cardOpen = (id: string) => open[id] ?? false;
+  const allOpen = v.cards.every((c) => cardOpen(c.other));
+  const mine = view(v.mine);
+  const balCap = self ? (v.mine > 0 ? t('my.owed') : v.mine < 0 ? t('my.owe') : t('my.square')) : (v.mine > 0 ? t('my.owedOf', { name: nameOf(viewer) }) : v.mine < 0 ? t('my.oweOf', { name: nameOf(viewer) }) : t('my.squareOf', { name: nameOf(viewer) }));
 
   return (
     <div className="content with-tabs" style={{ gap: 18 }}>
-      <div className="stats3">
-        <div className="stat">
-          <span className="lbl">
-            <Icon name="out" size="sm" className="neg" />
-            {t('my.iOwe')}
-          </span>
-          <span className="v neg amt">{fmt(v.totals.owe)}</span>
+      {me.admin && (
+        <div className="viewas">
+          <label className="viewas-field">
+            <span className="cap">{t('my.viewAs')}</span>
+            <span className="viewas-sel">
+              <select value={viewer} onChange={(e) => setChosen(e.target.value)}>
+                {membersInOrder(split).map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.id === me.id ? t('common.you') : m.name}
+                  </option>
+                ))}
+              </select>
+              <Icon name="down" size="sm" />
+            </span>
+          </label>
+          {!self && (
+            <div className="banner viewbanner" role="status">
+              <Icon name="user" size="sm" />
+              <span style={{ flex: 1 }}>{t('my.viewingAs', { name: nameOf(viewer) })}</span>
+              <button type="button" className="linkbtn" onClick={() => setChosen(me.id)}>
+                {t('my.backToYou')}
+              </button>
+            </div>
+          )}
         </div>
-        <div className="stat">
-          <span className="lbl">
-            <Icon name="check" size="sm" className="zero" />
-            {t('my.iPaid')}
+      )}
+
+      <div className="card" style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 8 }} aria-live="polite">
+        <p className="cap" style={{ fontWeight: 700 }}>
+          {self ? t('my.yourBal') : t('my.theirBal', { name: nameOf(viewer) })}
+        </p>
+        <div className={`bigbal ${flash}`}>
+          <span className={`balico ${mine.tone}`} aria-hidden="true">
+            <Icon name={mine.icon} />
           </span>
-          <span className="v zero amt">{fmt(v.totals.paid)}</span>
-        </div>
-        <div className="stat">
-          <span className="lbl">
-            <Icon name="in" size="sm" className="pos" />
-            {t('my.toRecv')}
+          <span>
+            <span className={`num amt ${mine.tone}`}>{v.mine === 0 ? fmt(0) : signed(v.mine)}</span>
+            <span className="balcap" style={{ display: 'block' }}>
+              {balCap}
+            </span>
           </span>
-          <span className="v pos amt">{fmt(v.totals.recv)}</span>
         </div>
       </div>
-      {sections.map((s) => (
-        <section key={s.key}>
-          <div className="sec-h">
-            <h2 className="h4">{s.title}</h2>
-            <span className="cap amt">{s.count}</span>
+
+      <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div className="sec-h" style={{ paddingBottom: 0, alignItems: 'center' }}>
+          <h2 className="h4">{t('my.byPerson')}</h2>
+          <button type="button" className="linkbtn" onClick={() => setOpen(Object.fromEntries(v.cards.map((c) => [c.other, !allOpen])))}>
+            {allOpen ? t('my.collapseAll') : t('my.expandAll')}
+          </button>
+        </div>
+        {v.cards.every((c) => c.status === 'zero') && (
+          <div className="info">
+            <Icon name="check" />
+            <span>{self ? t('my.allSettled') : t('my.allSettledOf', { name: nameOf(viewer) })}</span>
           </div>
-          {s.rows.length === 0 ? (
-            <p className="cap" style={{ padding: '0 4px' }}>
-              {t('my.nothing')}
-            </p>
-          ) : (
-            <div className="list">{s.rows}</div>
-          )}
-        </section>
-      ))}
+        )}
+        {v.cards.map((c) => {
+          const o = c.other;
+          const opened = cardOpen(o);
+          const tone = c.status === 'owe' ? 'neg' : c.status === 'owed' ? 'pos' : 'zero';
+          // Acertos que a pessoa registrou para quem está vendo: Confirmar ou "Não recebi".
+          const toCheck = c.entries.flatMap((x) => (x.kind === 'payment' && !x.out && x.payment.pendConf ? [x.payment] : []));
+          return (
+            <div key={o} className={`pcard ${c.status === 'zero' ? 'zero' : ''}`}>
+              <button type="button" className="pchead" aria-expanded={opened} onClick={() => setOpen((s) => ({ ...s, [o]: !opened }))}>
+                <Avatar name={nameOf(o)} color={colorOf(o)} />
+                <span className="mid">
+                  <span className="ttl">{who(o)}</span>
+                  <span className="cap">{caption(c)}</span>
+                </span>
+                <span className="right">
+                  {c.status === 'zero' ? (
+                    <span className="zerotag">
+                      <Icon name="check" size="sm" />
+                      {t('balance.settled')}
+                    </span>
+                  ) : (
+                    <span className={`amt strong ${tone}`}>{fmt(c.amount)}</span>
+                  )}
+                </span>
+                <Icon name="down" size="sm" className={opened ? 'up' : ''} />
+              </button>
+              {isOpen && c.status !== 'zero' && (
+                <div className="pcmain">
+                  {c.status === 'owe' ? (
+                    <>
+                      {self && <CopyPixButton split={split} to={o} amount={c.amount} />}
+                      <Button size="sm" icon={<Icon name="check" size="sm" />} onClick={() => flow.settle(viewer, o, c.amount)}>
+                        {t('pay.markPaid')}
+                      </Button>
+                    </>
+                  ) : (
+                    <Button size="sm" variant="secondary" icon={<Icon name="check" size="sm" />} onClick={() => flow.settle(o, viewer, c.amount)}>
+                      {t('pay.gotIt')}
+                    </Button>
+                  )}
+                </div>
+              )}
+              {isOpen &&
+                toCheck.map((p) => (
+                  <div key={p.id} className="pcpend">
+                    <span className="cap">{t('my.pendPay', { name: nameOf(p.from), amount: fmt(p.amount) })}</span>
+                    <span className="actgrp">
+                      {small(t('pay.notRecv'), () => flow.disputePayment(p), 'ghost')}
+                      {small(t('pay.confirmShort'), () => flow.confirmPayment(p), 'primary')}
+                    </span>
+                  </div>
+                ))}
+              {opened && (
+                <div className="pcbody">
+                  {c.entries.map((x) => entry(c, x))}
+                  {c.entries.length === 0 && <p className="cap pcempty">{t('my.noEntries')}</p>}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </section>
     </div>
   );
 }

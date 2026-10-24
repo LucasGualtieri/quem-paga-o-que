@@ -119,6 +119,15 @@ describe('acertos', () => {
     prunePaymentOps('s1', []);
     expect(current()).toHaveLength(0);
   });
+
+  it('Confirmar um acerto tira o "para conferir" na hora; sai quando o servidor confirmou', () => {
+    startPayOp({ kind: 'payment', splitId: 's1', id: 'p1', confirmed: true });
+    expect(applyPaymentOps('s1', [pay({ pendConf: true })], current())[0]!.pendConf).toBe(false);
+    prunePaymentOps('s1', [pay({ pendConf: true })]);
+    expect(current()).toHaveLength(1);
+    prunePaymentOps('s1', [pay({ pendConf: false })]);
+    expect(current()).toHaveLength(0);
+  });
 });
 
 describe('comprovante da despesa', () => {

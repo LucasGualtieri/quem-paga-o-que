@@ -194,6 +194,8 @@ export interface PaymentDoc {
   by: MemberId;
   when: Date | null;
   proof: ProofInfo | null;
+  /** Registrado por quem pagou: espera quem recebe confirmar (ou "Não recebi"). */
+  pendConf?: boolean;
 }
 
 /** Despesas que contam (as excluídas ficam de fora). */

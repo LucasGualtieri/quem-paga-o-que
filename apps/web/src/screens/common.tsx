@@ -72,19 +72,6 @@ export function appBase(): string {
   return location.origin + location.pathname;
 }
 
-const TAG_ICON = { food: 'food', drinks: 'drink', transport: 'car', stay: 'home' } as const;
-
-/** Ícone da despesa: o da primeira tag (diversão e outros usam o recibo). */
-export function TagIcon({ tags, size }: { tags: readonly string[]; size?: 'lg' }) {
-  const first = tags[0] ?? 'other';
-  const name = (TAG_ICON as Record<string, IconName>)[first] ?? 'receipt';
-  return (
-    <span className={size ? 'tagico lg' : 'tagico'} aria-hidden="true">
-      <Icon name={name} />
-    </span>
-  );
-}
-
 /** Como o nome de alguém aparece nas listas: "Você" ou o nome (preferência de Sua conta). */
 export function useWho(split: SplitDoc, me: Member) {
   const { t } = useTranslation();

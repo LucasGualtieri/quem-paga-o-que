@@ -24,20 +24,47 @@ async function setup(browser: Parameters<typeof guest>[0]) {
 
 const tab = (page: Page, name: string) => page.getByRole('navigation', { name: 'Seções do split' }).getByRole('link', { name });
 
-test('Beatriz marca pago e envia comprovante → Lucas confere a foto e confirma', async ({ browser }) => {
+/** Cartão da pessoa na Minha visão, aberto. */
+async function openCard(page: Page, name: string) {
+  await tab(page, 'Minha visão').click();
+  const card = page.locator('.pcard', { has: page.locator('.pchead .ttl', { hasText: name }) });
+  await card.locator('.pchead').click();
+  return card;
+}
+
+/** Beatriz marca a parte dela da Pizza pelo cartão do Lucas. */
+async function payPizzaShare(bia: Page) {
+  const card = await openCard(bia, 'Lucas');
+  const entry = card.locator('.pcentry', { hasText: 'Pizza' });
+  await entry.getByRole('button', { name: 'Marcar como pago' }).click();
+  await expect(entry).toHaveClass(/done/);
+  return { card, entry };
+}
+
+test('Beatriz marca a parte paga e envia comprovante → Lucas confere a foto e confirma', async ({ browser }) => {
   const { lucas, bia } = await setup(browser);
 
   await tab(bia, 'Minha visão').click();
-  const row = bia.locator('.row2', { hasText: 'Pizza' });
-  await expect(row).toContainText('Pendente');
-  await expect(row).toContainText('−R$ 30,00');
-  await shot(bia, 'minha-visao-pendente');
-  await row.getByRole('button', { name: 'Marcar como pago' }).click();
-  // Otimista: a linha fica no lugar e troca o selo na hora.
-  await expect(row).toContainText('Pago');
+  await expect(bia.locator('.bigbal')).toContainText('−R$ 30,00');
+  const card = bia.locator('.pcard', { has: bia.locator('.pchead .ttl', { hasText: 'Lucas' }) });
+  await expect(card.locator('.pchead')).toContainText('Você deve');
+  await expect(card.locator('.pchead')).toContainText('R$ 30,00');
+  await expect(bia.locator('.pcard.zero')).toContainText('Catarina');
+  await shot(bia, 'minha-visao');
+  await card.locator('.pchead').click();
+  const entry = card.locator('.pcentry', { hasText: 'Pizza' });
+  await expect(entry).toContainText('você devia para Lucas');
+  await expect(entry).toContainText('−R$ 30,00');
+  await shot(bia, 'minha-visao-aberta');
+  await entry.getByRole('button', { name: 'Marcar como pago' }).click();
+  // Otimista: a parte vira linha resolvida na hora e o par zera.
+  await expect(entry).toHaveClass(/done/);
+  await expect(entry).toContainText('você pagou para Lucas');
+  await expect(entry).toContainText('esperando Lucas confirmar');
+  await expect(card.locator('.pchead')).toContainText('Tudo certo');
   await expect(toast(bia)).toContainText('Pagamento registrado');
 
-  await row.getByRole('button', { name: 'Enviar comprovante' }).click();
+  await entry.getByRole('button', { name: 'Enviar comprovante' }).click();
   const sheet = bia.getByRole('dialog', { name: 'Enviar comprovante' });
   await expect(sheet).toContainText('Você pagou R$ 30,00 para Lucas');
   await expect(sheet).toContainText('Comprovantes ficam guardados por 15 dias.');
@@ -47,7 +74,7 @@ test('Beatriz marca pago e envia comprovante → Lucas confere a foto e confirma
   await shot(bia, 'folha-comprovante');
   await sheet.getByRole('button', { name: 'Enviar comprovante' }).click();
   await expect(toast(bia)).toContainText('Comprovante enviado');
-  await expect(row.getByRole('button', { name: 'Enviar comprovante' })).toHaveCount(0);
+  await expect(entry.getByRole('button', { name: 'Enviar comprovante' })).toHaveCount(0);
 
   // Lucas: a pendência vem do estado (pendConf), em qualquer caminho.
   const pizza = lucas.locator('.txrow', { hasText: 'Pizza' });
@@ -67,58 +94,126 @@ test('Beatriz marca pago e envia comprovante → Lucas confere a foto e confirma
   await expect(lucas.locator('.ev')).toContainText(['Beatriz marcou que pagou', 'Beatriz enviou um comprovante', 'Lucas confirmou que recebeu de Beatriz'], { timeout: 15_000 });
   await expect(share).toContainText('Pago · comprovante');
   await shot(lucas, 'detalhe-confirmado');
+  // Para a Beatriz, a espera some.
+  await expect(entry).not.toContainText('esperando', { timeout: 15_000 });
 });
 
 test('"Não recebi" desfaz a parte paga dos dois lados', async ({ browser }) => {
   const { lucas, bia } = await setup(browser);
-  await tab(bia, 'Minha visão').click();
-  const row = bia.locator('.row2', { hasText: 'Pizza' });
-  await row.getByRole('button', { name: 'Marcar como pago' }).click();
-  await expect(row).toContainText('Pago');
+  const { card, entry } = await payPizzaShare(bia);
 
   await lucas.locator('.txrow', { hasText: 'Pizza' }).click();
   const share = lucas.locator('.row2', { hasText: 'Beatriz' });
   await share.getByRole('button', { name: 'Não recebi' }).click();
   await expect(share).toContainText('Pendente');
   await expect(toast(lucas)).toContainText('Avisamos Beatriz que o pagamento não chegou');
-  // Do lado da Beatriz, a linha volta a pendente.
-  await expect(row).toContainText('Pendente');
-  await expect(row.getByRole('button', { name: 'Marcar como pago' })).toBeVisible();
+  // Do lado da Beatriz, a parte volta a aberta e o cartão volta a "Você deve".
+  await expect(entry).not.toHaveClass(/done/);
+  await expect(entry.getByRole('button', { name: 'Marcar como pago' })).toBeVisible();
+  await expect(card.locator('.pchead')).toContainText('Você deve');
 });
 
-test('acerto pelo Saldo: Recebi vira linha resolvida nos dois cartões; Desfazer volta', async ({ browser }) => {
+test('parte paga vira linha resolvida no mesmo lugar; quem recebeu confirma ali mesmo', async ({ browser }) => {
   const { lucas, bia } = await setup(browser);
-  await tab(lucas, 'Saldo').click();
-  await expect(lucas.locator('.bigbal')).toContainText('+R$ 60,00');
-  const mine = lucas.locator('.pcard.me');
-  await expect(mine).toContainText('Beatriz te deve');
-  await shot(lucas, 'saldo');
-  await mine.locator('.pcline', { hasText: 'Beatriz te deve' }).locator('xpath=..').getByRole('button', { name: 'Recebi' }).click();
-  await expect(toast(lucas)).toContainText('Pagamento registrado');
-  await expect(mine.locator('.pcline.done')).toContainText('Beatriz te pagou');
-  await expect(lucas.locator('.bigbal')).toContainText('+R$ 30,00');
+  const card = await openCard(lucas, 'Beatriz');
+  const entry = card.locator('.pcentry', { hasText: 'Pizza' });
+  await expect(entry).toContainText('Beatriz te devia');
+  await expect(entry.getByRole('button', { name: 'Recebi' })).toBeVisible();
 
-  // Beatriz vê o acerto no cartão dela e, em Minha visão, como "Acerto de contas".
-  await tab(bia, 'Saldo').click();
-  const biaCard = bia.locator('.pcard.me');
-  await expect(biaCard.locator('.pcline.done')).toContainText('Você pagou Lucas');
-  await expect(bia.locator('.bigbal')).toContainText('você está quitado');
+  await payPizzaShare(bia);
+  await expect(entry).toHaveClass(/done/);
+  await expect(entry).toContainText('Beatriz te pagou');
+  await expect(entry).toContainText('Beatriz marcou como pago');
+  await expect(card.locator('.pchead')).toContainText('1 para conferir');
+  await shot(lucas, 'minha-visao-parte-resolvida');
+  await entry.getByRole('button', { name: 'Confirmar' }).click();
+  await expect(toast(lucas)).toContainText('Recebimento confirmado');
+  await expect(entry).not.toContainText('marcou como pago');
+  await expect(card.locator('.pchead')).not.toContainText('para conferir');
+
+  // Desfazer na linha resolvida volta a parte para aberta.
+  await entry.getByRole('button', { name: 'Desfazer' }).click();
+  await expect(entry).not.toHaveClass(/done/);
+  await expect(card.locator('.pchead')).toContainText('Te deve');
+});
+
+test('acerto do par: Beatriz paga o saldo com o Lucas; ele confirma; Desfazer volta', async ({ browser }) => {
+  const { lucas, bia } = await setup(browser);
   await tab(bia, 'Minha visão').click();
-  await expect(bia.locator('.row2', { hasText: 'Acerto de contas' })).toContainText('Pago');
-  await expect(bia.locator('.row2', { hasText: 'Pizza' })).toContainText('Quitado no acerto');
+  const card = bia.locator('.pcard', { has: bia.locator('.pchead .ttl', { hasText: 'Lucas' }) });
+  // Lucas não tem chave Pix: sem "Copiar Pix".
+  await expect(card.getByRole('button', { name: 'Copiar Pix' })).toHaveCount(0);
+  await card.locator('.pcmain').getByRole('button', { name: 'Marcar como pago' }).click();
+  await expect(toast(bia)).toContainText('Pagamento registrado · avisamos Lucas');
+  await expect(card.locator('.pchead')).toContainText('Tudo certo');
+  await expect(bia.locator('.bigbal')).toContainText('você está quitado');
+  await card.locator('.pchead').click();
+  const settle = card.locator('.pcentry.done', { hasText: 'Acerto de contas' });
+  await expect(settle).toContainText('esperando Lucas confirmar');
+  await expect(card.locator('.pcentry', { hasText: 'Pizza' })).toContainText('compensado no saldo');
   await shot(bia, 'minha-visao-acerto');
 
-  await mine.locator('.pcline.done').getByRole('button', { name: 'Desfazer' }).click();
-  await expect(mine.locator('.pcline.done')).toHaveCount(0);
+  await tab(lucas, 'Minha visão').click();
+  const bcard = lucas.locator('.pcard', { has: lucas.locator('.pchead .ttl', { hasText: 'Beatriz' }) });
+  const pend = bcard.locator('.pcpend');
+  await expect(pend).toContainText('Beatriz registrou um pagamento de R$ 30,00');
+  await expect(bcard.locator('.pchead')).toContainText('1 para conferir');
+  // Catarina ainda deve.
+  await expect(lucas.locator('.bigbal')).toContainText('+R$ 30,00');
+  await shot(lucas, 'minha-visao-conferir');
+  await pend.getByRole('button', { name: 'Confirmar' }).click();
+  await expect(toast(lucas)).toContainText('Recebimento confirmado');
+  await expect(bcard.locator('.pcpend')).toHaveCount(0);
+  await expect(settle).not.toContainText('esperando', { timeout: 15_000 });
+
+  await bcard.locator('.pchead').click();
+  await bcard.locator('.pcentry.done', { hasText: 'Acerto de contas' }).getByRole('button', { name: 'Desfazer' }).click();
+  await expect(bcard.locator('.pchead')).toContainText('Te deve');
   await expect(lucas.locator('.bigbal')).toContainText('+R$ 60,00');
+});
+
+test('"Não recebi" no acerto: some dos dois lados e avisa quem pagou', async ({ browser }) => {
+  const { lucas, bia } = await setup(browser);
+  await tab(bia, 'Minha visão').click();
+  const card = bia.locator('.pcard', { has: bia.locator('.pchead .ttl', { hasText: 'Lucas' }) });
+  await card.locator('.pcmain').getByRole('button', { name: 'Marcar como pago' }).click();
+  await expect(card.locator('.pchead')).toContainText('Tudo certo');
+
+  await tab(lucas, 'Minha visão').click();
+  const pend = lucas.locator('.pcpend');
+  await pend.getByRole('button', { name: 'Não recebi' }).click();
+  await expect(toast(lucas)).toContainText('Avisamos Beatriz que o pagamento não chegou');
+  await expect(pend).toHaveCount(0);
+  await expect(lucas.locator('.bigbal')).toContainText('+R$ 60,00');
+  await expect(card.locator('.pchead')).toContainText('Você deve', { timeout: 15_000 });
+});
+
+test('admin vê como outra pessoa e registra o acerto por ela', async ({ browser }) => {
+  const { lucas, bia } = await setup(browser);
+  await tab(lucas, 'Minha visão').click();
+  await lucas.getByLabel('Ver como').selectOption({ label: 'Beatriz' });
+  await expect(lucas.locator('.viewbanner')).toContainText('Vendo como Beatriz');
+  await expect(lucas.locator('.card', { hasText: 'Saldo de Beatriz neste split' })).toContainText('−R$ 30,00');
+  const card = lucas.locator('.pcard', { has: lucas.locator('.pchead .ttl', { hasText: 'Você' }) });
+  await expect(card.locator('.pchead')).toContainText('Beatriz deve');
+  await shot(lucas, 'ver-como');
+  await card.locator('.pcmain').getByRole('button', { name: 'Marcar como pago' }).click();
+  await expect(card.locator('.pchead')).toContainText('Tudo certo');
+  await lucas.getByRole('button', { name: 'Voltar para você' }).click();
+  await expect(lucas.locator('.viewbanner')).toHaveCount(0);
+  await expect(lucas.locator('.pcard', { has: lucas.locator('.pchead .ttl', { hasText: 'Beatriz' }) }).locator('.pchead')).toContainText('Tudo certo');
+  // Registrado por quem recebe: já vale, sem "para conferir"; Beatriz vê o par quitado.
+  await expect(lucas.locator('.pcpend')).toHaveCount(0);
+  await tab(bia, 'Minha visão').click();
+  await expect(bia.locator('.pcard', { has: bia.locator('.pchead .ttl', { hasText: 'Lucas' }) }).locator('.pchead')).toContainText('Tudo certo');
+  // Quem não é admin não tem o seletor.
+  await expect(bia.getByLabel('Ver como')).toHaveCount(0);
 });
 
 test('"Só os envolvidos e admins": Catarina não abre o comprovante da Beatriz', async ({ browser }) => {
   const { lucas, bia, code } = await setup(browser);
-  await tab(bia, 'Minha visão').click();
-  const row = bia.locator('.row2', { hasText: 'Pizza' });
-  await row.getByRole('button', { name: 'Marcar como pago' }).click();
-  await row.getByRole('button', { name: 'Enviar comprovante' }).click();
+  const { entry } = await payPizzaShare(bia);
+  await entry.getByRole('button', { name: 'Enviar comprovante' }).click();
   const sheet = bia.getByRole('dialog', { name: 'Enviar comprovante' });
   await sheet.locator('input[type=file]').setInputFiles({ name: 'pix.png', mimeType: 'image/png', buffer: PNG });
   await sheet.getByRole('button', { name: 'Enviar comprovante' }).click();
@@ -138,31 +233,4 @@ test('"Só os envolvidos e admins": Catarina não abre o comprovante da Beatriz'
   await lucas.goto(lucas.url().replace(/\/pessoas$/, ''));
   await lucas.locator('.txrow', { hasText: 'Pizza' }).click();
   await expect(lucas.locator('.row2', { hasText: 'Beatriz' }).getByRole('button', { name: 'Ver comprovante' })).toBeVisible();
-});
-
-test('parte paga em Minha visão vira linha resolvida no Saldo, no mesmo lugar', async ({ browser }) => {
-  const { lucas, bia } = await setup(browser);
-  await tab(lucas, 'Saldo').click();
-  const mine = lucas.locator('.pcard.me');
-  const lines = mine.locator('.pcline');
-  await expect(lines.nth(0)).toContainText('Beatriz te deve');
-  await expect(lines.nth(1)).toContainText('Catarina te deve');
-
-  await tab(bia, 'Minha visão').click();
-  await bia.locator('.row2', { hasText: 'Pizza' }).getByRole('button', { name: 'Marcar como pago' }).click();
-
-  // Para o Lucas, a linha da Beatriz troca de estado sem sair do lugar.
-  await expect(lines.nth(0)).toHaveClass(/done/);
-  await expect(lines.nth(0)).toContainText('Beatriz te pagou');
-  await expect(lines.nth(0)).toContainText('Pizza');
-  await expect(lines.nth(1)).toContainText('Catarina te deve');
-  await shot(lucas, 'saldo-parte-resolvida');
-
-  // Para a Beatriz, no cartão dela, com Desfazer.
-  await tab(bia, 'Saldo').click();
-  const done = bia.locator('.pcard.me .pcline.done');
-  await expect(done).toContainText('Você pagou Lucas');
-  await done.getByRole('button', { name: 'Desfazer' }).click();
-  await expect(bia.locator('.pcard.me .pcline.done')).toHaveCount(0);
-  await expect(bia.locator('.pcard.me')).toContainText('Você deve para Lucas');
 });

@@ -65,6 +65,8 @@ export const api = {
   disputeShare: callable<ShareRef, PayWriteResponse>('disputeShare'),
   createPayment: callable<CreatePaymentRequest, CreatePaymentResponse>('createPayment'),
   deletePayment: callable<PaymentRef, unknown>('deletePayment'),
+  confirmPayment: callable<PaymentRef, unknown>('confirmPayment'),
+  disputePayment: callable<PaymentRef, unknown>('disputePayment'),
   attachProof: callable<AttachProofRequest, Partial<PayWriteResponse>>('attachProof'),
   setProofVisibility: callable<SetProofVisibilityRequest, unknown>('setProofVisibility'),
   setReceipt: callable<SetReceiptRequest, unknown>('setReceipt'),

@@ -4,7 +4,7 @@ import { Badge, Button, Segmented, Sheet, useToast } from '../components/index.t
 import { contrastRatio, isHex, normalizeHex, parseTokens, tokensToCss, type Overrides, type ThemeName, type Token } from '../theme/palette.ts';
 import tokensCss from '../theme/tokens.css?raw';
 import { ComponentsPanel } from './ComponentsPanel.tsx';
-import { SaldoPreview } from './SaldoPreview.tsx';
+import { MyViewPreview } from './MyViewPreview.tsx';
 import { DevBar } from './DevBar.tsx';
 import { hasOverrides, setOverrides, useOverrides } from './overrides.ts';
 
@@ -131,9 +131,9 @@ export default function PalettePage() {
             </div>
           </section>
           <section>
-            <p className="sec">{t('split.tabs.sal')}</p>
+            <p className="sec">{t('split.tabs.me')}</p>
             <div className={`panel theme-${theme}`}>
-              <SaldoPreview />
+              <MyViewPreview />
             </div>
           </section>
           <section className="card pal-group">

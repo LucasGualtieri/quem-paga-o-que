@@ -7,7 +7,7 @@ A notificação principal é uma só: "Beatriz pagou R$ 40,00 pra você", enviad
 | Evento | Quem é avisado |
 | --- | --- |
 | Alguém marca a própria parte como paga | Quem pagou a despesa (é a notificação da lista, com botões de confirmar) |
-| Alguém registra um acerto pelo cartão do Saldo | A outra pessoa do acerto |
+| Alguém registra um acerto pelo cartão da Minha visão | A outra pessoa do acerto (quem recebe confirma ou diz "Não recebi"; "Não recebi" avisa quem pagou) |
 | Alguém envia comprovante depois | A outra pessoa do pagamento |
 | Quem recebe toca "Não recebi" | Quem marcou que pagou ("o pagamento não chegou") |
 

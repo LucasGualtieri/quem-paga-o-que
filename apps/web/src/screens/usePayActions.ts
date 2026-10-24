@@ -16,8 +16,8 @@ function newPaymentId(): string {
 }
 
 /**
- * Pagamentos (spec 06): marcar pago / Recebi, Desfazer, Confirmar, Não recebi, acerto pelo
- * Saldo e comprovante. Tudo otimista: muda na hora e só volta, com aviso, se o servidor recusar.
+ * Pagamentos (spec 06): marcar pago / Recebi, Desfazer, Confirmar, Não recebi, acerto pela
+ * Minha visão e comprovante. Tudo otimista: muda na hora e só volta, com aviso, se o servidor recusar.
  */
 export function usePayActions(split: SplitDoc, me: Member) {
   const { t } = useTranslation();
@@ -161,13 +161,39 @@ export function usePayActions(split: SplitDoc, me: Member) {
     [splitId, paymentChange],
   );
 
+  /** Quem recebe (ou admin) confirma o acerto registrado por quem pagou. */
+  const confirmPayment = useCallback(
+    (p: PaymentDoc) => {
+      void paymentChange({ kind: 'payment', splitId, id: p.id, confirmed: true }, async () => {
+        await api.confirmPayment({ splitId, paymentId: p.id });
+        return true;
+      });
+      toast.show({ text: t('pay.confirmed') });
+    },
+    [splitId, paymentChange, toast, t],
+  );
+
+  /** "Não recebi": o acerto some (com o comprovante) e quem pagou é avisado. */
+  const disputePayment = useCallback(
+    (p: PaymentDoc) => {
+      void paymentChange({ kind: 'payment', splitId, id: p.id, doc: null }, async () => {
+        await api.disputePayment({ splitId, paymentId: p.id });
+        return true;
+      });
+      const who = notified(p.from);
+      toast.show({ text: who ? t('pay.disputedTo', { name: who }) : t('pay.disputed', { name: nameOf(p.from) }) });
+    },
+    [splitId, paymentChange, toast, t, nameOf, notified],
+  );
+
   const settle = useCallback(
     (from: string, to: string, amount: number, file?: File | null) => {
       const id = newPaymentId();
-      const doc: PaymentDoc = { id, from, to, amount, by: me.id, when: new Date(), proof: null };
+      // Registrado por quem recebe já vale; senão espera quem recebe confirmar (como no servidor).
+      const doc: PaymentDoc = { id, from, to, amount, by: me.id, when: new Date(), proof: null, pendConf: me.id !== to };
       void paymentChange({ kind: 'payment', splitId, id, doc }, async () => (await api.createPayment({ splitId, id, from, to })).amount > 0);
       if (file) attachPayment(doc, file, false);
-      // Quem paga pelo Saldo avisa quem recebe (como no protótipo).
+      // Quem paga avisa quem recebe.
       const to_ = from === me.id ? notified(to) : null;
       toast.show({ text: to_ ? t('pay.recordedTo', { name: to_ }) : t('pay.recorded'), onUndo: () => undoPayment(doc) });
     },
@@ -196,5 +222,5 @@ export function usePayActions(split: SplitDoc, me: Member) {
     [splitId, fail, me.id],
   );
 
-  return { mark, unmark, confirm, dispute, attachShare, settle, undoPayment, attachPayment, setReceipt };
+  return { mark, unmark, confirm, dispute, attachShare, settle, undoPayment, attachPayment, confirmPayment, disputePayment, setReceipt };
 }

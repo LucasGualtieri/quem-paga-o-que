@@ -130,7 +130,7 @@ export function useHistory(splitId: string, expenseId: string): HistoryEntry[] {
 const NO_PAYMENTS: readonly PaymentDoc[] = [];
 
 export function toPaymentDoc(id: string, d: Record<string, unknown>): PaymentDoc {
-  return { ...(d as unknown as PaymentDoc), id, when: stamp(d.when), proof: (d.proof as PaymentDoc['proof'] | undefined) ?? null };
+  return { ...(d as unknown as PaymentDoc), id, when: stamp(d.when), proof: (d.proof as PaymentDoc['proof'] | undefined) ?? null, pendConf: !!d.pendConf };
 }
 
 /** Despesas e acertos do split; o saldo nunca é guardado, sempre calculado deles (e sem as excluídas). */
