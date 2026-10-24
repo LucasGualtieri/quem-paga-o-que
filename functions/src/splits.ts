@@ -1,6 +1,7 @@
 import { randomInt } from 'node:crypto';
 import { FieldValue, type Transaction } from 'firebase-admin/firestore';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { purgeSplitProofs } from './proofs.ts';
 import type { Expense, Payment } from '@qpq/calc';
 import {
   cleanName,
@@ -232,6 +233,38 @@ export const removeMember = onCall(opts, async (req) => {
     tx.update(ref, mirrors(rest));
   });
   return { ok: true };
+});
+
+/**
+ * Finalizar (só admin, spec 04): ninguém lança, edita nem marca pagamentos (as Functions já
+ * recusam com `split-done`), e os comprovantes do split são apagados na hora (decisão 9).
+ */
+export const finalizeSplit = onCall(opts, async (req) => {
+  const uid = uidOf(req);
+  const data = input(req);
+  const splitId = text(data.splitId);
+  await db().runTransaction(async (tx) => {
+    const { ref, split } = await loadSplit(tx, splitId);
+    requireAdmin(split, uid);
+    if (split.status === 'done') return;
+    tx.update(ref, { status: 'done', doneAt: FieldValue.serverTimestamp() });
+  });
+  // Também se já estava finalizado: termina de apagar o que uma tentativa anterior não apagou.
+  await purgeSplitProofs(splitId);
+  return {};
+});
+
+/** Reabrir (só admin): volta a aceitar despesas e pagamentos; comprovantes apagados não voltam. */
+export const reopenSplit = onCall(opts, async (req) => {
+  const uid = uidOf(req);
+  const data = input(req);
+  await db().runTransaction(async (tx) => {
+    const { ref, split } = await loadSplit(tx, data.splitId);
+    requireAdmin(split, uid);
+    if (split.status === 'open') return;
+    tx.update(ref, { status: 'open', doneAt: null });
+  });
+  return {};
 });
 
 /** "Gerar novo código" (decisão 6): o antigo para na hora; quem já entrou continua. */

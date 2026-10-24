@@ -57,14 +57,9 @@ function located(splitId: string, target: ProofTarget): { ref: FirebaseFirestore
   return target.kind === 'share' ? { ref, field: `proof.${target.memberId}` } : { ref, field: 'receipt' };
 }
 
-/**
- * Prazo de 15 dias: marca como expirado o que venceu e apaga do Storage tudo o que está em
- * `splits/` há mais tempo, inclusive fotos enviadas e nunca anexadas. Capas e fotos de perfil ficam.
- */
-export async function purgeExpiredProofs(now: number): Promise<number> {
-  const cutoff = now - PROOF_TTL_DAYS * DAY;
-  const due = await db().collection('proofs').where('at', '<', cutoff).get();
-  for (const reg of due.docs) {
+/** Marca como expirados (`path: null`) os comprovantes destes registros e tira os registros. */
+async function expire(regs: FirebaseFirestore.QueryDocumentSnapshot[]): Promise<string[]> {
+  for (const reg of regs) {
     const { splitId, path, target } = reg.data() as { splitId: string; path: string; target: ProofTarget };
     await db().runTransaction(async (tx) => {
       const { ref, field } = located(splitId, target);
@@ -73,10 +68,29 @@ export async function purgeExpiredProofs(now: number): Promise<number> {
       tx.delete(reg.ref);
     });
   }
+  return regs.map((r) => r.get('path') as string);
+}
+
+/**
+ * Prazo de 15 dias: marca como expirado o que venceu e apaga do Storage tudo o que está em
+ * `splits/` há mais tempo, inclusive fotos enviadas e nunca anexadas. Capas e fotos de perfil ficam.
+ */
+export async function purgeExpiredProofs(now: number): Promise<number> {
+  const cutoff = now - PROOF_TTL_DAYS * DAY;
+  const due = await db().collection('proofs').where('at', '<', cutoff).get();
+  const paths = await expire(due.docs);
   const [files] = await bucket().getFiles({ prefix: 'splits/' });
   const old = files.filter((f) => Date.parse(String(f.metadata.timeCreated ?? '')) < cutoff);
-  await deleteFiles([...due.docs.map((d) => d.get('path') as string), ...old.map((f) => f.name)]);
+  await deleteFiles([...paths, ...old.map((f) => f.name)]);
   return due.size + old.length;
+}
+
+/** Split finalizado: todos os comprovantes dele expiram na hora e as fotos saem do Storage (decisão 9). */
+export async function purgeSplitProofs(splitId: string): Promise<void> {
+  const regs = await db().collection('proofs').where('splitId', '==', splitId).get();
+  const paths = await expire(regs.docs);
+  const [files] = await bucket().getFiles({ prefix: `splits/${splitId}/` });
+  await deleteFiles([...paths, ...files.map((f) => f.name)]);
 }
 
 export const purgeProofs = onSchedule({ schedule: 'every day 04:00', timeZone: 'America/Sao_Paulo', region: REGION }, async () => {
