@@ -354,3 +354,42 @@ describe('purgeExpiredProofs (prazo de 15 dias, decisão 9)', () => {
     expect(await reasonOf(w.bia.call('attachProof', { splitId: w.splitId, kind: 'share', expenseId: id, memberId: w.beatriz, path: again }))).toBe('proof-exists');
   });
 });
+
+describe('confirmPayment / disputePayment (acerto com confirmação)', () => {
+  it('quem paga registra: fica esperando a confirmação de quem recebe; quem recebe registra: já vale', async () => {
+    const w = await world();
+    await expense(w.lucas, w);
+    const id = newId();
+    await w.bia.call('createPayment', { splitId: w.splitId, id, from: w.beatriz, to: w.eu });
+    expect(await payDoc(w, id)).toMatchObject({ pendConf: true });
+    const got = newId();
+    await w.lucas.call('createPayment', { splitId: w.splitId, id: got, from: w.catarina, to: w.eu });
+    expect(await payDoc(w, got)).toMatchObject({ pendConf: false });
+  });
+
+  it('só quem recebe (ou admin) confirma; confirmar tira a pendência', async () => {
+    const w = await world();
+    await expense(w.lucas, w);
+    const id = newId();
+    await w.bia.call('createPayment', { splitId: w.splitId, id, from: w.beatriz, to: w.eu });
+    expect(await reasonOf(w.bia.call('confirmPayment', { splitId: w.splitId, paymentId: id }))).toBe('not-involved');
+    expect(await reasonOf(w.cat.call('confirmPayment', { splitId: w.splitId, paymentId: id }))).toBe('not-involved');
+    await w.lucas.call('confirmPayment', { splitId: w.splitId, paymentId: id });
+    expect(await payDoc(w, id)).toMatchObject({ pendConf: false, amount: 333 });
+    expect(await reasonOf(w.lucas.call('confirmPayment', { splitId: w.splitId, paymentId: id }))).toBe('not-pending');
+  });
+
+  it('"Não recebi" desfaz o acerto e apaga o comprovante', async () => {
+    const w = await world();
+    await expense(w.lucas, w);
+    const id = newId();
+    await w.bia.call('createPayment', { splitId: w.splitId, id, from: w.beatriz, to: w.eu });
+    const path = await upload(w.bia, proofPath(w.splitId, w.beatriz, w.eu, 'acerto.jpg'));
+    await w.bia.call('attachProof', { splitId: w.splitId, kind: 'payment', paymentId: id, path });
+    expect(await reasonOf(w.bia.call('disputePayment', { splitId: w.splitId, paymentId: id }))).toBe('not-involved');
+    await w.lucas.call('disputePayment', { splitId: w.splitId, paymentId: id });
+    expect(await payDoc(w, id)).toBeUndefined();
+    expect(await exists(path)).toBe(false);
+    expect(await reasonOf(w.lucas.call('disputePayment', { splitId: w.splitId, paymentId: id }))).toBe('payment-missing');
+  });
+});

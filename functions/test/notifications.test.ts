@@ -196,3 +196,23 @@ it('quem ainda não entrou no split não recebe aviso', async () => {
   await lucas.call('markShare', { splitId, expenseId: id, memberId: eu });
   expect((await admin().collection('notifications').get()).size).toBe(0);
 });
+
+describe('acerto com confirmação', () => {
+  it('Confirmar e "Não recebi" mudam o estado do aviso do acerto; "Não recebi" avisa quem pagou', async () => {
+    const w = await world();
+    await pizza(w);
+    const p1 = newId();
+    await w.bia.call('createPayment', { splitId: w.splitId, id: p1, from: w.beatriz, to: w.eu });
+    await w.lucas.call('confirmPayment', { splitId: w.splitId, paymentId: p1 });
+    expect((await notes(w.lucas)).map((n) => n.status)).toEqual(['confirmed']);
+    await w.lucas.call('deletePayment', { splitId: w.splitId, paymentId: p1 });
+
+    const p2 = newId();
+    await w.bia.call('createPayment', { splitId: w.splitId, id: p2, from: w.beatriz, to: w.eu });
+    await w.lucas.call('disputePayment', { splitId: w.splitId, paymentId: p2 });
+    const disputed = (await notes(w.lucas)).find((n) => n.paymentId === p2)!;
+    expect(disputed.status).toBe('disputed');
+    expect(disputed.hidden).toBe(false);
+    expect(await notes(w.bia)).toMatchObject([{ kind: 'disputed', from: w.eu, paymentId: p2, amount: 3000 }]);
+  });
+});

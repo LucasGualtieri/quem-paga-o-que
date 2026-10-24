@@ -71,9 +71,9 @@ export function findPayment(tx: Transaction, splitId: string, paymentId: string)
   return run(tx, col().where('splitId', '==', splitId).where('paymentId', '==', paymentId));
 }
 
-/** "Beatriz pagou" que quem recebeu confirmou, contestou ou resolveu com "Recebi". */
+/** "Beatriz pagou" (parte ou acerto) que quem recebeu confirmou, contestou ou resolveu com "Recebi". */
 export function setStatus(tx: Transaction, found: Found, from: readonly NotificationStatus[], to: NotificationStatus): void {
-  for (const n of found) if (n.data.kind === 'paid' && from.includes(n.data.status)) tx.update(n.ref, { status: to });
+  for (const n of found) if ((n.data.kind === 'paid' || n.data.kind === 'settled') && from.includes(n.data.status)) tx.update(n.ref, { status: to });
 }
 
 export function setHidden(tx: Transaction, found: Found, hidden: boolean, only?: (n: NotificationData) => boolean): void {

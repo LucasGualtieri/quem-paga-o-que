@@ -170,6 +170,8 @@ interface StoredPayment {
   to: string;
   amount: number;
   proof?: ProofInfo | null;
+  /** Registrado por quem não recebe: espera Confirmar ou "Não recebi" de quem recebe. */
+  pendConf?: boolean;
 }
 
 /** Acerto pelo cartão do Saldo: registra a dívida atual do par (`M`), calculada aqui. */
@@ -191,7 +193,8 @@ export const createPayment = onCall(opts, async (req): Promise<CreatePaymentResp
     if (existing.exists) return { amount: (existing.data() as StoredPayment).amount };
     const amount = ledgerOf(split, await readMoney(tx, splitRef)).M[from]?.[to] ?? 0;
     if (amount <= 0) return { amount: 0 };
-    tx.create(ref, { from, to, amount, by: me[0], when: FieldValue.serverTimestamp(), proof: null });
+    // Quem recebe registrando já está confirmando; senão, fica esperando a confirmação (como na parte).
+    tx.create(ref, { from, to, amount, by: me[0], when: FieldValue.serverTimestamp(), proof: null, pendConf: me[0] !== to });
     // Avisa a outra pessoa do acerto (as duas, se quem registrou foi um admin de fora).
     for (const m of others(me[0], from, to)) notify(tx, splitId, split, m, { kind: 'settled', from: me[0], amount, paymentId: ref.id, payFrom: from, payTo: to });
     return { amount };
@@ -217,6 +220,49 @@ export const deletePayment = onCall(opts, async (req) => {
     unregister(tx, p.proof);
     tx.delete(ref);
     return p.proof?.path ?? null;
+  });
+  await deleteFiles([file]);
+  return {};
+});
+
+/** O acerto e quem pode confirmá-lo: quem recebe ou admin. */
+async function loadPendingPayment(tx: FirebaseFirestore.Transaction, data: Record<string, unknown>, uid: string) {
+  const splitId = text(data.splitId);
+  const { split } = await loadSplit(tx, splitId);
+  const me = requireMember(split, uid);
+  const ref = paymentRef(splitId, data.paymentId);
+  const snap = await tx.get(ref);
+  if (!snap.exists) fail('payment-missing');
+  const p = snap.data() as StoredPayment;
+  if (me[0] !== p.to && !me[1].admin) fail('not-involved');
+  requireOpen(split);
+  if (!p.pendConf) fail('not-pending');
+  return { splitId, split, me, ref, p, notes: await findPayment(tx, splitId, ref.id) };
+}
+
+/** Confirmar o acerto (quem recebe ou admin). */
+export const confirmPayment = onCall(opts, async (req) => {
+  const uid = uidOf(req);
+  const data = input(req);
+  await db().runTransaction(async (tx) => {
+    const x = await loadPendingPayment(tx, data, uid);
+    setStatus(tx, x.notes, ['new'], 'confirmed');
+    tx.update(x.ref, { pendConf: false });
+  });
+  return {};
+});
+
+/** "Não recebi" no acerto: desfaz o acerto, apaga o comprovante e avisa quem pagou. */
+export const disputePayment = onCall(opts, async (req) => {
+  const uid = uidOf(req);
+  const data = input(req);
+  const file = await db().runTransaction(async (tx) => {
+    const x = await loadPendingPayment(tx, data, uid);
+    setStatus(tx, x.notes, ['new'], 'disputed');
+    notify(tx, x.splitId, x.split, x.p.from, { kind: 'disputed', from: x.me[0], amount: x.p.amount, paymentId: x.ref.id, payFrom: x.p.from, payTo: x.p.to });
+    unregister(tx, x.p.proof);
+    tx.delete(x.ref);
+    return x.p.proof?.path ?? null;
   });
   await deleteFiles([file]);
   return {};
