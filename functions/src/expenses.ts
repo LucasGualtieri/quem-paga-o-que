@@ -1,7 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { effectiveAmount, validateExpense, type Expense, type ExpenseMode, type JoinOrder, type SplitMode, type Weights } from '@qpq/calc';
-import { cleanName, isValidDate, normalizeTags, type ExpenseWriteResponse, type ProofInfo } from '@qpq/shared';
+import { cleanName, isValidDate, normalizeTags, parseEntryIcon, type EntryIcon, type ExpenseWriteResponse, type ProofInfo } from '@qpq/shared';
 import { findExpense, setHidden } from './notifications.ts';
 import { db, fail, input, loadSplit, opts, requireMember, requireOpen, text, uidOf, type Member, type SplitData } from './common.ts';
 
@@ -22,8 +22,9 @@ interface Clean {
   note: string;
   longDesc: string;
   w?: Weights;
-  items?: Array<{ name?: string; amount: number; members: string[]; mode?: SplitMode; w?: Weights }>;
+  items?: Array<{ name?: string; icon?: EntryIcon; amount: number; members: string[]; mode?: SplitMode; w?: Weights }>;
   rest?: string[];
+  icon: EntryIcon | null;
   restMode?: SplitMode;
   restW?: Weights;
 }
@@ -52,6 +53,12 @@ function splitMode(v: unknown): SplitMode | undefined {
   return (SPLIT_MODES as readonly unknown[]).includes(v) ? (v as SplitMode) : fail('invalid-input');
 }
 
+/** Ícone ou emoji (ou automático); qualquer outra coisa é `invalid-input`. */
+function iconOf(v: unknown): EntryIcon | null {
+  const icon = parseEntryIcon(v);
+  return icon === false ? fail('invalid-input') : icon;
+}
+
 function optText(v: unknown, max: number): string {
   if (v === undefined || v === null) return '';
   const s = text(v).trim();
@@ -78,6 +85,7 @@ function parse(raw: unknown): { clean: Clean; amount: number | null } {
     tags: normalizeTags(Array.isArray(d.tags) ? d.tags.filter((t): t is string => typeof t === 'string') : []),
     note: optText(d.note, 500),
     longDesc: optText(d.longDesc, 2000),
+    icon: iconOf(d.icon),
   };
   const w = weights(d.w);
   if (w && mode !== 'items') clean.w = w;
@@ -91,6 +99,8 @@ function parse(raw: unknown): { clean: Clean; amount: number | null } {
       const iw = weights(it.w);
       const itemName = optText(it.name, 60);
       if (itemName) item.name = itemName;
+      const itemIcon = iconOf(it.icon);
+      if (itemIcon) item.icon = itemIcon;
       if (m) item.mode = m;
       if (iw) item.w = iw;
       return item;

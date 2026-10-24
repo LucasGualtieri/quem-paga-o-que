@@ -163,6 +163,7 @@ describe('toInput (o que vai para a Function)', () => {
       tags: ['food'],
       note: 'ok',
       longDesc: '',
+      icon: null,
     });
   });
 

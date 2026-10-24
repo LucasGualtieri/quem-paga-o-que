@@ -1,5 +1,5 @@
 import { shares as calcShares, ledger, type Cents, type Expense, type ExpenseMode, type JoinOrder, type MemberId, type Payment, type SplitMode, type Weights } from '@qpq/calc';
-import type { ErrorReason, PixKey, ProofInfo, ProofVisibility } from '@qpq/shared';
+import type { EntryIcon, ErrorReason, PixKey, ProofInfo, ProofVisibility } from '@qpq/shared';
 
 /** Participante como está no Firestore (splits/{id}.members). */
 export interface MemberDoc {
@@ -154,7 +154,7 @@ export interface ExpenseDoc {
   members: MemberId[];
   mode: ExpenseMode;
   w?: Weights;
-  items?: Array<{ name?: string; amount: Cents; members: MemberId[]; mode?: SplitMode; w?: Weights }>;
+  items?: Array<{ name?: string; icon?: EntryIcon; amount: Cents; members: MemberId[]; mode?: SplitMode; w?: Weights }>;
   rest?: MemberId[];
   restMode?: SplitMode;
   restW?: Weights;
@@ -165,6 +165,8 @@ export interface ExpenseDoc {
   author: MemberId;
   version: number;
   updatedBy: MemberId;
+  /** Ícone ou emoji escolhido; `null`/ausente = automático pela tag. */
+  icon?: EntryIcon | null;
   /** Exclusão marcada (decisão 7): some das listas e do saldo; Desfazer limpa. */
   deletedAt: Date | null;
   createdAt?: Date | null;

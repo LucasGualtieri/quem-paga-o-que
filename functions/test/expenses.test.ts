@@ -66,6 +66,17 @@ describe('createExpense', () => {
     expect((await history(w, id)).map((h) => h.kind)).toEqual(['created']);
   });
 
+  it('ícone ou emoji na despesa e nos itens; inválido recusa; sem escolha fica automático', async () => {
+    const w = await world();
+    const { id } = await create(w.lucas, w, pizza(w, { icon: { kind: 'emoji', value: '🍕' }, mode: 'items', amount: null, items: [{ amount: 600, members: [w.eu], icon: { kind: 'icon', name: 'beer' } }, { amount: 400, members: [w.beatriz] }] }));
+    const d = await expDoc(w, id);
+    expect(d.icon).toEqual({ kind: 'emoji', value: '🍕' });
+    expect(d.items).toEqual([{ amount: 600, members: [w.eu], icon: { kind: 'icon', name: 'beer' } }, { amount: 400, members: [w.beatriz] }]);
+    expect(await reasonOf(create(w.lucas, w, pizza(w, { icon: { kind: 'icon', name: 'trash' } as never })))).toBe('invalid-input');
+    const plain = await create(w.lucas, w, pizza(w));
+    expect((await expDoc(w, plain.id)).icon).toBeNull();
+  });
+
   it('modo itens sem valor: o total vira a soma dos itens', async () => {
     const w = await world();
     const { id } = await create(

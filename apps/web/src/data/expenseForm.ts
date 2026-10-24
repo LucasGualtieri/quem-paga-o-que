@@ -12,7 +12,7 @@ import {
   type SplitMode,
   type Weights,
 } from '@qpq/calc';
-import { normalizeTags, type ExpenseInput } from '@qpq/shared';
+import { type EntryIcon, normalizeTags, type ExpenseInput } from '@qpq/shared';
 import { formatInputCents, parseCents } from '../lib/money.ts';
 import type { Lang } from '../i18n/index.ts';
 import type { ExpenseDoc, Member } from './model.ts';
@@ -29,6 +29,8 @@ export interface ItemForm {
   w: WeightText;
   /** Minimizado numa linha de resumo; com erro, reabre sozinho. */
   min: boolean;
+  /** Ícone ou emoji do item; ausente = ícone padrão de item. */
+  icon?: EntryIcon;
 }
 
 export interface FormState {
@@ -46,6 +48,8 @@ export interface FormState {
   tags: string[];
   note: string;
   longDesc: string;
+  /** Ícone ou emoji da despesa; ausente = automático pela tag. */
+  icon?: EntryIcon;
 }
 
 export function initialForm(people: readonly Member[], me: MemberId, today: string): FormState {
@@ -233,12 +237,14 @@ export function toInput(f: FormState): ExpenseInput {
     tags: f.tags,
     note: f.note.trim(),
     longDesc: f.longDesc.trim(),
+    icon: f.icon ?? null,
   };
   if (e.amount === null && f.mode !== 'items') out.amount = 0;
   if (e.w) out.w = e.w;
   if (f.mode === 'items') {
     out.items = (e.items ?? []).map((it, i) => ({
       ...(f.items[i]?.name.trim() ? { name: f.items[i]!.name.trim() } : {}),
+      ...(f.items[i]?.icon ? { icon: f.items[i]!.icon } : {}),
       amount: it.amount,
       members: [...it.members],
       mode: it.mode ?? 'equal',
@@ -274,6 +280,7 @@ export function fromDoc(d: ExpenseDoc, lang: Lang): FormState {
       mode: it.mode ?? 'equal',
       w: weightText(it.mode ?? 'equal', it.w, lang),
       min: true,
+      ...(it.icon ? { icon: it.icon } : {}),
     })),
     rest: d.rest ?? [],
     restMode: d.restMode ?? 'equal',
@@ -282,6 +289,7 @@ export function fromDoc(d: ExpenseDoc, lang: Lang): FormState {
     tags: d.tags.filter((t) => t !== 'other'),
     note: d.note,
     longDesc: d.longDesc,
+    ...(d.icon ? { icon: d.icon } : {}),
   };
 }
 

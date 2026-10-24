@@ -1,4 +1,5 @@
 import type { ExpenseMode, MemberId, SplitMode, Weights } from '@qpq/calc';
+import type { EntryIcon } from './icons.ts';
 import type { PixKey } from './pix.ts';
 
 /**
@@ -151,6 +152,8 @@ export interface MergeGuestRequest {
 export interface ExpenseItemInput {
   /** Nome do item (opcional); aparece no detalhe da despesa. */
   name?: string;
+  /** Ícone ou emoji do item; sem escolha, o ícone padrão de item. */
+  icon?: EntryIcon | null;
   amount: number;
   members: MemberId[];
   mode?: SplitMode;
@@ -175,6 +178,8 @@ export interface ExpenseInput {
   tags: string[];
   note?: string;
   longDesc?: string;
+  /** Ícone ou emoji da despesa; sem escolha, o ícone da tag. */
+  icon?: EntryIcon | null;
 }
 
 export interface CreateExpenseRequest {

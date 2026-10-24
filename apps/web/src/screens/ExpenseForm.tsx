@@ -12,6 +12,7 @@ import { useLang } from '../i18n/index.ts';
 import { formatCents } from '../lib/money.ts';
 import { BackLink, todayStr, useWho } from './common.tsx';
 import { ErrorLine, splitErrorText, splitStatus, WeightRows } from './ExpenseParts.tsx';
+import { IconButton } from './EntryIcon.tsx';
 import { ItemsEditor } from './ItemsEditor.tsx';
 import { useExpenseActions } from './useExpenseActions.ts';
 import { ReceiptField } from './ReceiptField.tsx';
@@ -107,6 +108,8 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc?: ExpenseDo
           <label className="label" htmlFor="ad-desc">
             {t('expense.form.desc')} <span className="req" aria-hidden="true">*</span>
           </label>
+          <div className="desc-row">
+          <IconButton value={form.icon} fallback={form} label={t('iconPicker.choose')} onChange={(icon) => setForm((f) => { const { icon: _old, ...rest } = f; return icon ? { ...rest, icon } : rest; })} />
           <input
             id="ad-desc"
             className={`input ${showErrors && a.nameError ? 'err' : ''}`}
@@ -118,6 +121,7 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc?: ExpenseDo
             aria-invalid={showErrors && a.nameError ? true : undefined}
             onChange={(e) => set({ name: e.target.value })}
           />
+          </div>
           {showErrors && a.nameError && <ErrorLine>{t('expense.form.descErr')}</ErrorLine>}
         </div>
 

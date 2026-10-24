@@ -7,7 +7,8 @@ import { pendingChecks } from '../data/balance.ts';
 import { membersInOrder, sharesOf, type ExpenseDoc, type Member, type SplitDoc } from '../data/model.ts';
 import { useLang } from '../i18n/index.ts';
 import { formatCents } from '../lib/money.ts';
-import { dayLabel, EmptyArt, TagIcon, todayStr, useWho } from './common.tsx';
+import { dayLabel, EmptyArt, todayStr, useWho } from './common.tsx';
+import { EntryIconView } from './EntryIcon.tsx';
 
 interface Filters {
   people: string[];
@@ -203,7 +204,7 @@ export function TxTab({ split, me, expenses, loaded, canAdd, onAdd, lastAdded }:
               const note = modeNote(e);
               return (
                 <Link key={e.id} to={`/s/${split.id}/despesa/${e.id}`} className={`row txrow ${lastAdded === e.id ? 'new' : ''}`}>
-                  <TagIcon tags={e.tags} />
+                  <EntryIconView icon={e.icon} fallback={e} />
                   <span className="mid">
                     <span className="ttl">{e.name}</span>
                     <span className="cap trunc">

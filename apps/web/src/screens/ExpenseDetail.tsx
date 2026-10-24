@@ -9,7 +9,8 @@ import { useSession } from '../data/session.ts';
 import { useLang } from '../i18n/index.ts';
 import { dateOf, shortDay, shortDayTime } from '../lib/dates.ts';
 import { formatCents } from '../lib/money.ts';
-import { BackLink, TagIcon, useWho } from './common.tsx';
+import { BackLink, useWho } from './common.tsx';
+import { EntryIconView } from './EntryIcon.tsx';
 import { PhotoBox, usePayFlow } from './PaySheet.tsx';
 import { hasPayments, useExpenseActions } from './useExpenseActions.ts';
 
@@ -166,7 +167,7 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc: ExpenseDoc
         })()}
 
         <div className="detail-head">
-          <TagIcon tags={doc.tags} size="lg" />
+          <EntryIconView icon={doc.icon} fallback={doc} size="lg" />
           <h1 className="h2" style={{ marginTop: 4 }}>
             {doc.name}
           </h1>
@@ -277,6 +278,7 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc: ExpenseDoc
             <div className="list">
               {doc.items?.map((it, i) => (
                 <div key={i} className="row" style={{ minHeight: 58 }}>
+                  <EntryIconView icon={it.icon} fallback="item" size="sm" />
                   <span className="mid">
                     <span className="ttl">{it.name || t('expense.detail.itemNoName')}</span>
                     <span className="cap" style={{ whiteSpace: 'normal' }}>

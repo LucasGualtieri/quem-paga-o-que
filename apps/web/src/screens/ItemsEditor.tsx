@@ -6,6 +6,7 @@ import type { Member } from '../data/model.ts';
 import { useLang } from '../i18n/index.ts';
 import { formatCents, parseCents } from '../lib/money.ts';
 import { ErrorLine, ModePicker, splitStatus, WeightRows, WhoToggles } from './ExpenseParts.tsx';
+import { IconButton } from './EntryIcon.tsx';
 
 interface Props {
   form: FormState;
@@ -94,6 +95,7 @@ export function ItemsEditor({ form, setForm, people, analysis, whoName, showErro
                   <button type="button" className="iconbtn icol" aria-expanded="true" aria-label={t('expense.form.minimize')} onClick={() => patchItem(it.key, (x) => ({ ...x, min: true }))}>
                     <Icon name="down" />
                   </button>
+                  <IconButton value={it.icon} fallback="item" size="sm" label={t('iconPicker.chooseItem')} onChange={(icon) => patchItem(it.key, (x) => { const { icon: _old, ...rest } = x; return icon ? { ...rest, icon } : rest; })} />
                   <input className="iname" value={it.name} placeholder={t('expense.form.itemN', { n: i + 1 })} aria-label={t('expense.form.itemPh')} autoComplete="off" onChange={(e) => patchItem(it.key, (x) => ({ ...x, name: e.target.value }))} />
                   <div className="minibox">
                     <span>R$</span>

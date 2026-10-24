@@ -4,3 +4,4 @@ export * from './expenses.ts';
 export * from './invite.ts';
 export * from './names.ts';
 export * from './pix.ts';
+export * from './icons.ts';
