@@ -21,3 +21,4 @@ O que foi decidido e descartado durante o design. Ideias descartadas não devem 
 | Filtros em dois menus (Pessoas, Tags) | Uma fileira de chips misturando pessoas e tags não escalava. |
 | Login opcional; convidado pode criar split | Barreira de cadastro afasta quem só quer ver a própria parte; o link de recuperação cobre a troca de aparelho. |
 | "+" flutuante (roxo, `--accent`) abre nova despesa; o "+" amarelo da ilustração do estado vazio da home vira "Novo split" | Cada botão faz a ação mais provável daquela tela. |
+| **Desktop igual ao celular** (coluna única centralizada), sem barra lateral nem Transações + Saldo lado a lado — decidido em 24/10/2026 | Uma UI só: menos informação na tela, uma interface para a pessoa aprender e um código só para manter. O layout de duas colunas de `Desktop.dc.html` foi implementado e descartado. |

@@ -25,9 +25,4 @@ Os tokens da Folha de estilo são a referência; nenhuma cor deve ser escrita di
 
 **"Eu" nas listas:** avatar redondo igual ao dos outros, com o nome em negrito embaixo. Sem anel extra, sem bolinha (parece notificação) e sem avatar quadrado.
 
-**Desktop (a partir de \~1024 px):**
-
-- Cabeçalho com tema, sino e avatar.
-- Barra lateral com "No total, você deve/recebe" e a lista de splits com o saldo de cada um.
-- Abas "Transações e saldo · Minha visão · Pessoas": no desktop, Transações e Saldo ficam lado a lado (lista à esquerda, cartões por pessoa à direita).
-- Mesmas regras, permissões e ações do celular. Não existe matriz.
+**Desktop:** a mesma interface do celular, numa coluna centralizada (até 560 px). Sem barra lateral nem colunas lado a lado; mesmas telas, regras, permissões e ações. Não existe matriz. (Decidido em 24/10/2026; o `reference/design/Desktop.dc.html` não vale mais.)

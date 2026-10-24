@@ -77,7 +77,7 @@ A parte quitada é `min(paid[x], share[x])`. Se `paid[x] < share[x]`, a diferen�
 | Sair do split | **Function** `leaveSplit`: recalcula com `packages/calc`, exige `net` 0; admin só se restar outro admin | Bloqueia com saldo; último admin nega; depois de sair, não lê mais o split |
 | Remover participante | **Function** `removeMember`: recalcula com `packages/calc`, exige `net` 0 e ausência em despesas | Emulador: bloqueia com saldo e com despesa |
 | Entrar por convite / "Quem é você?" | **Function** `joinByCode` + `claimMember` (transação; nome travado se já tem uid) e "Não estou na lista" com `nameKey` único | Dois claims no mesmo nome: o segundo falha; nome repetido falha |
-| Finalizar / reabrir | Rules: só admin muda `status`/`doneAt` | Membro nega |
+| Finalizar / reabrir | **Functions** `finalizeSplit` / `reopenSplit` (só admin; as regras negam escrita em `splits`); finalizar apaga os comprovantes do split | Membro nega; finalizado recusa lançar e marcar (`split-done`); comprovantes viram expirados (`finalize.test.ts`) |
 | Notificações | **Functions** de pagamento criam/atualizam o aviso na mesma transação; regras: só o dono lê e só marca como lido | Cada uma das 4 situações; confirmar/contestar/Recebi mudam o estado; excluir/desfazer esconde (`notifications.test.ts`, `rules.test.ts`) |
 | Link de recuperação | **Function** `createRecoveryLink` / `redeemRecovery` → `createCustomToken`; `revokeRecovery` | Token revogado falha; gerar outro revoga o anterior; salvar a conta revoga |
 | Gerar novo código de convite | **Function** `regenerateCode` (só admin): apaga o código antigo e cria outro na mesma transação | Membro nega; código antigo dá `invalid-code` |
@@ -234,9 +234,16 @@ Decisão: 10 ✅ (Resend, agrupado em 10 min, resumo + botão, sem foto; **e-mai
 ### Fase 8 — Finalizar, home completa, desktop e acabamento
 - Finalizar/reabrir com resumo `sug`, "Finalizar mesmo assim" e modo só leitura. Finalizar apaga na hora os comprovantes (de pagamento e de despesa) do split (decisão 9).
 - Filtro "Finalizados" e total da home.
-- Layout ≥ 1024 px: barra lateral, Transações + Saldo lado a lado.
+- ~~Layout ≥ 1024 px: barra lateral, Transações + Saldo lado a lado.~~ **Descartado em 24/10/2026:** o desktop usa a mesma UI do celular (spec 09 e 10).
 - Passada de a11y: contraste AA, alvos de 44 px, `prefers-reduced-motion`, `aria-pressed`.
 - **Pronto:** screenshots 1440 × `Desktop.dc.html`; checagem axe sem violações sérias; revisão manual no iPhone e no Android pelo link do Pages.
+- **Status: concluída** (falta só a revisão manual no iPhone e no Android, do Lucas). Notas da implementação:
+  - Finalizar e reabrir por Functions (só admin). Finalizar apaga na hora os comprovantes do split (registros `proofs/` e tudo em `splits/{id}/` no Storage), deixando-os como expirados; reabrir não traz de volta. A folha avisa: "Os comprovantes deste split são apagados ao finalizar."
+  - App: "Finalizar split" e "Reabrir" no menu (desabilitados para membro, com "só admin"), folha com o resumo `sug` e "Finalizar mesmo assim", aviso "Finalizado em …" com Reabrir (admin), tudo otimista. Home e barra lateral mostram "Finalizado em …". "Sua conta" entrou no menu do split, como a spec pede.
+  - Desktop: o layout de duas colunas do `Desktop.dc.html` chegou a ser feito e foi **descartado** a pedido do Lucas (muita informação na tela, duas UIs para aprender e manter). No desktop vale a mesma UI do celular, numa coluna centralizada de até 560 px; um e2e confere que em 1440 px é a mesma tela, sem rolagem horizontal.
+  - Acessibilidade: e2e com axe nas telas do produto (home, abas do split, notificações, conta), nos dois temas e nas duas larguras, sem violações sérias. `prefers-reduced-motion` desliga as animações novas.
+  - A prévia de Saldo entrou na tela Paleta (`dev/SaldoPreview.tsx`).
+  - Textos novos fora do protótipo (revisar): "Os comprovantes deste split são apagados ao finalizar."
 
 ## 5. Ações que só o Lucas pode fazer
 

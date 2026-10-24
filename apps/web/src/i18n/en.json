@@ -155,7 +155,8 @@
     "emptyTitle": "No splits yet",
     "emptyBody": "Start one for the trip, the barbecue or Secret Santa and stop doing math on napkins.",
     "newSplit": "New split",
-    "join": "Join with code or link"
+    "join": "Join with code or link",
+    "doneOn": "Closed {{date}}"
   },
   "create": {
     "title": "New split",
@@ -703,5 +704,21 @@
     "sentProof": "sent a receipt",
     "youConfirmed": "You confirmed receipt",
     "youSaidNo": "You said it didn’t arrive"
+  },
+  "fin": {
+    "menu": "Close split",
+    "reopen": "Reopen",
+    "adminOnly": "admin only",
+    "title": "Close “{{name}}”?",
+    "body": "No one can add new expenses. Pending payments stay visible and you can reopen anytime.",
+    "proofs": "This split’s receipts are deleted when you close it.",
+    "pending": "Still pending",
+    "allSettled": "All settled",
+    "anyway": "Close anyway",
+    "done": "Split closed",
+    "reopened": "Split reopened",
+    "banner": "Closed on {{date}}",
+    "lock": "Split is closed: reopen to edit.",
+    "pair": "{{from}} → {{to}}"
   }
 }

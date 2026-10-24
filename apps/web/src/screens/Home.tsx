@@ -1,42 +1,17 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router';
-import { collection, onSnapshot } from 'firebase/firestore';
-import type { Payment } from '@qpq/calc';
 import { Badge, Icon, Segmented, SkeletonCard, ThemeToggle } from '../components/index.ts';
-import { firebase } from '../firebase.ts';
-import { toExpenseDoc, useMySplits, useProfile } from '../data/hooks.ts';
+import { useMySplits, useProfile } from '../data/hooks.ts';
+import { totalsOf, useMyNets } from '../data/nets.ts';
 import { Bell } from './Notifications.tsx';
 import { ProfileAvatar, SplitCover } from './Photos.tsx';
 import { hiddenSplits } from '../data/local.ts';
-import { balances, myMember, type Money, type SplitDoc } from '../data/model.ts';
 import { useSession } from '../data/session.ts';
 import { useLang } from '../i18n/index.ts';
+import { dayMonth } from '../lib/dates.ts';
 import { formatCents } from '../lib/money.ts';
 import { EmptyArt, useBalanceView } from './common.tsx';
-
-/** Seu saldo em cada split, recalculado das despesas e acertos (nunca guardado). */
-function useMyNets(splits: SplitDoc[], uid: string | null): Record<string, number> {
-  const ids = splits.map((s) => s.id).join(',');
-  const [money, setMoney] = useState<Record<string, Money>>({});
-  useEffect(() => {
-    if (!ids) return;
-    const { db } = firebase();
-    const offs = ids.split(',').flatMap((id) => [
-      onSnapshot(collection(db, 'splits', id, 'expenses'), (s) => setMoney((m) => ({ ...m, [id]: { payments: [], ...m[id], expenses: s.docs.map((d) => toExpenseDoc(d.id, d.data())).filter((e) => !e.deletedAt) } })), () => {}),
-      onSnapshot(collection(db, 'splits', id, 'payments'), (s) => setMoney((m) => ({ ...m, [id]: { expenses: [], ...m[id], payments: s.docs.map((d) => d.data() as Payment) } })), () => {}),
-    ]);
-    return () => offs.forEach((off) => off());
-  }, [ids]);
-  return useMemo(() => {
-    const out: Record<string, number> = {};
-    for (const s of splits) {
-      const me = uid ? myMember(s, uid) : null;
-      out[s.id] = me ? (balances(s, money[s.id] ?? { expenses: [], payments: [] })[me.id] ?? 0) : 0;
-    }
-    return out;
-  }, [splits, money, uid]);
-}
 
 export default function Home() {
   const { t } = useTranslation();
@@ -58,14 +33,7 @@ export default function Home() {
   const done = splits.filter((s) => s.status === 'done');
   const shown = filter === 'open' ? open : done;
 
-  let owe = 0;
-  let recv = 0;
-  for (const s of open) {
-    const c = nets[s.id] ?? 0;
-    if (c < 0) owe -= c;
-    else recv += c;
-  }
-  const total = recv - owe;
+  const { owe, recv, total } = totalsOf(open, nets);
   const loading = result.status === 'loading';
 
   return (
@@ -146,7 +114,7 @@ export default function Home() {
                     <span className="sc-name clamp2">{s.name}</span>
                     <span className="sc-meta">
                       <span className={`stdot ${s.status === 'done' ? 'done' : ''}`} aria-hidden="true" />
-                      {t('split.people', { count })} · {t(s.status === 'done' ? 'split.done' : 'split.open')}
+                      {t('split.people', { count })} · {s.status === 'done' && s.doneAt ? t('home.doneOn', { date: dayMonth(s.doneAt, lang) }) : t(s.status === 'done' ? 'split.done' : 'split.open')}
                     </span>
                   </span>
                   <span className="balwrap">

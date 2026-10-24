@@ -6,10 +6,13 @@ import { Button, Icon, Sheet, SkeletonCard, useToast, type IconName } from '../c
 import { api, detailsOf } from '../data/api.ts';
 import { useMoney, useSplit } from '../data/hooks.ts';
 import { hideSplit, pendingJoins } from '../data/local.ts';
-import { applyPatches, leaveBlock, membersInOrder, myMember, type ExpenseDoc, type Member, type MemberPatch, type PaymentDoc, type SplitDoc } from '../data/model.ts';
+import { applyPatches, leaveBlock, membersInOrder, myMember, type ExpenseDoc, type Member, type MemberPatch, type Money, type PaymentDoc, type SplitDoc } from '../data/model.ts';
 import { useSession } from '../data/session.ts';
 import { useOptimisticAction } from '../lib/optimistic.ts';
 import { setTheme, useTheme } from '../theme/theme.ts';
+import { useLang } from '../i18n/index.ts';
+import { dayMonth } from '../lib/dates.ts';
+import { FinalizeSheet } from './FinalizeSheet.tsx';
 import { BalanceTab } from './BalanceTab.tsx';
 import { appBase, copyText, useWho } from './common.tsx';
 import { MyViewTab } from './MyViewTab.tsx';
@@ -63,6 +66,19 @@ function usePatches(split: SplitDoc | null): [SplitDoc | null, PeopleAction] {
   return [split ? applyPatches(split, patches.map((p) => p.patch)) : null, act];
 }
 
+/** Finalizar/Reabrir otimista: o status muda na hora; o snapshot do servidor vence quando chega. */
+function useStatus(split: SplitDoc | null): [SplitDoc | null, (status: 'open' | 'done') => () => void] {
+  const [override, setOverride] = useState<{ status: 'open' | 'done'; doneAt: Date | null } | null>(null);
+  useEffect(() => {
+    if (override && split?.status === override.status) setOverride(null);
+  }, [split, override]);
+  const set = useCallback((status: 'open' | 'done') => {
+    setOverride({ status, doneAt: status === 'done' ? new Date() : null });
+    return () => setOverride(null);
+  }, []);
+  return [split && override ? { ...split, ...override } : split, set];
+}
+
 /** Saldo e Minha visão, com as folhas de pagamento e de comprovante. */
 function MoneyTab({ tab, split, me, expenses, payments }: { tab: 'saldo' | 'eu'; split: SplitDoc; me: Member; expenses: readonly ExpenseDoc[]; payments: readonly PaymentDoc[] }) {
   const who = useWho(split, me);
@@ -87,6 +103,7 @@ function SplitSkeleton() {
 
 export default function Split() {
   const { t } = useTranslation();
+  const lang = useLang();
   const { id = '', tab = '' } = useParams();
   const navigate = useNavigate();
   const toast = useToast();
@@ -96,11 +113,13 @@ export default function Split() {
   const uid = session.status === 'ready' ? session.uid : null;
   const pending = pendingJoins.use().get(id);
   const result = useSplit(id, pending ? null : uid);
-  const [view, act] = usePatches(result.status === 'ready' ? result.data : null);
+  const [patched, act] = usePatches(result.status === 'ready' ? result.data : null);
+  const [view, setStatus] = useStatus(patched);
   const money = useMoney(id, result.status === 'ready');
   const added = (useLocation().state as { added?: string } | null)?.added ?? null;
   const [menu, setMenu] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [finalizing, setFinalizing] = useState(false);
   const run = useOptimisticAction();
 
   const current = TABS.find((x) => x.path === (tab ? `/${tab}` : '')) ?? TABS[0]!;
@@ -112,6 +131,8 @@ export default function Split() {
 
   const count = view ? membersInOrder(view).length : 0;
   const block = view && me ? leaveBlock(view, money, me.id) : null;
+  const isOpen = view?.status !== 'done';
+  const isAdmin = !!me?.admin;
 
   const invite = async () => {
     setMenu(false);
@@ -143,96 +164,127 @@ export default function Split() {
     });
   };
 
-  return (
-    <main className="page">
-      <header className="hdr hdr-split">
-        <Link to="/" className="iconbtn" aria-label={t('common.back')}>
-          <Icon name="back" />
-        </Link>
-        {view && <SplitCover split={view} size="sm" />}
-        <div className="hdr-mid">
-          <h1 className="h3 clamp2">{view?.name ?? ''}</h1>
-          {view && (
-            <p className="cap">
-              {t('split.people', { count })} · {t(view.status === 'done' ? 'split.done' : 'split.open')}
-            </p>
-          )}
-        </div>
-        <Bell />
-        <div className="menu-anchor">
-          <button type="button" className="iconbtn" aria-label={t('common.moreOptions')} aria-expanded={menu} disabled={!view} onClick={() => setMenu(!menu)}>
-            <Icon name="dots" />
-          </button>
-          {menu && (
-            <>
-              <button type="button" className="menuscrim" aria-label={t('common.close')} onClick={() => setMenu(false)} />
-              <div className="menu" role="menu">
-                <button type="button" className="mi" role="menuitem" onClick={() => void invite()}>
-                  <Icon name="link" />
-                  {t('menu.invite')}
-                </button>
-                <button
-                  type="button"
-                  className="mi"
-                  role="menuitem"
-                  onClick={() => {
-                    setMenu(false);
-                    setTheme(theme === 'light' ? 'dark' : 'light');
-                  }}
-                >
-                  <Icon name="moon" />
-                  {t('menu.theme')}
-                </button>
-                <button
-                  type="button"
-                  className="mi danger"
-                  role="menuitem"
-                  onClick={() => {
-                    setMenu(false);
-                    setLeaving(true);
-                  }}
-                >
-                  <Icon name="leave" />
-                  {t('menu.leave')}
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </header>
+  /** Finalizar ou reabrir (só admin): muda na hora; volta com aviso se o servidor recusar. */
+  const changeStatus = (status: 'open' | 'done') => {
+    setMenu(false);
+    setFinalizing(false);
+    void run({
+      apply: () => {
+        const undo = setStatus(status);
+        if (status === 'done') void navigate(`/s/${id}/saldo`, { replace: true });
+        return undo;
+      },
+      commit: async () => {
+        await (status === 'done' ? api.finalizeSplit({ splitId: id }) : api.reopenSplit({ splitId: id }));
+        toast.show({ text: status === 'done' ? t('fin.done') : t('fin.reopened') });
+      },
+      errorText: (e) => reasonText(detailsOf(e)),
+    });
+  };
 
-      {!view || !me ? (
-        <SplitSkeleton />
-      ) : current.key === 'pessoas' ? (
-        <PeopleTab split={view} money={money} me={me} act={act} />
-      ) : current.key === 'tx' ? (
-        <TxTab split={view} me={me} expenses={money.expenses} loaded={money.loaded} canAdd={view.status === 'open'} onAdd={() => void navigate(`/s/${id}/despesa/nova`)} lastAdded={added} />
+  const menuItems = (
+    <>
+      <button type="button" className="mi" role="menuitem" onClick={() => void invite()}>
+        <Icon name="link" />
+        {t('menu.invite')}
+      </button>
+      <button
+        type="button"
+        className="mi"
+        role="menuitem"
+        onClick={() => {
+          setMenu(false);
+          setTheme(theme === 'light' ? 'dark' : 'light');
+        }}
+      >
+        <Icon name="moon" />
+        {t('menu.theme')}
+      </button>
+      <Link to="/conta" className="mi" role="menuitem" onClick={() => setMenu(false)}>
+        <Icon name="user" />
+        {t('account.title')}
+      </Link>
+      {/* "Finalizar" aparece desabilitado para membro (spec 04). */}
+      {isOpen ? (
+        <button
+          type="button"
+          className="mi"
+          role="menuitem"
+          disabled={!isAdmin}
+          onClick={() => {
+            setMenu(false);
+            setFinalizing(true);
+          }}
+        >
+          <Icon name="flag" />
+          {t('fin.menu')}
+          {!isAdmin && <span className="cap">{t('fin.adminOnly')}</span>}
+        </button>
       ) : (
-        <MoneyTab tab={current.key === 'saldo' ? 'saldo' : 'eu'} split={view} me={me} expenses={money.expenses} payments={money.payments} />
+        <button type="button" className="mi" role="menuitem" disabled={!isAdmin} onClick={() => changeStatus('open')}>
+          <Icon name="reopen" />
+          {t('fin.reopen')}
+          {!isAdmin && <span className="cap">{t('fin.adminOnly')}</span>}
+        </button>
       )}
+      <button
+        type="button"
+        className="mi danger"
+        role="menuitem"
+        onClick={() => {
+          setMenu(false);
+          setLeaving(true);
+        }}
+      >
+        <Icon name="leave" />
+        {t('menu.leave')}
+      </button>
+    </>
+  );
 
-      {view && me && current.key === 'tx' && view.status === 'open' && money.expenses.length > 0 && (
-        <Link to={`/s/${id}/despesa/nova`} className="fab" aria-label={t('expense.tx.add')}>
-          <Icon name="plus" size="lg" />
-        </Link>
+  const menuButton = (
+    <div className="menu-anchor">
+      <button type="button" className="iconbtn" aria-label={t('common.moreOptions')} aria-expanded={menu} disabled={!view} onClick={() => setMenu(!menu)}>
+        <Icon name="dots" />
+      </button>
+      {menu && (
+        <>
+          <button type="button" className="menuscrim" aria-label={t('common.close')} onClick={() => setMenu(false)} />
+          <div className="menu" role="menu">
+            {menuItems}
+          </div>
+        </>
       )}
+    </div>
+  );
 
-      <nav className="tabbar" aria-label={t('split.tabs.nav')}>
-        {TABS.map((x) => (
-          <Link key={x.key} to={`/s/${id}${x.path}`} replace className={`tab ${x === current ? 'on' : ''}`} aria-current={x === current ? 'page' : undefined}>
-            <span className="pill" aria-hidden="true">
-              <Icon name={x.icon} />
-            </span>
-            <span>{t(x.label)}</span>
-            {x.key === 'pessoas' && me && !me.admin && (
-              <span className="lk" aria-label={t('split.tabs.adminOnly')}>
-                <Icon name="lock" />
-              </span>
-            )}
-          </Link>
-        ))}
-      </nav>
+  const doneBanner = view && !isOpen && (
+    <div className="banner banner-done" role="status">
+      <Icon name="flag" />
+      <span style={{ flex: 1 }}>{t('fin.banner', { date: view.doneAt ? dayMonth(view.doneAt, lang) : '' })}</span>
+      {isAdmin && (
+        <Button size="sm" variant="secondary" onClick={() => changeStatus('open')}>
+          {t('fin.reopen')}
+        </Button>
+      )}
+    </div>
+  );
 
+  const goAdd = () => void navigate(`/s/${id}/despesa/nova`);
+  const txTab = view && me && <TxTab split={view} me={me} expenses={money.expenses} loaded={money.loaded} canAdd={isOpen} onAdd={goAdd} lastAdded={added} />;
+  const tabBody =
+    !view || !me ? (
+      <SplitSkeleton />
+    ) : current.key === 'pessoas' ? (
+      <PeopleTab split={view} money={money} me={me} act={act} />
+    ) : current.key === 'tx' ? (
+      txTab
+    ) : (
+      <MoneyTab tab={current.key === 'saldo' ? 'saldo' : 'eu'} split={view} me={me} expenses={money.expenses} payments={money.payments} />
+    );
+
+  const sheets = (
+    <>
       <Sheet open={leaving} title={t('leave.title', { name: view?.name ?? '' })} onClose={() => setLeaving(false)}>
         {block ? (
           <div className="alert" role="alert">
@@ -253,6 +305,60 @@ export default function Split() {
           </Button>
         </div>
       </Sheet>
+      {view && me && <FinalizeSplitSheet open={finalizing} split={view} me={me} money={money} onClose={() => setFinalizing(false)} onConfirm={() => changeStatus('done')} />}
+    </>
+  );
+
+  return (
+    <main className="page">
+      <header className="hdr hdr-split">
+        <Link to="/" className="iconbtn" aria-label={t('common.back')}>
+          <Icon name="back" />
+        </Link>
+        {view && <SplitCover split={view} size="sm" />}
+        <div className="hdr-mid">
+          <h1 className="h3 clamp2">{view?.name ?? ''}</h1>
+          {view && (
+            <p className="cap">
+              {t('split.people', { count })} · {t(isOpen ? 'split.open' : 'split.done')}
+            </p>
+          )}
+        </div>
+        <Bell />
+        {menuButton}
+      </header>
+      {doneBanner}
+
+      {tabBody}
+
+      {view && me && current.key === 'tx' && isOpen && money.expenses.length > 0 && (
+        <Link to={`/s/${id}/despesa/nova`} className="fab" aria-label={t('expense.tx.add')}>
+          <Icon name="plus" size="lg" />
+        </Link>
+      )}
+
+      <nav className="tabbar" aria-label={t('split.tabs.nav')}>
+        {TABS.map((x) => (
+          <Link key={x.key} to={`/s/${id}${x.path}`} replace className={`tab ${x === current ? 'on' : ''}`} aria-current={x === current ? 'page' : undefined}>
+            <span className="pill" aria-hidden="true">
+              <Icon name={x.icon} />
+            </span>
+            <span>{t(x.label)}</span>
+            {x.key === 'pessoas' && me && !me.admin && (
+              <span className="lk" aria-label={t('split.tabs.adminOnly')}>
+                <Icon name="lock" />
+              </span>
+            )}
+          </Link>
+        ))}
+      </nav>
+      {sheets}
     </main>
   );
+}
+
+/** A folha de Finalizar com os nomes como a pessoa prefere ("Você" ou o nome). */
+function FinalizeSplitSheet({ open, split, me, money, onClose, onConfirm }: { open: boolean; split: SplitDoc; me: Member; money: Money; onClose: () => void; onConfirm: () => void }) {
+  const who = useWho(split, me);
+  return <FinalizeSheet open={open} split={split} money={money} who={who} onClose={onClose} onConfirm={onConfirm} />;
 }

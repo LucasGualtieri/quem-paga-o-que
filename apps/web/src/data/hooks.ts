@@ -5,6 +5,12 @@ import { pruneOps, mergeOps, useOps } from './expenseStore.ts';
 import { activeExpenses, type ExpenseDoc, type PaymentDoc, type SplitDoc } from './model.ts';
 import { applyPaymentOps, applyShareOps, prunePaymentOps, pruneShareOps, usePayOps } from './payStore.ts';
 
+/** Documento do Firestore → split (a data de finalização vira Date). */
+export function toSplitDoc(id: string, d: Record<string, unknown>): SplitDoc {
+  const done = d.doneAt as { toDate?: () => Date } | null | undefined;
+  return { ...(d as unknown as SplitDoc), id, doneAt: done?.toDate ? done.toDate() : null };
+}
+
 export type Loadable<T> = { status: 'loading' } | { status: 'ready'; data: T } | { status: 'denied' };
 
 /** Splits em que a pessoa está, em tempo real (a regra só deixa listar com este filtro). */
@@ -15,7 +21,7 @@ export function useMySplits(uid: string | null): Loadable<SplitDoc[]> {
     const q = query(collection(firebase().db, 'splits'), where('uids', 'array-contains', uid));
     return onSnapshot(
       q,
-      (snap) => setState({ status: 'ready', data: snap.docs.map((d) => ({ ...(d.data() as Omit<SplitDoc, 'id'>), id: d.id })) }),
+      (snap) => setState({ status: 'ready', data: snap.docs.map((d) => toSplitDoc(d.id, d.data())) }),
       () => setState({ status: 'denied' }),
     );
   }, [uid]);
@@ -29,7 +35,7 @@ export function useSplit(splitId: string, uid: string | null): Loadable<SplitDoc
     setState({ status: 'loading' });
     return onSnapshot(
       doc(firebase().db, 'splits', splitId),
-      (snap) => setState(snap.exists() ? { status: 'ready', data: { ...(snap.data() as Omit<SplitDoc, 'id'>), id: snap.id } } : { status: 'denied' }),
+      (snap) => setState(snap.exists() ? { status: 'ready', data: toSplitDoc(snap.id, snap.data()) } : { status: 'denied' }),
       () => setState({ status: 'denied' }),
     );
   }, [splitId, uid]);

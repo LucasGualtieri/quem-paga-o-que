@@ -350,7 +350,7 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc: ExpenseDoc
         ) : (
           <div className="info">
             <Icon name="lock" />
-            <span>{t('expense.detail.lock', { name: authorName })}</span>
+            <span>{isOpen ? t('expense.detail.lock', { name: authorName }) : t('fin.lock')}</span>
           </div>
         )}
       </div>

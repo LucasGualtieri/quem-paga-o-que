@@ -25,6 +25,8 @@ export interface SplitDoc {
   proofVisibility?: ProofVisibility;
   /** Capa com foto (caminho no Storage); sem ela, o emoji. */
   photo?: string | null;
+  /** Quando foi finalizado (spec 04). */
+  doneAt?: Date | null;
 }
 
 export type Member = MemberDoc & { id: MemberId };

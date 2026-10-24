@@ -155,7 +155,8 @@
     "emptyTitle": "Nenhum split por aqui",
     "emptyBody": "Crie um para a viagem, o churrasco ou o amigo oculto e pare de fazer conta no guardanapo.",
     "newSplit": "Novo split",
-    "join": "Entrar com código ou link"
+    "join": "Entrar com código ou link",
+    "doneOn": "Finalizado em {{date}}"
   },
   "create": {
     "title": "Novo split",
@@ -703,5 +704,21 @@
     "sentProof": "enviou comprovante",
     "youConfirmed": "Você confirmou o recebimento",
     "youSaidNo": "Você avisou que não recebeu"
+  },
+  "fin": {
+    "menu": "Finalizar split",
+    "reopen": "Reabrir",
+    "adminOnly": "só admin",
+    "title": "Finalizar “{{name}}”?",
+    "body": "Ninguém poderá lançar novas despesas. Pagamentos pendentes continuam visíveis e dá para reabrir quando quiser.",
+    "proofs": "Os comprovantes deste split são apagados ao finalizar.",
+    "pending": "Ficou pendente",
+    "allSettled": "Tudo quitado",
+    "anyway": "Finalizar mesmo assim",
+    "done": "Split finalizado",
+    "reopened": "Split reaberto",
+    "banner": "Finalizado em {{date}}",
+    "lock": "Split finalizado: reabra para editar.",
+    "pair": "{{from}} → {{to}}"
   }
 }

@@ -1,15 +1,15 @@
 # Quem Paga O Quê? — handoff para uma nova conversa
 
-Atualizado em 24/10/2026, ao fim da Fase 7 (branch `main`). Leia este arquivo primeiro; ele aponta para o resto.
+Atualizado em 24/10/2026, ao fim da Fase 8 — todas as fases do plano concluídas (branch `main`). Leia este arquivo primeiro; ele aponta para o resto.
 
 ## Como começar a nova conversa
 
 Abra o Claude Code na pasta do projeto e cole:
 
 ```text
-Leia docs/handoff.md, CLAUDE.md e docs/plan.md. O projeto está na Fase 7 concluída.
-Implemente a Fase 8 (finalizar split, home completa, desktop e acessibilidade).
-Se esbarrar num ponto em aberto, me entreviste antes.
+Leia docs/handoff.md, CLAUDE.md e docs/plan.md. As 8 fases estão concluídas.
+Próximo passo: preparar o lançamento (ver "O que falta para ir ao ar"). Se esbarrar
+num ponto em aberto, me entreviste antes.
 ```
 
 ## O produto
@@ -43,7 +43,7 @@ Web app de divisão de despesas em grupo ("Quem Paga O Quê?"). Front estático 
 | 5 | Despesas: formulário, 5 modos de divisão, itens, Transações, detalhe, editar/excluir, conflito de edição | ✅ (CI verde, Functions no staging) |
 | 6 | Saldo, Minha visão, marcar pago/Recebi, confirmar/"Não recebi", acertos, comprovantes (Storage), capa e foto de perfil | ✅ (CI verde, Functions e Storage no staging) |
 | 7 | Notificações no app (4 eventos, sino, lista, banner pelo aviso) | ✅ (e-mail adiado: decisão 10) |
-| **8** | **Finalizar split, home completa, desktop ≥ 1024 px, acessibilidade** | **próxima** |
+| 8 | Finalizar/reabrir, home completa, acessibilidade (axe); desktop = mesma UI do celular | ✅ (falta revisão manual no celular) |
 
 ### Decisões (docs/spec/pontos-em-aberto.md)
 
@@ -83,13 +83,13 @@ Conceitos que não são óbvios:
 - Pagamento de parte não é edição: não mexe em `version` (decisão 8), sobe `paySeq`. Comprovante = `{path, at, by}`; `path: null` = expirou (não aceita outro).
 - Fotos: leitura sempre por `getBlob` (passa pelas regras do Storage), nunca por link público; envio já reduzido (`lib/image.ts`) e por caminho que diz de quem é (`splits/{id}/proofs/{from}/{to}/…`).
 
-## O que a Fase 8 precisa fazer (de docs/plan.md + spec 04 e 09)
+## O que falta para ir ao ar
 
-- **Finalizar / reabrir** (só admin; hoje não existe): resumo com a sugestão simplificada `sug` do `@qpq/calc`, "Finalizar mesmo assim" com pendências, modo só leitura com o aviso no topo, "Reabrir". Finalizar **apaga na hora os comprovantes** do split (de pagamento e de despesa, decisão 9): reaproveitar `functions/src/proofs.ts` (registro `proofs/` e `deleteFiles`), marcando `path: null`. As Functions já recusam com `split-done`.
-- **Home completa:** filtro "Finalizados" e o total "No total, você deve/recebe" sem os finalizados.
-- **Desktop ≥ 1024 px:** barra lateral, Transações + Saldo lado a lado (`reference/design/Desktop.dc.html`); hoje é coluna única de até 560 px.
-- **Acessibilidade:** contraste AA, alvos de 44 px, `prefers-reduced-motion`, `aria-pressed`; checagem axe.
-- Pendências que ficaram para cá: prévia de Saldo na tela Paleta; desligar `VITE_DEV_TOOLS` no workflow antes de lançar; projeto de produção (Blaze, us-east1, alerta de orçamento, alias `prod`, Storage com o papel `firestoreServiceAgent` e CORS); revisão manual em iPhone e Android.
+- **Revisão manual** no iPhone e no Android pelo link do Pages (o Lucas): fluxo completo com duas pessoas, foto de comprovante pela câmera, tema escuro.
+- **Projeto de produção** (o Lucas cria; o Claude orienta): Blaze, us-east1, alerta de orçamento, alias `prod` no `.firebaserc`, provedores de login (e-mail, Google) e domínio autorizado, papel "Criador de token da conta de serviço" (link de recuperação), Storage em us-east1 com o CORS de `storage.cors.json` e o papel `roles/firebaserules.firestoreServiceAgent` para a conta de serviço do Storage. Variáveis `VITE_FIREBASE_*` do projeto de produção no repositório (ou num ambiente do GitHub).
+- **Desligar as telas de revisão**: tirar `VITE_DEV_TOOLS: true` do workflow do Pages.
+- **E-mail** (opcional, decisão 10): domínio, Resend e o envio agrupado; até lá, só notificações no app.
+- Revisar os "Textos novos fora do protótipo" listados em cada fase do `docs/plan.md`.
 
 ## Preferências do Lucas (aprenda com elas)
 
@@ -131,9 +131,7 @@ E-mail/senha e Google ligados (nome público "Quem Paga O Quê? (staging)"); dom
 
 - **Storage do staging configurado em 23/10/2026:** bucket `qpq-staging.firebasestorage.app` (us-east1, criado pelo console), CORS de `storage.cors.json` aplicado pelo Cloud Shell, regras publicadas e o papel `roles/firebaserules.firestoreServiceAgent` dado à conta de serviço do Storage (`service-419882001563@gcp-sa-firebasestorage.iam.gserviceaccount.com`), sem o qual toda regra que lê o split no Firestore recusa. Verificado no staging: envio e leitura de capa, PDF recusado, CORS só para o Pages e localhost. O deploy em modo não interativo **não** pede esse papel: num projeto novo (produção), conceder antes. Ficou um split "Teste Storage" de um convidado (dado de teste).
 - As Fases 5 e 6 foram verificadas nos emuladores (e2e em 390 e 1440 px), mas despesas e pagamentos **ainda não foram testados à mão no app publicado**.
-- Apagar comprovantes ao finalizar o split (decisão 9) entra junto com Finalizar, na Fase 8.
-- Antes de ir ao ar (Fase 8): criar projeto de produção (Blaze, `us-east1`, alerta de orçamento), alias `prod`, desligar as telas de revisão, revisão manual em iPhone e Android.
-- Layout desktop (≥ 1024 px) e acabamento de acessibilidade são da Fase 8; o produto hoje é coluna única de até 560 px.
+- Desktop usa a mesma UI do celular (coluna de até 560 px). O layout de duas colunas foi descartado (spec 10); não reintroduzir sem nova decisão.
 - E-mail de notificação: decidido (Resend, decisão 10), mas só entra quando houver domínio de remetente; até lá a opção fica escondida (`EMAIL_CHANNEL` em `Account.tsx`).
 
 ---

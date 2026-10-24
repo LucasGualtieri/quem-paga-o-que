@@ -48,6 +48,9 @@ export const api = {
   removeMember: callable<MemberRequest, unknown>('removeMember'),
   leaveSplit: callable<SplitRequest, unknown>('leaveSplit'),
   regenerateCode: callable<SplitRequest, RegenerateCodeResponse>('regenerateCode'),
+  // Finalizar e reabrir (Fase 8): só admin.
+  finalizeSplit: callable<SplitRequest, unknown>('finalizeSplit'),
+  reopenSplit: callable<SplitRequest, unknown>('reopenSplit'),
   // Despesas (Fase 5): só as Functions escrevem.
   createExpense: callable<CreateExpenseRequest, ExpenseWriteResponse>('createExpense'),
   updateExpense: callable<UpdateExpenseRequest, ExpenseWriteResponse>('updateExpense'),
