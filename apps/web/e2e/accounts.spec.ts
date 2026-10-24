@@ -103,8 +103,9 @@ test('link de recuperação devolve a identidade; preferências vão junto; revo
   await shot(page, 'sua-conta-convidado');
 
   await page.goto('./#/salvar');
+  // O link chega da Function depois que a tela abre: espera ele aparecer antes de ler.
+  await expect(page.locator('.linkbox .amt')).toContainText('#/r/', { timeout: 15_000 });
   const link = (await page.locator('.linkbox .amt').textContent())!;
-  expect(link).toContain('#/r/');
 
   const other = await (await browser.newContext()).newPage();
   await other.goto(link);
