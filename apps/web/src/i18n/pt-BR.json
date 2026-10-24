@@ -599,7 +599,10 @@
     "markPaid": "Marcar como pago",
     "gotIt": "Recebi",
     "markRecv": "Marcar como recebido",
-    "now": "agora"
+    "now": "agora",
+    "recordedTo": "Pagamento registrado · avisamos {{name}}",
+    "proofSentTo": "Comprovante enviado · avisamos {{name}}",
+    "disputedTo": "Avisamos {{name}} que o pagamento não chegou"
   },
   "sal": {
     "yourBal": "Seu saldo neste split",
@@ -675,5 +678,30 @@
     "loading": "Carregando foto",
     "error": "Não deu para abrir a foto.",
     "saved": "Foto atualizada"
+  },
+  "notif": {
+    "title": "Notificações",
+    "readAll": "Marcar todas como lidas",
+    "emptyT": "Nada de novo por aqui",
+    "emptyB": "Quando alguém marcar que te pagou, o aviso aparece aqui.",
+    "manage": "Gerenciar notificações",
+    "unread": "não lida",
+    "bell": "Notificações",
+    "bellNew": "Notificações, {{count}} novas",
+    "paid": "{{name}} pagou {{amount}} pra você",
+    "receivedFrom": "{{name}} marcou que recebeu {{amount}} de você",
+    "adminPaid": "{{name}} registrou que {{who}} te pagou {{amount}}",
+    "adminReceived": "{{name}} registrou que você pagou {{amount}} para {{who}}",
+    "proof": "{{name}} enviou um comprovante",
+    "disputed": "{{name}} avisou que não recebeu {{amount}}",
+    "settle": "Acerto de contas",
+    "withProof": "com comprovante",
+    "noProof": "sem comprovante",
+    "confirmed": " · confirmado",
+    "youDisputed": " · você contestou",
+    "bannerTitle": "{{name}} marcou que pagou {{amount}}",
+    "sentProof": "enviou comprovante",
+    "youConfirmed": "Você confirmou o recebimento",
+    "youSaidNo": "Você avisou que não recebeu"
   }
 }

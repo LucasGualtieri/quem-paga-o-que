@@ -6,6 +6,7 @@ import type { Payment } from '@qpq/calc';
 import { Badge, Icon, Segmented, SkeletonCard, ThemeToggle } from '../components/index.ts';
 import { firebase } from '../firebase.ts';
 import { toExpenseDoc, useMySplits, useProfile } from '../data/hooks.ts';
+import { Bell } from './Notifications.tsx';
 import { ProfileAvatar, SplitCover } from './Photos.tsx';
 import { hiddenSplits } from '../data/local.ts';
 import { balances, myMember, type Money, type SplitDoc } from '../data/model.ts';
@@ -75,6 +76,7 @@ export default function Home() {
           <h1 className="h1">{t('home.mySplits')}</h1>
         </div>
         <ThemeToggle />
+        <Bell />
         <Link to="/conta" className="avbtn" aria-label={t('account.title')}>
           <ProfileAvatar name={name} photoPath={photoPath} size="lg" />
         </Link>

@@ -14,6 +14,7 @@ import { BalanceTab } from './BalanceTab.tsx';
 import { appBase, copyText, useWho } from './common.tsx';
 import { MyViewTab } from './MyViewTab.tsx';
 import { usePayFlow } from './PaySheet.tsx';
+import { Bell } from './Notifications.tsx';
 import { SplitCover } from './Photos.tsx';
 import { PeopleTab, type PeopleAction } from './PeopleTab.tsx';
 import { TxTab } from './TxTab.tsx';
@@ -157,6 +158,7 @@ export default function Split() {
             </p>
           )}
         </div>
+        <Bell />
         <div className="menu-anchor">
           <button type="button" className="iconbtn" aria-label={t('common.moreOptions')} aria-expanded={menu} disabled={!view} onClick={() => setMenu(!menu)}>
             <Icon name="dots" />

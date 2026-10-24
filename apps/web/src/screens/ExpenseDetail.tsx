@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, Navigate, useNavigate, useParams } from 'react-router';
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router';
 import { Avatar, avatarColor, Badge, Button, Icon, Sheet, SkeletonCard } from '../components/index.ts';
 import { useExpenses, useHistory, useSplit, type HistoryEntry } from '../data/hooks.ts';
 import { canSeeProof, myMember, sharesOf, type ExpenseDoc, type Member, type SplitDoc } from '../data/model.ts';
+import { markRead, useNotifications } from '../data/notifications.ts';
 import { useSession } from '../data/session.ts';
 import { useLang } from '../i18n/index.ts';
 import { dateOf, shortDay, shortDayTime } from '../lib/dates.ts';
@@ -27,6 +28,19 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc: ExpenseDoc
   const history = useHistory(split.id, doc.id);
   const [confirm, setConfirm] = useState(false);
   const { flow, sheets } = usePayFlow(split, me, who);
+  // Destaque vem do caminho (?n= da notificação), pendência vem do estado (spec 07).
+  const [params] = useSearchParams();
+  const session = useSession();
+  const notes = useNotifications(session.status === 'ready' ? session.uid : null);
+  const note = notes?.find((n) => n.id === params.get('n') && n.expId === doc.id) ?? null;
+  const hl = note?.memberId ?? null;
+  const banner = note?.kind === 'paid' && note.memberId ? note : null;
+  // O que a pessoa fez pelo banner aparece na hora, antes de o servidor atualizar o aviso.
+  const [acted, setActed] = useState<'confirmed' | 'disputed' | null>(null);
+  // Chegar pela notificação (lista ou, no futuro, e-mail) conta como abrir o aviso.
+  useEffect(() => {
+    if (note && !note.read) void markRead(note.id);
+  }, [note]);
   const fmt = (c: number) => formatCents(c, lang);
   const isOpen = split.status === 'open';
 
@@ -87,6 +101,70 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc: ExpenseDoc
       </header>
 
       <div className="content" style={{ gap: 18, paddingBottom: 40 }}>
+        {banner && (() => {
+          const m = banner.memberId!;
+          const member = split.members[m];
+          const v = sh[m] ?? banner.amount;
+          const paidNow = (doc.paid[m] ?? 0) > 0;
+          const proof = paidNow ? doc.proof[m] : undefined;
+          const pending = paidNow && !!doc.pendConf[m];
+          const result = pending ? null : (acted ?? (banner.status === 'new' ? null : banner.status));
+          return (
+            <div className="nbanner" role="status">
+              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                <span className="avsel">
+                  <Avatar name={member?.name ?? banner.fromName} color={avatarColor(member?.joinOrder ?? 0)} />
+                  <span className="nbadge" aria-hidden="true">
+                    <Icon name="in" />
+                  </span>
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p className="h4">{t('notif.bannerTitle', { name: member?.name ?? banner.fromName, amount: fmt(v) })}</p>
+                  <p className="cap" style={{ marginTop: 2 }}>
+                    {banner.at ? `${when(banner.at)} · ` : ''}
+                    {proof?.path ? t('notif.sentProof') : t('notif.noProof')}
+                  </p>
+                </div>
+              </div>
+              <div className="nb-acts">
+                {proof?.path && canSeeProof(split, me, m, doc.payer) && (
+                  <Button size="sm" variant="secondary" icon={<Icon name="camera" size="sm" />} onClick={() => flow.viewProof({ proof, from: m, to: doc.payer, amount: v, what: doc.name })}>
+                    {t('pay.seeProof')}
+                  </Button>
+                )}
+                {pending && isOpen && (
+                  <>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setActed('confirmed');
+                        flow.confirm(doc, m);
+                      }}
+                    >
+                      {t('pay.confirmRecv')}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => {
+                        setActed('disputed');
+                        flow.dispute(doc, m);
+                      }}
+                    >
+                      {t('pay.notRecv')}
+                    </Button>
+                  </>
+                )}
+                {result && (
+                  <Badge tone={result === 'disputed' ? 'neg' : 'pos'} icon="check">
+                    {result === 'disputed' ? t('notif.youSaidNo') : t('notif.youConfirmed')}
+                  </Badge>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
         <div className="detail-head">
           <TagIcon tags={doc.tags} size="lg" />
           <h1 className="h2" style={{ marginTop: 4 }}>
@@ -121,9 +199,11 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc: ExpenseDoc
               const canAttach = paid && !proof && isOpen && (id === me.id || doc.payer === me.id || me.admin);
               const canView = paid && !!proof?.path && canSeeProof(split, me, id, doc.payer);
               const expired = paid && !!proof && !proof.path;
-              const showActs = (canAct && !toCheck) || canAttach || canView || expired || (toCheck && isOpen);
+              // Com o banner aberto, Confirmar / Não recebi saem da linha (sem ações repetidas).
+              const lineCheck = toCheck && isOpen && banner?.memberId !== id;
+              const showActs = (canAct && !toCheck) || canAttach || canView || expired || lineCheck;
               return (
-                <div key={id} className={`row2 ${id === me.id ? 'me-row' : ''}`}>
+                <div key={id} className={`row2 ${id === me.id ? 'me-row' : ''} ${hl === id ? 'hlrow' : ''}`}>
                   <div className="top">
                     <Avatar name={m?.name ?? '?'} color={avatarColor(m?.joinOrder ?? 0)} size="lg" />
                     <span className="mid">
@@ -170,7 +250,7 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc: ExpenseDoc
                           {paid ? t('common.undo') : doc.payer === me.id ? t('pay.markRecv') : t('pay.markPaid')}
                         </Button>
                       )}
-                      {toCheck && isOpen && (
+                      {lineCheck && (
                         <>
                           <Button size="sm" variant="secondary" onClick={() => flow.dispute(doc, id)}>
                             {t('pay.notRecv')}

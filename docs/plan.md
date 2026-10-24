@@ -47,7 +47,7 @@ Decisões que moldam o plano:
 - `inviteCodes/{code}` → `{splitId}`. Só Functions leem.
 - `recoveryTokens/{sha256(token)}` → `{uid, createdAt, revokedAt?}`. Só Functions acessam. Um token ativo por pessoa (gerar outro revoga o anterior); revogado ao salvar a conta (decisão 6).
 - `mergeTokens/{sha256(token)}` → `{guestUid, expiresAt}`: prova curta (10 min) de que quem pede a fusão era o convidado. Só Functions acessam (decisão 5).
-- `users/{uid}/notifications/{nid}`: `kind, splitId, expId?, paymentId?, fromMember, amount, hasProof, when, read, status: new|confirmed|disputed`. Só Functions criam.
+- `notifications/{nid}` (coleção de topo, filtrada por `to` = uid): `to, toMember, kind: paid|settled|proof|disputed, splitId, splitName, from, fromName, amount, hasProof, expId?, expName?, memberId?, paymentId?, payFrom?, payTo?, at, read, status: new|confirmed|disputed, hidden`. Só Functions criam; o dono só muda `read` para `true`. Índice `to` + `at desc`.
 
 ### Sempre calculado, nunca guardado
 
@@ -78,7 +78,7 @@ A parte quitada é `min(paid[x], share[x])`. Se `paid[x] < share[x]`, a diferen�
 | Remover participante | **Function** `removeMember`: recalcula com `packages/calc`, exige `net` 0 e ausência em despesas | Emulador: bloqueia com saldo e com despesa |
 | Entrar por convite / "Quem é você?" | **Function** `joinByCode` + `claimMember` (transação; nome travado se já tem uid) e "Não estou na lista" com `nameKey` único | Dois claims no mesmo nome: o segundo falha; nome repetido falha |
 | Finalizar / reabrir | Rules: só admin muda `status`/`doneAt` | Membro nega |
-| Notificações | **Function** triggers em `expenses`/`payments` | Marcar pago gera 1 notificação para o payer |
+| Notificações | **Functions** de pagamento criam/atualizam o aviso na mesma transação; regras: só o dono lê e só marca como lido | Cada uma das 4 situações; confirmar/contestar/Recebi mudam o estado; excluir/desfazer esconde (`notifications.test.ts`, `rules.test.ts`) |
 | Link de recuperação | **Function** `createRecoveryLink` / `redeemRecovery` → `createCustomToken`; `revokeRecovery` | Token revogado falha; gerar outro revoga o anterior; salvar a conta revoga |
 | Gerar novo código de convite | **Function** `regenerateCode` (só admin): apaga o código antigo e cria outro na mesma transação | Membro nega; código antigo dá `invalid-code` |
 | Fusão convidado → conta existente | **Functions** `prepareMerge` (como convidado: devolve token curto) → `previewMerge` / `mergeGuest` (já na conta: move os nomes, resolve conflitos pela escolha da pessoa, herda admin, apaga o usuário anônimo e revoga o link dele) | Token de outro usuário ou vencido falha; conflito sem escolha falha; nenhum split fica sem admin |
@@ -223,6 +223,13 @@ Decisão: 10 ✅ (Resend, agrupado em 10 min, resumo + botão, sem foto; **e-mai
 - Destaque por `hlShare` (parâmetro de navegação) × pendência por `pendConf`.
 - E-mail via Function, indisponível para convidado.
 - **Pronto:** testes de Functions no emulador para cada evento; e2e "chegar pela notificação mostra o banner; voltar pela lista não mostra".
+- **Status: concluída (sem e-mail).** Notas da implementação:
+  - Avisos criados dentro das Functions de pagamento (não por trigger): o aviso existe se e só se o pagamento foi gravado, e os testes não precisam esperar. Coleção de topo `notifications` (não `users/{uid}/notifications`): a Function acha os avisos de uma parte ou acerto com uma consulta simples.
+  - Quem é avisado: marcar a **própria** parte avisa quem pagou (admin marcando pelo outro ou "Recebi" de quem pagou não avisam); acerto avisa a outra pessoa (as duas, se foi um admin de fora); comprovante enviado logo depois de marcar entra no mesmo aviso ("com comprovante"), depois vira aviso novo; "Não recebi" avisa quem marcou. Quem ainda não entrou no split não recebe aviso.
+  - Estado do aviso "pagou": Confirmar → confirmado; Não recebi → contestado; "Recebi" de quem pagou resolve contestação antiga. Desfazer da própria pessoa esconde o aviso que ainda esperava confirmação; excluir a despesa ou desfazer o acerto esconde os avisos deles; restaurar a despesa traz de volta.
+  - App: sino na home e no split (contagem até "9+", some com "No app" desligado), tela `/notificacoes` (lista, "Marcar todas como lidas", "Gerenciar notificações"), banner no detalhe só com `?n=` (chegou pelo aviso), linha destacada e Confirmar/Não recebi só no banner. Toasts dizem "avisamos Beatriz" quando a pessoa vai mesmo receber.
+  - E-mail (decisão 10): opção escondida em Sua conta até haver domínio; nada de envio implementado.
+  - Textos novos fora do protótipo (revisar): títulos de acerto ("marcou que recebeu … de você", "registrou que …"), "enviou um comprovante", "avisou que não recebeu", e os ícones do selo do aviso por tipo (câmera, alerta).
 
 ### Fase 8 — Finalizar, home completa, desktop e acabamento
 - Finalizar/reabrir com resumo `sug`, "Finalizar mesmo assim" e modo só leitura. Finalizar apaga na hora os comprovantes (de pagamento e de despesa) do split (decisão 9).

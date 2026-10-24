@@ -80,7 +80,7 @@ test('"Não recebi" desfaz a parte paga dos dois lados', async ({ browser }) => 
   const share = lucas.locator('.row2', { hasText: 'Beatriz' });
   await share.getByRole('button', { name: 'Não recebi' }).click();
   await expect(share).toContainText('Pendente');
-  await expect(toast(lucas)).toContainText('Marcamos que o pagamento de Beatriz não chegou');
+  await expect(toast(lucas)).toContainText('Avisamos Beatriz que o pagamento não chegou');
   // Do lado da Beatriz, a linha volta a pendente.
   await expect(row).toContainText('Pendente');
   await expect(row.getByRole('button', { name: 'Marcar como pago' })).toBeVisible();

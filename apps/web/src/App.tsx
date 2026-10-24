@@ -29,6 +29,7 @@ const Redeem = lazy(() => import('./screens/Recovery.tsx').then((m) => ({ defaul
 const Merge = lazy(() => import('./screens/Merge.tsx'));
 const ExpenseForm = lazy(() => import('./screens/ExpenseForm.tsx'));
 const ExpenseDetail = lazy(() => import('./screens/ExpenseDetail.tsx'));
+const Notifications = lazy(() => import('./screens/Notifications.tsx'));
 
 /** Rotas que funcionam sem login: convite (vira convidado sozinho), link de recuperação e e-mail. */
 const OPEN = [/^\/convite\//, /^\/r\//, /^\/email$/];
@@ -65,6 +66,7 @@ export function App() {
               <Route path="/s/:id/despesa/:expId/editar" element={<Gate><ExpenseForm /></Gate>} />
               <Route path="/s/:id/:tab?" element={<Gate><Split /></Gate>} />
               <Route path="/conta" element={<Gate><Account /></Gate>} />
+              <Route path="/notificacoes" element={<Gate><Notifications /></Gate>} />
               <Route path="/salvar" element={<Gate><Recovery /></Gate>} />
               <Route path="/email" element={<Gate><EmailAuth /></Gate>} />
               <Route path="/r/:token" element={<Gate><Redeem /></Gate>} />

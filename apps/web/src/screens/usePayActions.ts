@@ -25,6 +25,8 @@ export function usePayActions(split: SplitDoc, me: Member) {
   const reasonText = useReasonText();
   const splitId = split.id;
   const nameOf = useCallback((id: string) => split.members[id]?.name ?? '', [split]);
+  /** Só diz "avisamos" a quem já entrou no split (quem não entrou não recebe aviso). */
+  const notified = useCallback((id: string) => (split.members[id]?.uid ? nameOf(id) : null), [split, nameOf]);
 
   const fail = useCallback(
     (error: unknown) => toast.show({ kind: 'error', text: error instanceof ImageError ? t('pay.imageError') : reasonText(detailsOf(error)) }),
@@ -62,10 +64,13 @@ export function usePayActions(split: SplitDoc, me: Member) {
         await uploadPhoto(path, file);
         const r = await api.attachProof({ splitId, kind: 'share', expenseId: e.id, memberId, path });
         return { paySeq: r.paySeq ?? 0 };
-      }).then((ok) => ok && announce && toast.show({ text: t('pay.proofSent') }));
+      }).then((ok) => {
+        const other = notified(me.id === e.payer ? memberId : e.payer);
+        if (ok && announce) toast.show({ text: other ? t('pay.proofSentTo', { name: other }) : t('pay.proofSent') });
+      });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [splitId, shareChange, toast, t, me.id],
+    [splitId, shareChange, toast, t, me.id, notified],
   );
 
   const ref = (e: ExpenseDoc, memberId: string) => ({ splitId, expenseId: e.id, memberId });
@@ -83,10 +88,12 @@ export function usePayActions(split: SplitDoc, me: Member) {
       const iAmPayer = me.id === e.payer;
       void shareChange(e, memberId, { paid: Math.max(share, e.paid[memberId] ?? 0), pendConf: iAmPayer ? null : true }, () => api.markShare(ref(e, memberId)));
       if (file) attachShare(e, memberId, file, false);
-      toast.show({ text: iAmPayer ? t('pay.received') : t('pay.recorded'), onUndo: () => unmark(e, memberId) });
+      // Marcar a própria parte avisa quem pagou a despesa (spec 07).
+      const payer = !iAmPayer && memberId === me.id ? notified(e.payer) : null;
+      toast.show({ text: iAmPayer ? t('pay.received') : payer ? t('pay.recordedTo', { name: payer }) : t('pay.recorded'), onUndo: () => unmark(e, memberId) });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [split, me.id, shareChange, attachShare, unmark, toast, t],
+    [split, me.id, shareChange, attachShare, unmark, toast, t, notified],
   );
 
   const confirm = useCallback(
@@ -102,10 +109,11 @@ export function usePayActions(split: SplitDoc, me: Member) {
   const dispute = useCallback(
     (e: ExpenseDoc, memberId: string) => {
       void shareChange(e, memberId, { paid: null, pendConf: null, proof: null }, () => api.disputeShare(ref(e, memberId)));
-      toast.show({ text: t('pay.disputed', { name: nameOf(memberId) }) });
+      const who = notified(memberId);
+      toast.show({ text: who ? t('pay.disputedTo', { name: who }) : t('pay.disputed', { name: nameOf(memberId) }) });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [shareChange, toast, t, nameOf],
+    [shareChange, toast, t, nameOf, notified],
   );
 
   /** Acerto de um pagamento entre duas pessoas: registra na hora; o servidor confere o valor. */
@@ -135,10 +143,13 @@ export function usePayActions(split: SplitDoc, me: Member) {
         await uploadPhoto(path, file);
         await api.attachProof({ splitId, kind: 'payment', paymentId: p.id, path });
         return true;
-      }).then((ok) => ok && announce && toast.show({ text: t('pay.proofSent') }));
+      }).then((ok) => {
+        const other = notified(me.id === p.from ? p.to : p.from);
+        if (ok && announce) toast.show({ text: other ? t('pay.proofSentTo', { name: other }) : t('pay.proofSent') });
+      });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [splitId, paymentChange, toast, t, me.id],
+    [splitId, paymentChange, toast, t, me.id, notified],
   );
 
   const undoPayment = useCallback(
@@ -156,9 +167,11 @@ export function usePayActions(split: SplitDoc, me: Member) {
       const doc: PaymentDoc = { id, from, to, amount, by: me.id, when: new Date(), proof: null };
       void paymentChange({ kind: 'payment', splitId, id, doc }, async () => (await api.createPayment({ splitId, id, from, to })).amount > 0);
       if (file) attachPayment(doc, file, false);
-      toast.show({ text: t('pay.recorded'), onUndo: () => undoPayment(doc) });
+      // Quem paga pelo Saldo avisa quem recebe (como no protótipo).
+      const to_ = from === me.id ? notified(to) : null;
+      toast.show({ text: to_ ? t('pay.recordedTo', { name: to_ }) : t('pay.recorded'), onUndo: () => undoPayment(doc) });
     },
-    [splitId, me.id, paymentChange, attachPayment, undoPayment, toast, t],
+    [splitId, me.id, paymentChange, attachPayment, undoPayment, toast, t, notified],
   );
 
   /** Comprovante (foto) da despesa: troca na hora; `null` tira. */

@@ -599,7 +599,10 @@
     "markPaid": "Mark as paid",
     "gotIt": "Got it",
     "markRecv": "Mark as received",
-    "now": "just now"
+    "now": "just now",
+    "recordedTo": "Payment recorded · we notified {{name}}",
+    "proofSentTo": "Receipt sent · we notified {{name}}",
+    "disputedTo": "We let {{name}} know it didn’t arrive"
   },
   "sal": {
     "yourBal": "Your balance in this split",
@@ -675,5 +678,30 @@
     "loading": "Loading photo",
     "error": "Couldn’t open the photo.",
     "saved": "Photo updated"
+  },
+  "notif": {
+    "title": "Notifications",
+    "readAll": "Mark all as read",
+    "emptyT": "Nothing new",
+    "emptyB": "When someone marks they paid you, you’ll see it here.",
+    "manage": "Manage notifications",
+    "unread": "unread",
+    "bell": "Notifications",
+    "bellNew": "Notifications, {{count}} new",
+    "paid": "{{name}} paid you {{amount}}",
+    "receivedFrom": "{{name}} marked they got {{amount}} from you",
+    "adminPaid": "{{name}} recorded that {{who}} paid you {{amount}}",
+    "adminReceived": "{{name}} recorded that you paid {{who}} {{amount}}",
+    "proof": "{{name}} sent a receipt",
+    "disputed": "{{name}} says {{amount}} didn’t arrive",
+    "settle": "Settle-up",
+    "withProof": "with receipt",
+    "noProof": "no receipt",
+    "confirmed": " · confirmed",
+    "youDisputed": " · you disputed",
+    "bannerTitle": "{{name}} marked as paid {{amount}}",
+    "sentProof": "sent a receipt",
+    "youConfirmed": "You confirmed receipt",
+    "youSaidNo": "You said it didn’t arrive"
   }
 }

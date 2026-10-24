@@ -14,6 +14,9 @@ import { BackLink } from './common.tsx';
 import { ProfileAvatar, useChangeProfilePhoto } from './Photos.tsx';
 import { useShortDate } from './Recovery.tsx';
 
+/** "Por e-mail" fica escondido até existir domínio de remetente (decisão 10). */
+const EMAIL_CHANNEL = false;
+
 /** Linha com interruptor: a linha inteira é o role="switch" (protótipo, setrow). */
 function SwitchRow({ icon, title, caption, checked, disabled, onChange }: { icon: IconName; title: string; caption: ReactNode; checked: boolean; disabled?: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -206,14 +209,16 @@ function AccountBody({
         {/* Push só existe no app nativo; no navegador a opção nem aparece (spec 07). */}
         <div className="list">
           <SwitchRow icon="bell" title={t('account.inappT')} caption={t('account.inappB')} checked={inapp} onChange={setInapp} />
-          <SwitchRow
-            icon="mail"
-            title={t('account.emailT')}
-            caption={isAnonymous ? t('account.emailGuest') : t('account.emailTo', { email: email ?? '' })}
-            checked={byEmail && !isAnonymous}
-            disabled={isAnonymous}
-            onChange={setByEmail}
-          />
+          {EMAIL_CHANNEL && (
+            <SwitchRow
+              icon="mail"
+              title={t('account.emailT')}
+              caption={isAnonymous ? t('account.emailGuest') : t('account.emailTo', { email: email ?? '' })}
+              checked={byEmail && !isAnonymous}
+              disabled={isAnonymous}
+              onChange={setByEmail}
+            />
+          )}
         </div>
       </section>
 

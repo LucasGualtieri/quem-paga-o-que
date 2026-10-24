@@ -1,15 +1,15 @@
 # Quem Paga O Quê? — handoff para uma nova conversa
 
-Atualizado em 23/10/2026, ao fim da Fase 6 (branch `main`). Leia este arquivo primeiro; ele aponta para o resto.
+Atualizado em 24/10/2026, ao fim da Fase 7 (branch `main`). Leia este arquivo primeiro; ele aponta para o resto.
 
 ## Como começar a nova conversa
 
 Abra o Claude Code na pasta do projeto e cole:
 
 ```text
-Leia docs/handoff.md, CLAUDE.md e docs/plan.md. O projeto está na Fase 6 concluída.
-Antes da Fase 7, me entreviste sobre a decisão 10 (provedor de e-mail e remetente) de
-docs/spec/pontos-em-aberto.md; depois implemente a Fase 7.
+Leia docs/handoff.md, CLAUDE.md e docs/plan.md. O projeto está na Fase 7 concluída.
+Implemente a Fase 8 (finalizar split, home completa, desktop e acessibilidade).
+Se esbarrar num ponto em aberto, me entreviste antes.
 ```
 
 ## O produto
@@ -42,15 +42,14 @@ Web app de divisão de despesas em grupo ("Quem Paga O Quê?"). Front estático 
 | 4 | Contas: entrada, e-mail/Google, link de recuperação, fusão com conta existente, Sua conta | ✅ |
 | 5 | Despesas: formulário, 5 modos de divisão, itens, Transações, detalhe, editar/excluir, conflito de edição | ✅ (CI verde, Functions no staging) |
 | 6 | Saldo, Minha visão, marcar pago/Recebi, confirmar/"Não recebi", acertos, comprovantes (Storage), capa e foto de perfil | ✅ (CI verde, Functions e Storage no staging) |
-| **7** | **Notificações (4 eventos, sino, banner por `hlShare`, e-mail)** | **próxima — travada pela decisão 10** |
-| 8 | Finalizar split, home completa, desktop ≥ 1024 px, acessibilidade | pendente |
+| 7 | Notificações no app (4 eventos, sino, lista, banner pelo aviso) | ✅ (e-mail adiado: decisão 10) |
+| **8** | **Finalizar split, home completa, desktop ≥ 1024 px, acessibilidade** | **próxima** |
 
 ### Decisões (docs/spec/pontos-em-aberto.md)
 
-Decididas (1–9): centavos pela ordem de entrada (`joinOrder`); `paid[pessoa]` guarda centavos pagos; nome escolhido trava e só admin libera; sempre ao menos um admin e "Sair do split" só com saldo zero; convidado que salva com conta existente entra nela e traz os splits (pergunta qual nome manter quando há dois no mesmo split, nome que fica herda admin); convite sem prazo e admin gera código novo; link de recuperação sem prazo, reutilizável até revogar e revogado ao salvar a conta; excluir despesa com parte paga é bloqueado, notificações da despesa excluída somem; edição simultânea avisa por versão ("Ver a versão nova" / "Salvar a minha por cima"); comprovantes: quem vê é escolha do split em Pessoas (padrão "Todo o split", ou "Só os envolvidos e admins"), guardados no máximo 15 dias e apagados ao finalizar, só imagem recomprimida no aparelho. Detalhes e textos exatos estão na spec.
+Decididas (1–10): centavos pela ordem de entrada (`joinOrder`); `paid[pessoa]` guarda centavos pagos; nome escolhido trava e só admin libera; sempre ao menos um admin e "Sair do split" só com saldo zero; convidado que salva com conta existente entra nela e traz os splits (pergunta qual nome manter quando há dois no mesmo split, nome que fica herda admin); convite sem prazo e admin gera código novo; link de recuperação sem prazo, reutilizável até revogar e revogado ao salvar a conta; excluir despesa com parte paga é bloqueado, notificações da despesa excluída somem; edição simultânea avisa por versão ("Ver a versão nova" / "Salvar a minha por cima"); comprovantes: quem vê é escolha do split em Pessoas (padrão "Todo o split", ou "Só os envolvidos e admins"), guardados no máximo 15 dias e apagados ao finalizar, só imagem recomprimida no aparelho; e-mail por Resend, agrupado em 10 minutos, sem foto, **adiado até existir domínio** (a opção fica escondida). Detalhes e textos exatos estão na spec.
 
-**Em aberto:**
-- **10 — Provedor de e-mail transacional e remetente** (Resend com domínio próprio, chave em secret). **Bloqueia a Fase 7.** Entrevistar o Lucas antes de codar (ele prefere ser entrevistado com opções recomendadas).
+**Em aberto:** nenhuma. Para ligar o e-mail: comprar o domínio, verificar no Resend, guardar a chave em secret das Functions e implementar o envio agrupado (spec 07 e decisão 10).
 
 ## Como o código está organizado
 
@@ -64,6 +63,7 @@ functions/         Cloud Functions chamáveis (us-east1, esbuild)
   src/payments.ts  markShare, unmarkShare, confirmShare, disputeShare, createPayment, deletePayment,
                    attachProof, setReceipt, setSplitPhoto, setProofVisibility
   src/proofs.ts    prazo de 15 dias dos comprovantes (purgeProofs, rotina diária)
+  src/notifications.ts  avisos criados e atualizados pelas Functions de pagamento
   src/common.ts    ajudantes (db(), fail(), isGuest()…)
 apps/web/          SPA (React 19 + Vite + HashRouter)
   src/theme/tokens.css   ÚNICA fonte de cor (um teste falha se houver cor em outro arquivo)
@@ -83,14 +83,13 @@ Conceitos que não são óbvios:
 - Pagamento de parte não é edição: não mexe em `version` (decisão 8), sobe `paySeq`. Comprovante = `{path, at, by}`; `path: null` = expirou (não aceita outro).
 - Fotos: leitura sempre por `getBlob` (passa pelas regras do Storage), nunca por link público; envio já reduzido (`lib/image.ts`) e por caminho que diz de quem é (`splits/{id}/proofs/{from}/{to}/…`).
 
-## O que a Fase 7 precisa fazer (de docs/plan.md + spec 07)
+## O que a Fase 8 precisa fazer (de docs/plan.md + spec 04 e 09)
 
-- Triggers (Functions) das 4 situações da spec 07: alguém marca a própria parte paga (avisa quem pagou, com botões de confirmar), acerto pelo Saldo (a outra pessoa), comprovante enviado depois (a outra pessoa do pagamento), "Não recebi" (quem marcou). Hoje os pagamentos já gravam Histórico e `paySeq`; as notificações não existem.
-- `users/{uid}/notifications/{nid}` (só Functions criam), sino com contagem (até "9+"), lista, "Marcar todas como lidas", sino some com `inapp` desligado.
-- Banner no detalhe por `hlShare` (parâmetro de navegação) × pendência por `pendConf` (já existe). Com o banner aberto, os botões da linha daquela pessoa somem.
-- Toasts passam a dizer "avisamos Beatriz" (hoje: "Pagamento registrado").
-- Excluir despesa some com as notificações dela (decisão 7); Desfazer traz de volta.
-- E-mail via Function (decisão 10), indisponível para convidado.
+- **Finalizar / reabrir** (só admin; hoje não existe): resumo com a sugestão simplificada `sug` do `@qpq/calc`, "Finalizar mesmo assim" com pendências, modo só leitura com o aviso no topo, "Reabrir". Finalizar **apaga na hora os comprovantes** do split (de pagamento e de despesa, decisão 9): reaproveitar `functions/src/proofs.ts` (registro `proofs/` e `deleteFiles`), marcando `path: null`. As Functions já recusam com `split-done`.
+- **Home completa:** filtro "Finalizados" e o total "No total, você deve/recebe" sem os finalizados.
+- **Desktop ≥ 1024 px:** barra lateral, Transações + Saldo lado a lado (`reference/design/Desktop.dc.html`); hoje é coluna única de até 560 px.
+- **Acessibilidade:** contraste AA, alvos de 44 px, `prefers-reduced-motion`, `aria-pressed`; checagem axe.
+- Pendências que ficaram para cá: prévia de Saldo na tela Paleta; desligar `VITE_DEV_TOOLS` no workflow antes de lançar; projeto de produção (Blaze, us-east1, alerta de orçamento, alias `prod`, Storage com o papel `firestoreServiceAgent` e CORS); revisão manual em iPhone e Android.
 
 ## Preferências do Lucas (aprenda com elas)
 
@@ -135,7 +134,7 @@ E-mail/senha e Google ligados (nome público "Quem Paga O Quê? (staging)"); dom
 - Apagar comprovantes ao finalizar o split (decisão 9) entra junto com Finalizar, na Fase 8.
 - Antes de ir ao ar (Fase 8): criar projeto de produção (Blaze, `us-east1`, alerta de orçamento), alias `prod`, desligar as telas de revisão, revisão manual em iPhone e Android.
 - Layout desktop (≥ 1024 px) e acabamento de acessibilidade são da Fase 8; o produto hoje é coluna única de até 560 px.
-- Receber e-mail (Fase 7) depende do provedor da decisão 10 e de um domínio de remetente.
+- E-mail de notificação: decidido (Resend, decisão 10), mas só entra quando houver domínio de remetente; até lá a opção fica escondida (`EMAIL_CHANNEL` em `Account.tsx`).
 
 ---
 

@@ -342,3 +342,128 @@
 .pcline .sideacts .linkbtn {
   align-self: center;
 }
+
+/* Fase 7: sino, lista de notificações e banner do detalhe */
+.bell {
+  position: relative;
+}
+.bdg {
+  position: absolute;
+  top: 5px;
+  right: 4px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: var(--alert);
+  color: var(--alert-ink);
+  font: 800 11px 'Figtree', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  box-shadow: 0 0 0 2px var(--bg);
+}
+.nrow {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  align-items: flex-start;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+.nrow + .nrow {
+  border-top: 1px solid var(--line);
+}
+.nrow.unread {
+  background: var(--accent-soft);
+}
+.nrow .mid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.nrow .ttl,
+.nrow .cap {
+  white-space: normal;
+}
+.nrow .ttl {
+  font-weight: 700;
+}
+.nrow.unread .ttl {
+  font-weight: 800;
+}
+.udot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex: none;
+  margin-top: 6px;
+}
+.nbadge {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--pos);
+  color: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.nbadge.acc {
+  background: var(--accent);
+}
+.nbadge.neg {
+  background: var(--neg);
+}
+.nbadge .ic {
+  width: 12px;
+  height: 12px;
+  stroke-width: 3;
+}
+.notif-empty {
+  width: 64px;
+  height: 64px;
+  border-radius: 22px;
+}
+.nbanner {
+  background: var(--accent-soft);
+  border-radius: 18px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+  animation: inlIn 0.3s ease;
+}
+.nbanner .nb-acts {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-left: 44px;
+}
+.row2.hlrow {
+  background: var(--accent-soft);
+  animation: hlp 1.4s ease 2;
+}
+@keyframes hlp {
+  50% {
+    background: var(--surface);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .row2.hlrow,
+  .nbanner {
+    animation: none;
+  }
+}
