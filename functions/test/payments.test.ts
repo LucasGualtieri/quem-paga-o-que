@@ -69,6 +69,8 @@ describe('markShare (marcar parte paga)', () => {
     const d = await expDoc(w, id);
     expect(d.paid).toEqual({ [w.beatriz]: 333 });
     expect(d.pendConf).toEqual({ [w.beatriz]: true });
+    // Hora do pagamento, para a linha "Resolvido · …" no Saldo.
+    expect(Math.abs(d.paidAt[w.beatriz] - Date.now())).toBeLessThan(60_000);
     // Marcar pago não é edição da despesa (decisão 8).
     expect(d.version).toBe(1);
     expect(d.paySeq).toBe(1);
@@ -139,6 +141,7 @@ describe('unmarkShare (Desfazer)', () => {
     expect(r.paySeq).toBe(3);
     const d = await expDoc(w, id);
     expect(d.paid).toEqual({});
+    expect(d.paidAt).toEqual({});
     expect(d.pendConf).toEqual({});
     expect(d.proof).toEqual({});
     expect(await exists(path)).toBe(false);

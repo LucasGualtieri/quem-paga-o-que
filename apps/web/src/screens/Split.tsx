@@ -25,8 +25,8 @@ import { useReasonText } from './reasons.ts';
 
 const TABS: Array<{ key: string; path: string; icon: IconName; label: string }> = [
   { key: 'tx', path: '', icon: 'receipt', label: 'split.tabs.tx' },
-  { key: 'saldo', path: '/saldo', icon: 'swap', label: 'split.tabs.sal' },
   { key: 'eu', path: '/eu', icon: 'user', label: 'split.tabs.me' },
+  { key: 'saldo', path: '/saldo', icon: 'swap', label: 'split.tabs.sal' },
   { key: 'pessoas', path: '/pessoas', icon: 'people', label: 'split.tabs.ppl' },
 ];
 

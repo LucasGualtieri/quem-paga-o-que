@@ -6,11 +6,15 @@ import { membersInOrder, orderOf, sharesOf, type ExpenseDoc, type PaymentDoc, ty
  * (sem as excluídas) e dos acertos pelo @qpq/calc. Nada aqui é guardado.
  */
 
-/** Linha de um cartão do Saldo: dívida real do par (`M`) ou acerto já registrado. */
+/**
+ * Linha de um cartão do Saldo: dívida real do par (`M`), acerto registrado pelo Saldo (`done`)
+ * ou parte de despesa paga (`shareDone`, marcada em Minha visão ou no detalhe).
+ */
 export type CardLine =
   | { kind: 'owe'; from: MemberId; to: MemberId; other: MemberId; amount: Cents }
   | { kind: 'recv'; from: MemberId; to: MemberId; other: MemberId; amount: Cents }
-  | { kind: 'done'; payment: PaymentDoc; other: MemberId; paidOut: boolean };
+  | { kind: 'done'; payment: PaymentDoc; other: MemberId; paidOut: boolean }
+  | { kind: 'shareDone'; expense: ExpenseDoc; memberId: MemberId; other: MemberId; paidOut: boolean; amount: Cents; at: Date | null };
 
 export interface PersonCard {
   id: MemberId;
@@ -33,23 +37,53 @@ function byTime(a: PaymentDoc, b: PaymentDoc): number {
   return (a.when?.getTime() ?? Infinity) - (b.when?.getTime() ?? Infinity);
 }
 
+/** Hora de uma linha resolvida (sem hora, por último: acabou de acontecer). */
+function resolvedAt(l: CardLine): number {
+  if (l.kind === 'done') return l.payment.when?.getTime() ?? Infinity;
+  if (l.kind === 'shareDone') return l.at?.getTime() ?? Infinity;
+  return Infinity;
+}
+
+/** Partes de despesa pagas, de quem pagou a parte para quem pagou a despesa. */
+function paidShares(split: SplitDoc, expenses: readonly ExpenseDoc[]) {
+  const out: Array<{ expense: ExpenseDoc; memberId: MemberId; payer: MemberId; amount: Cents; at: Date | null }> = [];
+  for (const e of expenses) {
+    const sh = sharesOf(e, split);
+    for (const [id, paid] of Object.entries(e.paid)) {
+      if (id === e.payer || paid <= 0) continue;
+      const at = e.paidAt?.[id];
+      out.push({ expense: e, memberId: id, payer: e.payer, amount: Math.min(paid, sh[id] ?? paid), at: at ? new Date(at) : null });
+    }
+  }
+  return out;
+}
+
 export function balanceView(split: SplitDoc, expenses: readonly ExpenseDoc[], payments: readonly PaymentDoc[], me: MemberId): BalanceView {
   const { M, net } = ledger({ order: orderOf(split), expenses, payments });
   const ids = membersInOrder(split).map((m) => m.id);
   const others = ids.filter((id) => id !== me).sort((a, b) => Math.abs(net[b] ?? 0) - Math.abs(net[a] ?? 0));
   const sortedPayments = [...payments].sort(byTime);
+  const shares = paidShares(split, expenses);
   const cards = (ids.includes(me) ? [me, ...others] : others).map((r): PersonCard => {
     const lines: CardLine[] = [];
+    // Tudo com a mesma pessoa fica junto, pela ordem de entrada: o que falta e o que já foi
+    // resolvido. Marcar como pago troca a linha de estado sem mudar o lugar (spec 06).
     for (const o of ids) {
       if (o === r) continue;
       const owe = M[r]?.[o] ?? 0;
       const get = M[o]?.[r] ?? 0;
       if (owe > 0) lines.push({ kind: 'owe', from: r, to: o, other: o, amount: owe });
       if (get > 0) lines.push({ kind: 'recv', from: o, to: r, other: o, amount: get });
-    }
-    for (const p of sortedPayments) {
-      if (p.from === r) lines.push({ kind: 'done', payment: p, other: p.to, paidOut: true });
-      else if (p.to === r) lines.push({ kind: 'done', payment: p, other: p.from, paidOut: false });
+      const resolved: CardLine[] = [];
+      for (const p of sortedPayments) {
+        if (p.from === r && p.to === o) resolved.push({ kind: 'done', payment: p, other: o, paidOut: true });
+        else if (p.to === r && p.from === o) resolved.push({ kind: 'done', payment: p, other: o, paidOut: false });
+      }
+      for (const s of shares) {
+        if (s.memberId === r && s.payer === o) resolved.push({ kind: 'shareDone', expense: s.expense, memberId: s.memberId, other: o, paidOut: true, amount: s.amount, at: s.at });
+        else if (s.payer === r && s.memberId === o) resolved.push({ kind: 'shareDone', expense: s.expense, memberId: s.memberId, other: o, paidOut: false, amount: s.amount, at: s.at });
+      }
+      lines.push(...resolved.sort((a, b) => resolvedAt(a) - resolvedAt(b)));
     }
     return {
       id: r,
@@ -57,7 +91,7 @@ export function balanceView(split: SplitDoc, expenses: readonly ExpenseDoc[], pa
       lines,
       owes: lines.filter((l) => l.kind === 'owe').length,
       gets: lines.filter((l) => l.kind === 'recv').length,
-      done: lines.filter((l) => l.kind === 'done').length,
+      done: lines.filter((l) => l.kind === 'done' || l.kind === 'shareDone').length,
     };
   });
   return { mine: net[me] ?? 0, cards };

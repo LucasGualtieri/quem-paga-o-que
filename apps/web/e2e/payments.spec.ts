@@ -139,3 +139,30 @@ test('"Só os envolvidos e admins": Catarina não abre o comprovante da Beatriz'
   await lucas.locator('.txrow', { hasText: 'Pizza' }).click();
   await expect(lucas.locator('.row2', { hasText: 'Beatriz' }).getByRole('button', { name: 'Ver comprovante' })).toBeVisible();
 });
+
+test('parte paga em Minha visão vira linha resolvida no Saldo, no mesmo lugar', async ({ browser }) => {
+  const { lucas, bia } = await setup(browser);
+  await tab(lucas, 'Saldo').click();
+  const mine = lucas.locator('.pcard.me');
+  const lines = mine.locator('.pcline');
+  await expect(lines.nth(0)).toContainText('Beatriz te deve');
+  await expect(lines.nth(1)).toContainText('Catarina te deve');
+
+  await tab(bia, 'Minha visão').click();
+  await bia.locator('.row2', { hasText: 'Pizza' }).getByRole('button', { name: 'Marcar como pago' }).click();
+
+  // Para o Lucas, a linha da Beatriz troca de estado sem sair do lugar.
+  await expect(lines.nth(0)).toHaveClass(/done/);
+  await expect(lines.nth(0)).toContainText('Beatriz te pagou');
+  await expect(lines.nth(0)).toContainText('Pizza');
+  await expect(lines.nth(1)).toContainText('Catarina te deve');
+  await shot(lucas, 'saldo-parte-resolvida');
+
+  // Para a Beatriz, no cartão dela, com Desfazer.
+  await tab(bia, 'Saldo').click();
+  const done = bia.locator('.pcard.me .pcline.done');
+  await expect(done).toContainText('Você pagou Lucas');
+  await done.getByRole('button', { name: 'Desfazer' }).click();
+  await expect(bia.locator('.pcard.me .pcline.done')).toHaveCount(0);
+  await expect(bia.locator('.pcard.me')).toContainText('Você deve para Lucas');
+});

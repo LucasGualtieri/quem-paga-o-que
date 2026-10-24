@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Avatar, avatarColor, Button, Icon } from '../components/index.ts';
 import { balanceView, type CardLine, type PersonCard } from '../data/balance.ts';
 import { useProfile } from '../data/hooks.ts';
-import type { ExpenseDoc, Member, PaymentDoc, SplitDoc } from '../data/model.ts';
+import { canSeeProof, type ExpenseDoc, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
 import { useSession } from '../data/session.ts';
 import { useLang } from '../i18n/index.ts';
 import { shortDayTime } from '../lib/dates.ts';
@@ -83,7 +83,7 @@ export function BalanceTab({ split, me, expenses, payments, flow }: Props) {
 
   const lineText = (r: string, l: CardLine): string => {
     const self = r === me.id && !selfName;
-    if (l.kind === 'done') {
+    if (l.kind === 'done' || l.kind === 'shareDone') {
       if (l.paidOut) return self ? t('sal.youPaidTo', { name: nameOf(l.other) }) : t('sal.paidTo', { name: nameOf(l.other) });
       return self ? t('sal.paidYou', { name: nameOf(l.other) }) : t('sal.gotFrom', { name: nameOf(l.other) });
     }
@@ -91,59 +91,57 @@ export function BalanceTab({ split, me, expenses, payments, flow }: Props) {
     return r === me.id ? (selfName ? t('sal.getFrom', { name: nameOf(l.from) }) : t('sal.owesYou', { name: nameOf(l.from) })) : t('sal.getFrom', { name: who(l.from) });
   };
 
+  /** Linha resolvida (cinza, tracejada): câmera para ver ou enviar comprovante, e Desfazer. */
+  const resolvedRow = (key: string, text: string, note: string, amount: number, other: string, camera: { view: boolean; onClick: () => void } | null, onUndo: (() => void) | null) => (
+    <div key={key} className="pcline done">
+      <span className="dir zero" aria-hidden="true">
+        <Icon name="check" size="sm" />
+      </span>
+      <Avatar name={nameOf(other)} color={colorOf(other)} size="sm" />
+      <span className="mid">
+        <span className="ttl">{text}</span>
+        <span className="cap" style={{ whiteSpace: 'normal' }}>
+          {note}
+        </span>
+      </span>
+      <span className="side">
+        <span className="amt strong">{fmt(amount)}</span>
+        <span className="sideacts">
+          {camera && (
+            <button type="button" className="iconbtn" aria-label={camera.view ? t('pay.seeProof') : t('pay.sendProof')} title={camera.view ? t('pay.seeProof') : t('pay.sendProof')} onClick={camera.onClick}>
+              <Icon name="camera" size="sm" />
+            </button>
+          )}
+          {onUndo && (
+            <button type="button" className="linkbtn" style={{ fontSize: 13 }} onClick={onUndo}>
+              {t('common.undo')}
+            </button>
+          )}
+        </span>
+      </span>
+    </div>
+  );
+
+  const proofNote = (proof: { path: string | null } | null | undefined) => (proof ? (proof.path ? t('sal.withProof') : t('sal.expired')) : '');
+
   const line = (c: PersonCard, l: CardLine, i: number) => {
     if (l.kind === 'done') {
+      // Acerto registrado pelo Saldo: só as duas pessoas anexam; as duas ou admin desfazem (spec 04).
       const p = l.payment;
       const mineToo = p.from === me.id || p.to === me.id;
-      const proofNote = p.proof ? (p.proof.path ? t('sal.withProof') : t('sal.expired')) : '';
-      const canAttach = isOpen && !p.proof && mineToo;
-      const canView = !!p.proof?.path;
-      return (
-        <div key={`d-${p.id}`} className="pcline done">
-          <span className="dir zero" aria-hidden="true">
-            <Icon name="check" size="sm" />
-          </span>
-          <Avatar name={nameOf(l.other)} color={colorOf(l.other)} size="sm" />
-          <span className="mid">
-            <span className="ttl">{lineText(c.id, l)}</span>
-            <span className="cap" style={{ whiteSpace: 'normal' }}>
-              {t('sal.settledNote', { when: when(p.when) })}
-              {proofNote}
-            </span>
-          </span>
-          <span className="side">
-            <span className="amt strong">{fmt(p.amount)}</span>
-            <span className="sideacts">
-              {(canAttach || canView) && (
-                <button
-                  type="button"
-                  className="iconbtn"
-                  aria-label={canView ? t('pay.seeProof') : t('pay.sendProof')}
-                  title={canView ? t('pay.seeProof') : t('pay.sendProof')}
-                  onClick={() =>
-                    canView && p.proof
-                      ? flow.viewProof({
-                          proof: p.proof,
-                          from: p.from,
-                          to: p.to,
-                          amount: p.amount,
-                          what: t('my.settle'),
-                        })
-                      : flow.attachPayment(p)
-                  }
-                >
-                  <Icon name="camera" size="sm" />
-                </button>
-              )}
-              {isOpen && (me.admin || mineToo) && (
-                <button type="button" className="linkbtn" style={{ fontSize: 13 }} onClick={() => flow.undoPayment(p)}>
-                  {t('common.undo')}
-                </button>
-              )}
-            </span>
-          </span>
-        </div>
-      );
+      const view = !!p.proof?.path;
+      const camera = view && p.proof ? { view, onClick: () => flow.viewProof({ proof: p.proof!, from: p.from, to: p.to, amount: p.amount, what: t('my.settle') }) } : isOpen && !p.proof && mineToo ? { view, onClick: () => flow.attachPayment(p) } : null;
+      return resolvedRow(`d-${p.id}`, lineText(c.id, l), t('sal.settledNote', { when: when(p.when) }) + proofNote(p.proof), p.amount, l.other, camera, isOpen && (me.admin || mineToo) ? () => flow.undoPayment(p) : null);
+    }
+    if (l.kind === 'shareDone') {
+      // Parte de despesa paga (Minha visão ou detalhe): as duas pessoas ou admin (spec 04).
+      const e = l.expense;
+      const m = l.memberId;
+      const proof = e.proof[m];
+      const allowed = me.id === m || me.id === e.payer || me.admin;
+      const view = !!proof?.path && canSeeProof(split, me, m, e.payer);
+      const camera = view && proof ? { view, onClick: () => flow.viewProof({ proof, from: m, to: e.payer, amount: l.amount, what: e.name }) } : isOpen && !proof && allowed ? { view, onClick: () => flow.attachShare(e, m) } : null;
+      return resolvedRow(`s-${e.id}-${m}`, lineText(c.id, l), `${t('sal.settledNote', { when: when(l.at) })} · ${e.name}${proofNote(proof)}`, l.amount, l.other, camera, isOpen && allowed ? () => flow.unmark(e, m) : null);
     }
     const owe = l.kind === 'owe';
     const canMark = isOpen && (l.from === me.id || l.to === me.id || me.admin);

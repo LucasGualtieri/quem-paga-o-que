@@ -160,6 +160,8 @@ export interface ExpenseDoc {
   updatedAt?: Date | null;
   /** Centavos pagos de cada parte (decisão 2). */
   paid: Record<MemberId, Cents>;
+  /** Quando cada parte foi paga (ms); some com Desfazer e "Não recebi". */
+  paidAt?: Record<MemberId, number>;
   /** Pagamento marcado que quem recebeu ainda não confirmou. */
   pendConf: Record<MemberId, boolean>;
   /** Comprovante de cada parte paga; `path: null` = expirou (decisão 9). */

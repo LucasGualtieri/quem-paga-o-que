@@ -84,6 +84,34 @@ describe('balanceView (aba Saldo)', () => {
     expect(lines.map((l) => (l.kind === 'done' ? l.payment.id : ''))).toEqual(['c', 'a', 'b']);
   });
 
+  it('parte paga vira linha resolvida no lugar da dívida, no cartão das duas pessoas', () => {
+    // Pizza: Beatriz (m2) e Catarina (m3) devem R$ 3,00 cada a Lucas. Beatriz paga a parte dela.
+    const paid = { ...pizza, paid: { m2: 300 }, paidAt: { m2: 1000 } };
+    const v = balanceView(split, [paid], [], 'm1');
+    const mine = v.cards[0]!;
+    // A linha da Beatriz continua antes da Catarina (ordem de entrada), agora resolvida.
+    expect(mine.lines.map((l) => [l.kind, l.other])).toEqual([
+      ['shareDone', 'm2'],
+      ['recv', 'm3'],
+    ]);
+    expect(mine.lines[0]).toEqual({ kind: 'shareDone', expense: paid, memberId: 'm2', other: 'm2', paidOut: false, amount: 300, at: new Date(1000) });
+    expect([mine.gets, mine.done]).toEqual([1, 1]);
+    const bia = v.cards.find((c) => c.id === 'm2')!;
+    expect(bia.lines).toEqual([{ kind: 'shareDone', expense: paid, memberId: 'm2', other: 'm1', paidOut: true, amount: 300, at: new Date(1000) }]);
+  });
+
+  it('pago em parte: o que falta fica pendente e o pago aparece logo abaixo, com a mesma pessoa', () => {
+    const partial = { ...pizza, paid: { m3: 100 } };
+    const lines = balanceView(split, [partial], [], 'm1').cards[0]!.lines;
+    expect(lines.map((l) => [l.kind, l.other, l.kind === 'shareDone' || l.kind === 'recv' ? l.amount : 0])).toEqual([
+      ['recv', 'm2', 300],
+      ['recv', 'm3', 200],
+      ['shareDone', 'm3', 100],
+    ]);
+    // Sem hora gravada (pagamento antigo): sem data na linha.
+    expect(lines[2]).toMatchObject({ at: null });
+  });
+
   it('quem não está no split vê só os cartões dos outros', () => {
     expect(balanceView(split, [], [], 'm9').cards.map((c) => c.id)).toEqual(['m1', 'm2', 'm3']);
   });

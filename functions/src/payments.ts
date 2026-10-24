@@ -86,7 +86,12 @@ export const markShare = onCall(opts, async (req): Promise<PayWriteResponse> => 
       s.ref,
       s.e,
       // Quem recebe marcando já está confirmando: sem pendência (spec 06).
-      { [`paid.${s.id}`]: Math.max(s.paid, s.share), [`pendConf.${s.id}`]: s.iAmPayer ? FieldValue.delete() : true },
+      {
+        [`paid.${s.id}`]: Math.max(s.paid, s.share),
+        [`pendConf.${s.id}`]: s.iAmPayer ? FieldValue.delete() : true,
+        // Hora do pagamento (linha "Resolvido · …" no Saldo); "Recebi" sobre parte já paga não muda.
+        ...(s.paid < s.share ? { [`paidAt.${s.id}`]: Date.now() } : {}),
+      },
       { kind: s.iAmPayer ? 'received' : 'paid', by: s.me[0], memberId: s.id },
     );
   });
@@ -96,7 +101,12 @@ export const markShare = onCall(opts, async (req): Promise<PayWriteResponse> => 
 /** Tira o pago, a pendência e o comprovante (Desfazer e "Não recebi"). */
 function clearShare(tx: FirebaseFirestore.Transaction, s: Awaited<ReturnType<typeof loadShare>>) {
   unregister(tx, s.proof);
-  return { [`paid.${s.id}`]: FieldValue.delete(), [`pendConf.${s.id}`]: FieldValue.delete(), [`proof.${s.id}`]: FieldValue.delete() };
+  return {
+    [`paid.${s.id}`]: FieldValue.delete(),
+    [`paidAt.${s.id}`]: FieldValue.delete(),
+    [`pendConf.${s.id}`]: FieldValue.delete(),
+    [`proof.${s.id}`]: FieldValue.delete(),
+  };
 }
 
 export const unmarkShare = onCall(opts, async (req): Promise<PayWriteResponse> => {

@@ -9,6 +9,10 @@ Marcar como pago vale na hora (atualização otimista); quem recebe pode confirm
 - Cartão fechado mostra nome, saldo e resumo ("deve a 2 pessoas · recebe de 1 pessoa", "1 resolvido", "Tudo certo com todo mundo").
 - Cartão aberto lista as dívidas **reais de cada par** (`M`): "Você deve para Beatriz −R$ 235,00", "Catarina te deve +R$ 84,50". Botões: "Marcar como pago" (quem deve) ou "Recebi" (quem recebe).
 - Pagamento registrado vira linha **resolvida** no cartão das duas pessoas: cinza, tracejada, "Resolvido · agora · com comprovante", com Desfazer e ícone de câmera para anexar comprovante.
+- Vale para o acerto feito no Saldo e para a parte de despesa paga em Minha visão ou no detalhe (essa mostra também o nome da despesa: "Resolvido · agora · Pizza").
+- **A linha fica no lugar:** o cartão agrupa tudo o que é com a mesma pessoa (o que falta e o que já foi resolvido), na ordem de entrada no split. Marcar como pago só troca o estado da linha; nada pula para o fim (decidido em 24/10/2026).
+
+**Abas do split, nesta ordem:** Transações · Minha visão · Saldo · Pessoas (decidido em 24/10/2026).
 
 **Aba Minha visão:**
 

@@ -9,6 +9,26 @@
   box-sizing: border-box;
 }
 
+/*
+ * Sem o retângulo de toque do navegador (Android pinta um quadrado por cima de botões
+ * arredondados). O retorno do toque vem de cada componente, no formato dele.
+ */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+.iconbtn:active,
+.chip:active,
+.seg button:active,
+.linkbtn:active,
+.mi:active,
+.tab:active,
+.pchead:active,
+.nrow:active,
+.prow:active,
+.avt:active {
+  opacity: 0.72;
+}
+
 html,
 body {
   margin: 0;
