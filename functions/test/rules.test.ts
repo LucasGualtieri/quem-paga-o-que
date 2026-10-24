@@ -149,3 +149,27 @@ describe('pagamentos e foto de perfil (Fase 6)', () => {
     await assertFails(updateDoc(doc(as('ana'), 'users/ana'), { photoPath: 42 }));
   });
 });
+
+describe('notificações (Fase 7)', () => {
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'notifications/n1'), { to: 'ana', kind: 'paid', read: false, status: 'new', hidden: false, amount: 100 });
+    });
+  });
+
+  it('cada um lê só as próprias (e a lista precisa filtrar por quem recebe)', async () => {
+    await assertSucceeds(getDoc(doc(as('ana'), 'notifications/n1')));
+    await assertSucceeds(getDocs(query(collection(as('ana'), 'notifications'), where('to', '==', 'ana'))));
+    await assertFails(getDoc(doc(as('bia'), 'notifications/n1')));
+    await assertFails(getDocs(collection(as('ana'), 'notifications')));
+  });
+
+  it('só marca como lida; ninguém cria, apaga ou muda o resto', async () => {
+    await assertSucceeds(updateDoc(doc(as('ana'), 'notifications/n1'), { read: true }));
+    await assertFails(updateDoc(doc(as('ana'), 'notifications/n1'), { status: 'confirmed' }));
+    await assertFails(updateDoc(doc(as('ana'), 'notifications/n1'), { read: false }));
+    await assertFails(updateDoc(doc(as('bia'), 'notifications/n1'), { read: true }));
+    await assertFails(setDoc(doc(as('ana'), 'notifications/n2'), { to: 'ana', read: false }));
+    await assertFails(deleteDoc(doc(as('ana'), 'notifications/n1')));
+  });
+});

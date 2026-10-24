@@ -68,6 +68,15 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Notificações (spec 07): só as Functions criam; cada um lê as suas e só marca como lida.
+    match /notifications/{id} {
+      allow read: if signedIn() && resource.data.to == request.auth.uid;
+      allow update: if signedIn() && resource.data.to == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
+        && request.resource.data.read == true;
+      allow create, delete: if false;
+    }
+
     // inviteCodes, recoveryTokens, mergeTokens, proofs (prazo dos comprovantes) e qualquer
     // outra coleção: só o Admin SDK (Functions).
   }

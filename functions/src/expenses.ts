@@ -2,6 +2,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { effectiveAmount, validateExpense, type Expense, type ExpenseMode, type JoinOrder, type SplitMode, type Weights } from '@qpq/calc';
 import { cleanName, isValidDate, normalizeTags, type ExpenseWriteResponse, type ProofInfo } from '@qpq/shared';
+import { findExpense, setHidden } from './notifications.ts';
 import { db, fail, input, loadSplit, opts, requireMember, requireOpen, text, uidOf, type Member, type SplitData } from './common.ts';
 
 const MODES: readonly ExpenseMode[] = ['equal', 'frac', 'pct', 'exact', 'items'];
@@ -239,6 +240,8 @@ export const deleteExpense = onCall(opts, async (req): Promise<ExpenseWriteRespo
     const paid = Object.values((e.paid ?? {}) as Record<string, number>).some((v) => v > 0);
     const pending = Object.values((e.pendConf ?? {}) as Record<string, unknown>).some(Boolean);
     if (paid || pending) fail('has-payments');
+    // Os avisos da despesa somem junto (decisão 7); Desfazer traz de volta.
+    setHidden(tx, await findExpense(tx, splitId, ref.id), true);
     const version = e.version + 1;
     tx.update(ref, { deletedAt: FieldValue.serverTimestamp(), version, updatedBy: me, updatedAt: FieldValue.serverTimestamp() });
     await addHistory(tx, ref, { seq: version, kind: 'deleted', by: me });
@@ -259,6 +262,7 @@ export const restoreExpense = onCall(opts, async (req): Promise<ExpenseWriteResp
     if (!e.deletedAt) return { version: e.version };
     const order: JoinOrder = Object.fromEntries(Object.entries(split.members).map(([id, m]) => [id, m.joinOrder]));
     if (validateExpense(e as unknown as Expense, order).length > 0) fail('expense-invalid');
+    setHidden(tx, await findExpense(tx, splitId, ref.id), false);
     const version = e.version + 1;
     tx.update(ref, { deletedAt: null, version, updatedBy: me, updatedAt: FieldValue.serverTimestamp() });
     await addHistory(tx, ref, { seq: version, kind: 'restored', by: me });

@@ -284,3 +284,47 @@ export interface SetSplitPhotoRequest {
   splitId: string;
   path: string | null;
 }
+
+/**
+ * Notificações no app (Fase 7, spec 07). Só as Functions criam, em `notifications/{id}`;
+ * a pessoa só lê as suas (`to`) e só marca como lida.
+ */
+export type NotificationKind =
+  /** Alguém marcou a própria parte como paga (vai para quem pagou a despesa, com Confirmar). */
+  | 'paid'
+  /** Acerto registrado pelo Saldo (vai para a outra pessoa do acerto). */
+  | 'settled'
+  /** Comprovante enviado depois (vai para a outra pessoa do pagamento). */
+  | 'proof'
+  /** "Não recebi" (vai para quem marcou que pagou). */
+  | 'disputed';
+
+export type NotificationStatus = 'new' | 'confirmed' | 'disputed';
+
+export interface NotificationData {
+  /** UID de quem recebe. */
+  to: string;
+  /** Participante de quem recebe, no split. */
+  toMember: string;
+  kind: NotificationKind;
+  splitId: string;
+  splitName: string;
+  /** Quem fez a ação (memberId) e o nome dele naquele momento. */
+  from: string;
+  fromName: string;
+  amount: number;
+  hasProof: boolean;
+  /** Parte de despesa: a despesa e de quem é a parte. */
+  expId: string | null;
+  expName: string | null;
+  memberId: string | null;
+  /** Acerto: o pagamento e as duas pontas. */
+  paymentId: string | null;
+  payFrom: string | null;
+  payTo: string | null;
+  read: boolean;
+  /** Na notificação "paid": o que quem recebeu fez depois (confirmou ou contestou). */
+  status: NotificationStatus;
+  /** Despesa excluída ou pagamento desfeito: some da lista (decisão 7); Desfazer traz de volta. */
+  hidden: boolean;
+}

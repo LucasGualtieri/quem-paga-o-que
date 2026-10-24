@@ -12,6 +12,7 @@ import {
 } from '@qpq/shared';
 import { db, fail, input, ledgerOf, loadSplit, opts, orderOf, readMoney, requireAdmin, requireMember, requireOpen, text, uidOf, type Member, type SplitData } from './common.ts';
 import { addHistory, loadExpense, requireEditor, type HistoryKind } from './expenses.ts';
+import { findPayment, findShare, notify, notifyProof, others, setHidden, setStatus } from './notifications.ts';
 import { deleteFiles, newProof, register, requireFile, requirePath, unregister } from './proofs.ts';
 
 /**
@@ -75,6 +76,11 @@ export const markShare = onCall(opts, async (req): Promise<PayWriteResponse> => 
     requireShareActor(s.me, s.e.payer, s.id);
     // Já paga: só "Recebi" de quem pagou ainda muda algo (tira a pendência).
     if (s.paid >= s.share && !(s.iAmPayer && s.pending)) return s.e.paySeq ?? 0;
+    const notes = await findShare(tx, s.splitId, s.ref.id, s.id);
+    // "Recebi" de quem pagou confirma o aviso e resolve contestações antigas (spec 07).
+    if (s.iAmPayer) setStatus(tx, notes, ['new', 'disputed'], 'confirmed');
+    // Só quem marca a própria parte avisa quem pagou.
+    else if (s.me[0] === s.id) notify(tx, s.splitId, s.split, s.e.payer, { kind: 'paid', from: s.id, amount: s.share, expId: s.ref.id, expName: s.e.name as string, memberId: s.id });
     return payWrite(
       tx,
       s.ref,
@@ -101,6 +107,9 @@ export const unmarkShare = onCall(opts, async (req): Promise<PayWriteResponse> =
     const s = await loadShare(tx, data, uid);
     requireShareActor(s.me, s.e.payer, s.id);
     if (!s.paid && !s.pending && !s.proof) return s.e.paySeq ?? 0;
+    const notes = await findShare(tx, s.splitId, s.ref.id, s.id);
+    // Quem desfaz o próprio pagamento tira o aviso que ainda esperava confirmação.
+    if (s.me[0] === s.id) setHidden(tx, notes, true, (n) => (n.kind === 'paid' || n.kind === 'proof') && n.status === 'new');
     file = s.proof?.path ?? null;
     return payWrite(tx, s.ref, s.e, clearShare(tx, s), { kind: 'unpaid', by: s.me[0], memberId: s.id });
   });
@@ -115,6 +124,7 @@ export const confirmShare = onCall(opts, async (req): Promise<PayWriteResponse> 
     const s = await loadShare(tx, data, uid);
     requireReceiver(s.me, s.e.payer);
     if (!s.pending) fail('not-pending');
+    setStatus(tx, await findShare(tx, s.splitId, s.ref.id, s.id), ['new'], 'confirmed');
     return payWrite(tx, s.ref, s.e, { [`pendConf.${s.id}`]: FieldValue.delete() }, { kind: 'confirmed', by: s.me[0], memberId: s.id });
   });
   return { paySeq };
@@ -129,6 +139,9 @@ export const disputeShare = onCall(opts, async (req): Promise<PayWriteResponse> 
     const s = await loadShare(tx, data, uid);
     requireReceiver(s.me, s.e.payer);
     if (!s.pending) fail('not-pending');
+    setStatus(tx, await findShare(tx, s.splitId, s.ref.id, s.id), ['new'], 'disputed');
+    // Avisa quem marcou que pagou: "o pagamento não chegou".
+    notify(tx, s.splitId, s.split, s.id, { kind: 'disputed', from: s.me[0], amount: s.share, expId: s.ref.id, expName: s.e.name as string, memberId: s.id });
     file = s.proof?.path ?? null;
     return payWrite(tx, s.ref, s.e, clearShare(tx, s), { kind: 'disputed', by: s.me[0], memberId: s.id });
   });
@@ -169,6 +182,8 @@ export const createPayment = onCall(opts, async (req): Promise<CreatePaymentResp
     const amount = ledgerOf(split, await readMoney(tx, splitRef)).M[from]?.[to] ?? 0;
     if (amount <= 0) return { amount: 0 };
     tx.create(ref, { from, to, amount, by: me[0], when: FieldValue.serverTimestamp(), proof: null });
+    // Avisa a outra pessoa do acerto (as duas, se quem registrou foi um admin de fora).
+    for (const m of others(me[0], from, to)) notify(tx, splitId, split, m, { kind: 'settled', from: me[0], amount, paymentId: ref.id, payFrom: from, payTo: to });
     return { amount };
   });
 });
@@ -187,6 +202,8 @@ export const deletePayment = onCall(opts, async (req) => {
     const p = snap.data() as StoredPayment;
     if (me[0] !== p.from && me[0] !== p.to && !me[1].admin) fail('not-involved');
     requireOpen(split);
+    const notes = await findPayment(tx, splitId, ref.id);
+    setHidden(tx, notes, true);
     unregister(tx, p.proof);
     tx.delete(ref);
     return p.proof?.path ?? null;
@@ -209,8 +226,12 @@ export const attachProof = onCall(opts, async (req): Promise<Partial<PayWriteRes
       if (!(s.paid > 0)) fail('proof-invalid');
       const path = requirePath(data.path, proofPath(splitId, s.id, s.e.payer, ''));
       await requireFile(path);
+      const notes = await findShare(tx, splitId, s.ref.id, s.id);
       const proof = newProof(path, s.me[0]);
       register(tx, splitId, proof, { kind: 'share', expenseId: s.ref.id, memberId: s.id });
+      for (const m of others(s.me[0], s.id, s.e.payer)) {
+        notifyProof(tx, splitId, s.split, notes, m, { from: s.me[0], amount: s.share, expId: s.ref.id, expName: s.e.name as string, memberId: s.id }, (n) => n.kind === 'paid' && n.status === 'new');
+      }
       return payWrite(tx, s.ref, s.e, { [`proof.${s.id}`]: proof }, { kind: 'proof', by: s.me[0], memberId: s.id });
     });
     return { paySeq };
@@ -229,9 +250,13 @@ export const attachProof = onCall(opts, async (req): Promise<Partial<PayWriteRes
     if (p.proof) fail('proof-exists');
     const path = requirePath(data.path, proofPath(splitId, p.from, p.to, ''));
     await requireFile(path);
+    const notes = await findPayment(tx, splitId, ref.id);
     const proof = newProof(path, me[0]);
     register(tx, splitId, proof, { kind: 'payment', paymentId: ref.id });
     tx.update(ref, { proof });
+    for (const m of others(me[0], p.from, p.to)) {
+      notifyProof(tx, splitId, split, notes, m, { from: me[0], amount: p.amount, paymentId: ref.id, payFrom: p.from, payTo: p.to }, (n) => n.kind === 'settled' && !n.read);
+    }
   });
   return {};
 });
