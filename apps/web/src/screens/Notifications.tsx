@@ -1,18 +1,20 @@
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate } from 'react-router';
-import { Avatar, avatarColor, Icon, SkeletonCard, type IconName } from '../components/index.ts';
+import { Icon, SkeletonCard, type IconName } from '../components/index.ts';
 import { useMySplits, useProfile } from '../data/hooks.ts';
 import { bellCount, markAllRead, markRead, useNotifications, viewOf, type NotificationDoc } from '../data/notifications.ts';
 import { useSession } from '../data/session.ts';
 import { useLang } from '../i18n/index.ts';
 import { shortDayTime } from '../lib/dates.ts';
 import { formatCents } from '../lib/money.ts';
+import { MemberAvatar } from './Photos.tsx';
 
 const BADGE: Record<NotificationDoc['kind'], { icon: IconName; tone: string }> = {
   paid: { icon: 'in', tone: 'pos' },
   settled: { icon: 'in', tone: 'pos' },
   proof: { icon: 'camera', tone: 'acc' },
   disputed: { icon: 'alert', tone: 'neg' },
+  splitDeleted: { icon: 'trash', tone: 'neg' },
 };
 
 function useUid(): string | null {
@@ -94,7 +96,7 @@ export default function Notifications() {
               return (
                 <button key={n.id} type="button" className={`row nrow ${n.read ? '' : 'unread'}`} onClick={() => open(n, v.to)}>
                   <span className="avsel">
-                    <Avatar name={name(n.from) || n.fromName} color={avatarColor(split?.members[n.from]?.joinOrder ?? 0)} size="lg" />
+                    <MemberAvatar member={split?.members[n.from]} name={name(n.from) || n.fromName} size="lg" />
                     <span className={`nbadge ${badge.tone}`} aria-hidden="true">
                       <Icon name={badge.icon} />
                     </span>

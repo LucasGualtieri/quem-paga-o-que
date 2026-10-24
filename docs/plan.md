@@ -252,6 +252,11 @@ Decisão: 10 ✅ (Resend, agrupado em 10 min, resumo + botão, sem foto; **e-mai
   - Chave Pix no perfil (uma por pessoa, convidado também), vista só por quem divide um split com a pessoa; "Copiar Pix" gera o Pix copia e cola com o valor.
   - Ícone ou emoji em despesas e itens (seletor com abas Ícones e Emoji, busca, "Remover" volta ao automático pela tag).
   - **Aba Saldo saiu; a Minha visão virou o lugar do dinheiro** (spec 06): seu saldo, um cartão por pessoa com o saldo do par (devo / me deve / quitado), "Marcar como pago" do par num acerto só, Copiar Pix, "Recebi", e o cartão aberto lista despesas e acertos. Acertos agora têm confirmação de quem recebe (Confirmar / "Não recebi", Functions `confirmPayment` e `disputePayment`). Admin vê como qualquer pessoa ("Ver como").
+- **Terceira leva:**
+  - Foto de perfil no lugar da inicial em todos os avatares do split: a Function `setProfilePhoto` grava no perfil e espelha em `members.{id}.photo` (como a chave Pix); entrar, sair e a fusão de convidado levam junto.
+  - Barra de abas com uma coluna por aba (estava em 4 colunas depois que o Saldo saiu).
+  - Campos em R$ como no caixa eletrônico (spec 05).
+  - Excluir o split inteiro (só admin, digitando o nome; `deleteSplit`) e split sem ninguém apagado depois de 15 dias (rotina diária `purgeEmptySplits`, contando de `emptySince`). Fica a lápide `deletedSplits/{id}` para o link e o convite antigos explicarem o que houve (spec 04). Splits que já estavam vazios antes desta versão não têm `emptySince` e não são apagados.
 
 ## 5. Ações que só o Lucas pode fazer
 

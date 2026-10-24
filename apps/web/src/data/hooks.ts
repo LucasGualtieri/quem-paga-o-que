@@ -1,6 +1,6 @@
-import { collection, doc, onSnapshot, query, setDoc, where } from 'firebase/firestore';
+import { collection, doc, getDoc, onSnapshot, query, setDoc, where } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
-import type { PixKey } from '@qpq/shared';
+import type { DeletedSplitData, PixKey } from '@qpq/shared';
 import { firebase } from '../firebase.ts';
 import { pruneOps, mergeOps, useOps } from './expenseStore.ts';
 import { activeExpenses, type ExpenseDoc, type PaymentDoc, type SplitDoc } from './model.ts';
@@ -212,4 +212,16 @@ export function useProfileName(uid: string | null): string {
 /** Grava nome e preferências; o cache local do Firestore já mostra a mudança na hora. */
 export function saveProfile(uid: string, patch: { displayName?: string; prefs?: Prefs; photoPath?: string | null }): Promise<void> {
   return setDoc(doc(firebase().db, 'users', uid), patch, { merge: true });
+}
+
+/** Lápide do split apagado (quem excluiu, ou que ficou sem ninguém); `null` se não há. */
+export function useDeletedSplit(splitId: string): Loadable<DeletedSplitData | null> {
+  const [state, setState] = useState<Loadable<DeletedSplitData | null>>({ status: 'loading' });
+  useEffect(() => {
+    getDoc(doc(firebase().db, 'deletedSplits', splitId)).then(
+      (snap) => setState({ status: 'ready', data: snap.exists() ? (snap.data() as DeletedSplitData) : null }),
+      () => setState({ status: 'ready', data: null }),
+    );
+  }, [splitId]);
+  return state;
 }

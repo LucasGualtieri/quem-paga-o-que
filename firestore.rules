@@ -77,6 +77,12 @@ service cloud.firestore {
       allow create, delete: if false;
     }
 
+    // Split apagado (spec 04): quem tem o link lê a explicação pelo id; ninguém lista nem escreve.
+    match /deletedSplits/{splitId} {
+      allow get: if signedIn();
+      allow list, write: if false;
+    }
+
     // inviteCodes, recoveryTokens, mergeTokens, proofs (prazo dos comprovantes) e qualquer
     // outra coleção: só o Admin SDK (Functions).
   }

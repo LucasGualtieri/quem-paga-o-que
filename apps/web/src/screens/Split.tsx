@@ -12,7 +12,8 @@ import { useOptimisticAction } from '../lib/optimistic.ts';
 import { setTheme, useTheme } from '../theme/theme.ts';
 import { useLang } from '../i18n/index.ts';
 import { dayMonth } from '../lib/dates.ts';
-import { FinalizeSheet } from './FinalizeSheet.tsx';
+import { DeleteSplitSheet, FinalizeSheet } from './FinalizeSheet.tsx';
+import { SplitGone } from './SplitGone.tsx';
 import { appBase, copyText, useWho } from './common.tsx';
 import { MyViewTab } from './MyViewTab.tsx';
 import { usePayFlow } from './PaySheet.tsx';
@@ -118,11 +119,13 @@ export default function Split() {
   const [menu, setMenu] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const run = useOptimisticAction();
 
   const current = TABS.find((x) => x.path === (tab ? `/${tab}` : '')) ?? TABS[0]!;
 
-  if (result.status === 'denied' && !pending) return <Navigate to="/" replace />;
+  // Split apagado, link errado ou de quem não está nele: explica em vez de só voltar ao início.
+  if (result.status === 'denied' && !pending) return <SplitGone splitId={id} />;
   // A aba Saldo virou parte da Minha visão (links antigos e avisos já lidos).
   if (tab === 'saldo') return <Navigate to={`/s/${id}/eu`} replace />;
 
@@ -184,6 +187,25 @@ export default function Split() {
     });
   };
 
+  /** Excluir o split (só admin): some na hora; volta com aviso se o servidor recusar. */
+  const destroy = () => {
+    if (!view) return;
+    setDeleting(false);
+    const name = view.name;
+    void run({
+      apply: () => {
+        hideSplit(id, true);
+        void navigate('/', { replace: true });
+        return () => hideSplit(id, false);
+      },
+      commit: async () => {
+        await api.deleteSplit({ splitId: id });
+        toast.show({ text: t('del.done', { name }) });
+      },
+      errorText: (e) => reasonText(detailsOf(e)),
+    });
+  };
+
   const menuItems = (
     <>
       <button type="button" className="mi" role="menuitem" onClick={() => void invite()}>
@@ -229,6 +251,20 @@ export default function Split() {
           {!isAdmin && <span className="cap">{t('fin.adminOnly')}</span>}
         </button>
       )}
+      <button
+        type="button"
+        className="mi danger"
+        role="menuitem"
+        disabled={!isAdmin}
+        onClick={() => {
+          setMenu(false);
+          setDeleting(true);
+        }}
+      >
+        <Icon name="trash" />
+        {t('del.menu')}
+        {!isAdmin && <span className="cap">{t('fin.adminOnly')}</span>}
+      </button>
       <button
         type="button"
         className="mi danger"
@@ -316,6 +352,7 @@ export default function Split() {
         </div>
       </Sheet>
       {view && me && <FinalizeSplitSheet open={finalizing} split={view} me={me} money={money} onClose={() => setFinalizing(false)} onConfirm={() => changeStatus('done')} />}
+      {view && me && <DeleteSheet open={deleting} split={view} me={me} money={money} onClose={() => setDeleting(false)} onConfirm={destroy} />}
     </>
   );
 
@@ -371,4 +408,9 @@ export default function Split() {
 function FinalizeSplitSheet({ open, split, me, money, onClose, onConfirm }: { open: boolean; split: SplitDoc; me: Member; money: Money; onClose: () => void; onConfirm: () => void }) {
   const who = useWho(split, me);
   return <FinalizeSheet open={open} split={split} money={money} who={who} onClose={onClose} onConfirm={onConfirm} />;
+}
+
+function DeleteSheet({ open, split, me, money, onClose, onConfirm }: { open: boolean; split: SplitDoc; me: Member; money: Money; onClose: () => void; onConfirm: () => void }) {
+  const who = useWho(split, me);
+  return <DeleteSplitSheet open={open} split={split} money={money} who={who} onClose={onClose} onConfirm={onConfirm} />;
 }

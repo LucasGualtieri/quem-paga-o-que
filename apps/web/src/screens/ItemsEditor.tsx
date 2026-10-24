@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Avatar, avatarColor, Button, Icon } from '../components/index.ts';
+import { Button, Icon } from '../components/index.ts';
 import { itemWithMode, newItem, restWithMode, type Analysis, type FormState, type ItemForm } from '../data/expenseForm.ts';
 import type { Member } from '../data/model.ts';
 import { useLang } from '../i18n/index.ts';
 import { formatCents, parseCents } from '../lib/money.ts';
 import { ErrorLine, ModePicker, splitStatus, WeightRows, WhoToggles } from './ExpenseParts.tsx';
 import { IconButton } from './EntryIcon.tsx';
+import { MemberAvatar } from './Photos.tsx';
+import { amountInput } from './common.tsx';
 
 interface Props {
   form: FormState;
@@ -25,7 +27,7 @@ function AvatarStack({ ids, people, size }: { ids: readonly string[]; people: re
   return (
     <span className="avstack" aria-hidden="true">
       {shown.map((id) => (
-        <Avatar key={id} name={by.get(id)?.name ?? '?'} color={avatarColor(by.get(id)?.joinOrder ?? 0)} {...(size ? { size } : {})} />
+        <MemberAvatar key={id} member={by.get(id)} {...(size ? { size } : {})} />
       ))}
       {more > 0 && <span className={`av more ${size ?? ''}`}>+{more}</span>}
     </span>
@@ -99,7 +101,7 @@ export function ItemsEditor({ form, setForm, people, analysis, whoName, showErro
                   <input className="iname" value={it.name} placeholder={t('expense.form.itemN', { n: i + 1 })} aria-label={t('expense.form.itemPh')} autoComplete="off" onChange={(e) => patchItem(it.key, (x) => ({ ...x, name: e.target.value }))} />
                   <div className="minibox">
                     <span>R$</span>
-                    <input inputMode="numeric" value={it.amountStr} placeholder={t('expense.form.amountPh')} aria-label={t('expense.form.itemAmount')} style={{ width: 62 }} onChange={(e) => patchItem(it.key, (x) => ({ ...x, amountStr: e.target.value }))} />
+                    <input {...amountInput(it.amountStr, lang, (amountStr) => patchItem(it.key, (x) => ({ ...x, amountStr })))} placeholder={t('expense.form.amountPh')} aria-label={t('expense.form.itemAmount')} style={{ width: 62 }} />
                   </div>
                   <button type="button" className="iconbtn" aria-label={t('expense.form.removeItem', { name: title })} onClick={() => setForm((f) => ({ ...f, items: f.items.filter((x) => x.key !== it.key) }))}>
                     <Icon name="x" />
@@ -222,7 +224,7 @@ export function ItemsEditor({ form, setForm, people, analysis, whoName, showErro
             .filter((p) => (analysis.shares[p.id] ?? 0) > 0)
             .map((p) => (
               <div key={p.id} className="shareitem">
-                <Avatar name={p.name} color={avatarColor(p.joinOrder)} size="sm" />
+                <MemberAvatar member={p} size="sm" />
                 <span>{whoName(p.id)}</span>
                 <span className="amt">{fmt(analysis.shares[p.id] ?? 0)}</span>
               </div>

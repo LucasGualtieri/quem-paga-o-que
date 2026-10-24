@@ -3,20 +3,21 @@ import { useTranslation } from 'react-i18next';
 import { Navigate, useNavigate, useParams } from 'react-router';
 import { TAGS } from '@qpq/shared';
 import type { ExpenseMode } from '@qpq/calc';
-import { Avatar, avatarColor, Button, Chip, Icon, PersonRow, Segmented, SkeletonCard } from '../components/index.ts';
+import { avatarColor, Button, Chip, Icon, PersonRow, Segmented, SkeletonCard } from '../components/index.ts';
 import { analyze, fromDoc, initialForm, setMode, toggleMember, toInput, type FormState } from '../data/expenseForm.ts';
 import { useExpenses, useSplit } from '../data/hooks.ts';
 import { membersInOrder, myMember, orderOf, type ExpenseDoc, type Member, type SplitDoc } from '../data/model.ts';
 import { useSession } from '../data/session.ts';
 import { useLang } from '../i18n/index.ts';
 import { formatCents } from '../lib/money.ts';
-import { BackLink, todayStr, useWho } from './common.tsx';
+import { amountInput, BackLink, todayStr, useWho } from './common.tsx';
 import { ErrorLine, splitErrorText, splitStatus, WeightRows } from './ExpenseParts.tsx';
 import { IconButton } from './EntryIcon.tsx';
 import { ItemsEditor } from './ItemsEditor.tsx';
 import { useExpenseActions } from './useExpenseActions.ts';
 import { ReceiptField } from './ReceiptField.tsx';
 import { usePayActions } from './usePayActions.ts';
+import { MemberAvatar } from './Photos.tsx';
 
 const newExpenseId = () => crypto.randomUUID().replaceAll('-', '').slice(0, 20);
 
@@ -136,13 +137,11 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc?: ExpenseDo
             <input
               id="ad-amt"
               className="amtinput"
-              inputMode="decimal"
-              value={form.amountStr}
+              {...amountInput(form.amountStr, lang, (amountStr) => set({ amountStr }))}
               placeholder={isItems && a.total > 0 ? formatCents(a.total, lang).replace('R$ ', '') : t('expense.form.amountPh')}
               autoComplete="off"
               aria-required="true"
               aria-invalid={showErrors && a.amountError ? true : undefined}
-              onChange={(e) => set({ amountStr: e.target.value })}
             />
           </div>
           {showErrors && a.amountError && <ErrorLine>{t('expense.form.amtErr')}</ErrorLine>}
@@ -153,7 +152,7 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc?: ExpenseDo
           <div className="chiprow bleed" role="radiogroup" aria-label={t('expense.form.paidBy')}>
             {people.map((p) => (
               <button key={p.id} type="button" className={`chip hasav ${form.payer === p.id ? 'on' : ''}`} role="radio" aria-checked={form.payer === p.id} onClick={() => set({ payer: p.id })}>
-                <Avatar name={p.name} color={avatarColor(p.joinOrder)} size="sm" />
+                <MemberAvatar member={p} size="sm" />
                 {whoName(p.id)}
               </button>
             ))}
@@ -184,6 +183,7 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc?: ExpenseDo
                         name={whoName(p.id)}
                         avatarName={p.name}
                         color={avatarColor(p.joinOrder)}
+                        avatar={<MemberAvatar member={p} />}
                         me={p.id === me.id}
                         selected={form.members.includes(p.id)}
                         trailing={form.members.includes(p.id) && a.total > 0 ? fmt(a.shares[p.id] ?? 0) : '—'}
@@ -208,7 +208,7 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc?: ExpenseDo
                   </span>
                   <span className="avstack" aria-hidden="true">
                     {selected.slice(0, 5).map((p) => (
-                      <Avatar key={p.id} name={p.name} color={avatarColor(p.joinOrder)} />
+                      <MemberAvatar key={p.id} member={p} />
                     ))}
                     {selected.length > 5 && <span className="av more">+{selected.length - 5}</span>}
                   </span>

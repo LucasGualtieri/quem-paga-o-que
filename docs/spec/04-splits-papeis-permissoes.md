@@ -19,6 +19,7 @@ Cada split tem dois papéis: **admin** (pode haver vários; quem cria é admin) 
 | Deixar de ser admin | O próprio admin | Fica na sua linha em Pessoas. Sendo o último admin, o papel passa para quem tem a menor ordem de entrada entre os que já escolheram o nome; sem ninguém, para a próxima pessoa que entrar. Uma folha avisa antes. |
 | Sair do split | Qualquer participante | Só com saldo zero neste split. O último admin também sai: o papel passa adiante como em "Deixar de ser admin", e a folha diz para quem. Fica no menu de três pontos. |
 | Finalizar e reabrir split | Só admin | No menu, "Finalizar" aparece desabilitado para membro. |
+| Excluir o split inteiro | Só admin | No menu, "Excluir split" aparece desabilitado para membro, com "só admin". |
 
 **O papel de admin passa adiante** (revisto em 24/10/2026). O último admin pode sair ou deixar de ser admin: o papel vai para quem tem a menor ordem de entrada entre os que já escolheram o nome, e a folha avisa ("Ao sair, Beatriz vira admin."). Se ninguém mais entrou, o split fica sem admin até a próxima pessoa entrar e escolher um nome: ela vira admin. Se o único admin perder o acesso (convidado sem link de recuperação), nada muda automaticamente na v1: o split continua para os membros, só sem convidar, promover ou finalizar.
 
@@ -26,9 +27,20 @@ Cada split tem dois papéis: **admin** (pode haver vários; quem cria é admin) 
 
 **Texto para membro na aba Pessoas**, conforme a quantidade de admins: nenhum → "fale com um admin"; 1 → o nome; 2 ou 3 → "Beatriz, Catarina ou Fellipe"; mais de 3 → "Beatriz, Catarina ou outro admin".
 
-**Menu de três pontos do split:** Convidar (admin vai para Pessoas; membro copia o link), Finalizar ou Reabrir, Sair do split e Sua conta.
+**Menu de três pontos do split:** Convidar (admin vai para Pessoas; membro copia o link), Finalizar ou Reabrir, Excluir split, Sair do split e Sua conta.
 
 **Remover participante** é bloqueado em dois casos, com a mensagem na própria linha: quando a pessoa tem saldo diferente de zero ("Quitem as contas antes de remover") e quando ela aparece em alguma despesa ("Edite-as antes de remover").
+
+**Excluir o split inteiro** (decidido em 24/10/2026):
+
+- Só admin, mesmo com dinheiro pendente: a folha mostra o que ficou pendente (como em Finalizar) e avisa que não tem volta.
+- Para confirmar, a pessoa digita o nome do split; só então o botão vermelho "Excluir split" libera.
+- Some de vez, para todo mundo: despesas, acertos, histórico, notificações, comprovantes e capa. O convite deixa de funcionar.
+- Cada pessoa que estava no split recebe no sino "Lucas excluiu o split Churras de sábado".
+
+**Split sem ninguém é apagado sozinho** (decidido em 24/10/2026): quando a última pessoa ligada a um nome sai, começa a contagem; depois de **15 dias** sem ninguém entrar, o split é apagado como acima (sem aviso, porque não sobra ninguém). Se alguém entrar pelo convite antes, a contagem para.
+
+**Link que não leva a lugar nenhum:** link de split ou convite de um split apagado abre a tela "Este split não existe mais", que diz o que aconteceu ("Lucas excluiu “Churras de sábado”…" ou "ficou 15 dias sem ninguém e foi apagado automaticamente"). Link errado, ou de um split em que a pessoa não está, mostra "Não encontramos este split". As duas têm "Criar um split" e "Ir para o início".
 
 **Split finalizado:**
 

@@ -8,7 +8,7 @@ import { db, type SplitData } from './common.ts';
  * Regra das transações: todas as leituras (`find`) antes de qualquer escrita.
  */
 
-const col = () => db().collection('notifications');
+export const col = () => db().collection('notifications');
 
 export interface NoteInput {
   kind: NotificationKind;
@@ -25,9 +25,15 @@ export interface NoteInput {
 
 /** Cria o aviso para `toMember`, se a pessoa já entrou no split. */
 export function notify(tx: Transaction, splitId: string, split: SplitData, toMember: string, n: NoteInput): void {
+  const data = noteData(splitId, split, toMember, n);
+  if (data) tx.create(col().doc(), data);
+}
+
+/** O aviso pronto para gravar, ou `null` se a pessoa não entrou no split. */
+export function noteData(splitId: string, split: SplitData, toMember: string, n: NoteInput): (NotificationData & { at: FieldValue }) | null {
   const to = split.members[toMember]?.uid;
-  if (!to) return;
-  const data: NotificationData & { at: FieldValue } = {
+  if (!to) return null;
+  return {
     to,
     toMember,
     kind: n.kind,
@@ -48,7 +54,6 @@ export function notify(tx: Transaction, splitId: string, split: SplitData, toMem
     hidden: false,
     at: FieldValue.serverTimestamp(),
   };
-  tx.create(col().doc(), data);
 }
 
 type Found = Array<{ ref: FirebaseFirestore.DocumentReference; data: NotificationData }>;

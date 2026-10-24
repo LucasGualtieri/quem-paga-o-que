@@ -2,13 +2,14 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { nameKey, TAGS } from '@qpq/shared';
-import { Avatar, avatarColor, Button, Chip, Icon, SkeletonCard } from '../components/index.ts';
+import { Button, Chip, Icon, SkeletonCard } from '../components/index.ts';
 import { pendingChecks } from '../data/balance.ts';
 import { membersInOrder, sharesOf, type ExpenseDoc, type Member, type SplitDoc } from '../data/model.ts';
 import { useLang } from '../i18n/index.ts';
 import { formatCents } from '../lib/money.ts';
 import { dayLabel, EmptyArt, todayStr, useWho } from './common.tsx';
 import { EntryIconView } from './EntryIcon.tsx';
+import { MemberAvatar } from './Photos.tsx';
 
 interface Filters {
   people: string[];
@@ -112,7 +113,7 @@ export function TxTab({ split, me, expenses, loaded, canAdd, onAdd, lastAdded }:
                 return (
                   <button key={p.id} type="button" className={`ddi ${on ? 'on' : 'off'}`} aria-pressed={on} onClick={() => toggle('people', p.id)}>
                     <span className="avsel">
-                      <Avatar name={p.name} color={avatarColor(p.joinOrder)} size="sm" />
+                      <MemberAvatar member={p} size="sm" />
                       <span className="avck" aria-hidden="true">
                         <Icon name="check" />
                       </span>

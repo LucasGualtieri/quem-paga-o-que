@@ -11,6 +11,8 @@ export interface MemberDoc {
   isNew: boolean;
   /** Chave Pix de quem está ligado ao nome (só quem está no split lê). */
   pix?: PixKey | null;
+  /** Foto de perfil de quem está ligado ao nome (caminho no Storage). */
+  photo?: string | null;
 }
 
 export interface SplitDoc {

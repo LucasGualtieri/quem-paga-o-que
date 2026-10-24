@@ -8,6 +8,7 @@ import type {
   PayWriteResponse,
   SetPixKeyRequest,
   SetPixKeyResponse,
+  SetProfilePhotoRequest,
   SetProofVisibilityRequest,
   SetReceiptRequest,
   SetSplitPhotoRequest,
@@ -52,6 +53,7 @@ export const api = {
   regenerateCode: callable<SplitRequest, RegenerateCodeResponse>('regenerateCode'),
   // Finalizar e reabrir (Fase 8): só admin.
   finalizeSplit: callable<SplitRequest, unknown>('finalizeSplit'),
+  deleteSplit: callable<SplitRequest, unknown>('deleteSplit'),
   reopenSplit: callable<SplitRequest, unknown>('reopenSplit'),
   // Despesas (Fase 5): só as Functions escrevem.
   createExpense: callable<CreateExpenseRequest, ExpenseWriteResponse>('createExpense'),
@@ -79,6 +81,7 @@ export const api = {
   previewMerge: callable<MergeTokenRequest, PreviewMergeResponse>('previewMerge'),
   mergeGuest: callable<MergeGuestRequest, unknown>('mergeGuest'),
   setPixKey: callable<SetPixKeyRequest, SetPixKeyResponse>('setPixKey'),
+  setProfilePhoto: callable<SetProfilePhotoRequest, unknown>('setProfilePhoto'),
 };
 
 /** O motivo da recusa enviado pela Function, se houver. */

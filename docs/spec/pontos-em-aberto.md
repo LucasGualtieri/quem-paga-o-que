@@ -97,7 +97,7 @@ Spec atualizada: `05-despesas-e-divisao.md`.
 - **Prazo: no máximo 15 dias** a partir do envio, e **apagado assim que o split é finalizado** (reabrir não traz de volta). Também some quando o pagamento é desfeito ou contestado ("Não recebi"). Passado o prazo, a linha mostra "comprovante expirado" e não dá para enviar outro. A folha de anexar avisa: "Comprovantes ficam guardados por 15 dias."
 - **Só imagem.** Foto ou print; o app reduz para no máximo 1600 px e regrava em JPEG de até 1 MB, o que tira os metadados (como a localização da câmera). O servidor aceita só imagem de até 2 MB.
 - **Foto da despesa** (o comprovante em "Mais detalhes" do formulário, como uma nota fiscal): qualquer participante do split vê, independentemente da escolha acima. Mesmo prazo do comprovante de pagamento (15 dias, apagada ao finalizar).
-- **Capa do split:** qualquer participante vê; fica enquanto o split existir. **Foto de perfil:** qualquer pessoa com login vê; fica até a pessoa trocar.
+- **Capa do split:** qualquer participante vê; fica enquanto o split existir. **Foto de perfil:** qualquer pessoa com login vê; fica até a pessoa trocar. Aparece no lugar da inicial em todos os avatares, para quem divide um split com a pessoa (24/10/2026).
 
 Spec atualizada: `02-modelo-de-dados-e-calculo.md`, `04-splits-papeis-permissoes.md`, `05-despesas-e-divisao.md` e `06-saldo-pagamentos-comprovantes.md`.
 

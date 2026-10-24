@@ -1,7 +1,7 @@
 import { randomBytes, createHash } from 'node:crypto';
 import { getApps, initializeApp, type App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, type DocumentReference, type Transaction } from 'firebase-admin/firestore';
+import { FieldValue, getFirestore, type DocumentReference, type Transaction } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { ledger, type Expense, type JoinOrder, type Ledger, type Payment } from '@qpq/calc';
 import { HttpsError, type CallableRequest, type FunctionsErrorCode } from 'firebase-functions/v2/https';
@@ -44,6 +44,8 @@ export interface Member {
   isNew: boolean;
   /** Chave Pix de quem está ligado ao nome (espelho do perfil; só quem está no split lê). */
   pix?: PixKey | null;
+  /** Foto de perfil (caminho no Storage; espelho do perfil, como a chave Pix). */
+  photo?: string | null;
 }
 
 export interface SplitData {
@@ -102,6 +104,8 @@ export function mirrors(members: Record<string, Member>) {
     members,
     uids: linked.map((m) => m.uid!),
     adminUids: linked.filter((m) => m.admin).map((m) => m.uid!),
+    // Sem ninguém ligado: conta os dias até apagar o split sozinho (EMPTY_SPLIT_DAYS).
+    emptySince: linked.length ? null : FieldValue.serverTimestamp(),
   };
 }
 
@@ -191,9 +195,13 @@ export function requireOpen(split: SplitData): void {
   if (split.status !== 'open') fail('split-done');
 }
 
-/** Chave Pix do perfil, para espelhar no participante ao entrar num split. */
-export async function pixOf(tx: Transaction, uid: string): Promise<PixKey | null> {
-  return ((await tx.get(db().doc(`users/${uid}`))).get('pix') as PixKey | undefined) ?? null;
+/** Chave Pix e foto do perfil, para espelhar no participante ao entrar num split. */
+export async function profileOf(tx: Transaction, uid: string): Promise<{ pix: PixKey | null; photo: string | null }> {
+  const d = await tx.get(db().doc(`users/${uid}`));
+  return { pix: (d.get('pix') as PixKey | undefined) ?? null, photo: (d.get('photoPath') as string | undefined) ?? null };
 }
+
+/** O que sai do participante quando o nome fica sem ninguém (sair, liberar, fusão). */
+export const UNLINKED = { uid: null, admin: false, joinedAt: null, pix: null, photo: null } as const;
 
 export type { DocumentReference, Transaction };

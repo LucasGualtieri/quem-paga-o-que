@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Avatar, avatarColor, Badge, Button, Icon, Sheet, useToast } from '../components/index.ts';
+import { Badge, Button, Icon, Sheet, useToast } from '../components/index.ts';
 import { api, detailsOf } from '../data/api.ts';
 import { useProfile } from '../data/hooks.ts';
 import { useSession } from '../data/session.ts';
@@ -11,6 +11,7 @@ import { useLang } from '../i18n/index.ts';
 import { formatCents } from '../lib/money.ts';
 import { InviteBox } from './Created.tsx';
 import { useReasonText } from './reasons.ts';
+import { MemberAvatar } from './Photos.tsx';
 
 /** Uma ou mais mudanças em participantes (ex.: deixar de ser admin e o herdeiro virar admin). */
 export type PeopleAction = (patch: MemberPatch | MemberPatch[], commit: () => Promise<unknown>, done?: string) => void;
@@ -143,7 +144,7 @@ export function PeopleTab({ split, money, me, act }: { split: SplitDoc; money: M
             return (
               <div key={m.id} className={`row2 ${mine ? 'me-row' : ''}`}>
                 <div className="top">
-                  <Avatar name={m.name} color={avatarColor(m.joinOrder)} size="lg" />
+                  <MemberAvatar member={m} size="lg" />
                   <span className="mid">
                     <span className="ttl">
                       {m.name}

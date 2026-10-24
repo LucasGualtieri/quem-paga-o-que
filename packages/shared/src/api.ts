@@ -11,6 +11,8 @@ import type { PixKey } from './pix.ts';
 export type ErrorReason =
   | 'invalid-input'
   | 'invalid-code'
+  /** O split do link ou do convite foi apagado (`splitId` leva à explicação). */
+  | 'split-gone'
   | 'name-taken'
   | 'name-claimed'
   | 'not-member'
@@ -42,6 +44,8 @@ export interface ErrorDetails {
   name?: string;
   /** Saldo em centavos, quando o motivo é saldo. */
   amount?: number;
+  /** Split apagado, quando o motivo é `split-gone`. */
+  splitId?: string;
 }
 
 export interface CreateSplitRequest {
@@ -303,7 +307,9 @@ export type NotificationKind =
   /** Comprovante enviado depois (vai para a outra pessoa do pagamento). */
   | 'proof'
   /** "Não recebi" (vai para quem marcou que pagou). */
-  | 'disputed';
+  | 'disputed'
+  /** Um admin excluiu o split (vai para todos que estavam nele; sem link). */
+  | 'splitDeleted';
 
 export type NotificationStatus = 'new' | 'confirmed' | 'disputed';
 
@@ -341,4 +347,23 @@ export interface SetPixKeyRequest {
 }
 export interface SetPixKeyResponse {
   pix: PixKey | null;
+}
+/** Foto de perfil já enviada ao Storage (users/{uid}/…); `path: null` tira. */
+export interface SetProfilePhotoRequest {
+  path: string | null;
+}
+
+/** Split sem ninguém ligado por este tempo é apagado sozinho. */
+export const EMPTY_SPLIT_DAYS = 15;
+
+/**
+ * Lápide de um split apagado (`deletedSplits/{id}`), para o link antigo explicar o que houve:
+ * excluído por um admin ou apagado por ficar sem ninguém. Qualquer pessoa logada lê pelo id.
+ */
+export interface DeletedSplitData {
+  name: string;
+  emoji: string;
+  cause: 'admin' | 'empty';
+  /** Nome de quem excluiu (só `admin`). */
+  byName: string | null;
 }

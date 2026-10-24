@@ -32,6 +32,8 @@ interface SelectProps {
   selected: boolean;
   /** É você: nome em negrito (sem anel extra, sem bolinha). */
   me?: boolean;
+  /** Avatar pronto (com a foto de perfil); sem ele, a inicial na cor. */
+  avatar?: ReactNode;
   onClick: () => void;
 }
 
@@ -42,6 +44,7 @@ export function PersonRow({
   color,
   selected,
   me,
+  avatar,
   caption,
   trailing,
   onClick,
@@ -49,7 +52,7 @@ export function PersonRow({
   return (
     <button type="button" aria-pressed={selected} className={cx('prow', selected ? 'on' : 'off', me && 'me')} onClick={onClick}>
       <span className="avsel">
-        <Avatar name={avatarName ?? name} color={color} />
+        {avatar ?? <Avatar name={avatarName ?? name} color={color} />}
         <span className="avck" aria-hidden="true">
           <Icon name="check" />
         </span>
@@ -64,7 +67,7 @@ export function PersonRow({
 }
 
 /** Avatar com o nome embaixo, para escolher quem consumiu um item. */
-export function AvatarToggle({ name, avatarName, color, selected, me, all, onClick }: SelectProps & { all?: boolean }) {
+export function AvatarToggle({ name, avatarName, color, selected, me, all, avatar, onClick }: SelectProps & { all?: boolean }) {
   return (
     <button type="button" aria-pressed={selected} className={cx('avt', selected ? 'on' : 'off')} onClick={onClick}>
       {all ? (
@@ -72,7 +75,7 @@ export function AvatarToggle({ name, avatarName, color, selected, me, all, onCli
           <Icon name="people" size="sm" />
         </span>
       ) : (
-        <Avatar name={avatarName ?? name} color={color} />
+        (avatar ?? <Avatar name={avatarName ?? name} color={color} />)
       )}
       <span className={cx('avn', me && 'me')}>{name}</span>
     </button>

@@ -278,7 +278,8 @@
     "not-pending": "This payment was already checked.",
     "proof-exists": "This payment already has a receipt.",
     "proof-invalid": "Couldn’t attach that photo. Try again.",
-    "payment-missing": "This settle-up no longer exists."
+    "payment-missing": "This settle-up no longer exists.",
+    "split-gone": "This split no longer exists."
   },
   "entry": {
     "tagline": "Split the bills for the trip, the barbecue and the night out. No confusion, no awkwardness.",
@@ -690,7 +691,9 @@
     "bannerTitle": "{{name}} marked as paid {{amount}}",
     "sentProof": "sent a receipt",
     "youConfirmed": "You confirmed receipt",
-    "youSaidNo": "You said it didn’t arrive"
+    "youSaidNo": "You said it didn’t arrive",
+    "splitDeleted": "{{name}} deleted the split {{split}}",
+    "splitDeletedSub": "Its expenses and settle-ups were erased"
   },
   "fin": {
     "menu": "Close split",
@@ -791,5 +794,22 @@
     "none": "Nothing found.",
     "choose": "Choose the expense icon",
     "chooseItem": "Choose the item icon"
+  },
+  "del": {
+    "menu": "Delete split",
+    "title": "Delete “{{name}}”?",
+    "body": "Permanently deletes this split’s expenses, settle-ups, history, notifications and photos for everyone, and the invite stops working. There’s no undo. Everyone in the split gets a notice.",
+    "typeName": "Type “{{name}}” to confirm",
+    "confirm": "Delete split",
+    "done": "Split “{{name}}” deleted"
+  },
+  "gone": {
+    "title": "This split no longer exists",
+    "notFound": "We couldn’t find this split",
+    "byAdmin": "{{by}} deleted “{{name}}”. Its expenses, settle-ups and photos were erased for everyone.",
+    "empty": "“{{name}}” had nobody in it for 15 days and was deleted automatically.",
+    "unknown": "The link may be wrong, the split may have been deleted, or you’re not part of it.",
+    "create": "Create a split",
+    "home": "Go to home"
   }
 }

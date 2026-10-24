@@ -278,7 +278,8 @@
     "not-pending": "Esse pagamento já foi conferido.",
     "proof-exists": "Esse pagamento já tem comprovante.",
     "proof-invalid": "Não deu para anexar essa foto. Tente de novo.",
-    "payment-missing": "Esse acerto não existe mais."
+    "payment-missing": "Esse acerto não existe mais.",
+    "split-gone": "Este split não existe mais."
   },
   "entry": {
     "tagline": "Divida as contas da viagem, do churras e do rolê. Sem confusão e sem climão.",
@@ -690,7 +691,9 @@
     "bannerTitle": "{{name}} marcou que pagou {{amount}}",
     "sentProof": "enviou comprovante",
     "youConfirmed": "Você confirmou o recebimento",
-    "youSaidNo": "Você avisou que não recebeu"
+    "youSaidNo": "Você avisou que não recebeu",
+    "splitDeleted": "{{name}} excluiu o split {{split}}",
+    "splitDeletedSub": "As despesas e os acertos foram apagados"
   },
   "fin": {
     "menu": "Finalizar split",
@@ -791,5 +794,22 @@
     "none": "Nada encontrado.",
     "choose": "Escolher ícone da despesa",
     "chooseItem": "Escolher ícone do item"
+  },
+  "del": {
+    "menu": "Excluir split",
+    "title": "Excluir “{{name}}”?",
+    "body": "Apaga de vez, para todo mundo, as despesas, os acertos, o histórico, as notificações e as fotos deste split, e o convite deixa de funcionar. Não tem volta. Quem está no split recebe um aviso.",
+    "typeName": "Digite “{{name}}” para confirmar",
+    "confirm": "Excluir split",
+    "done": "Split “{{name}}” excluído"
+  },
+  "gone": {
+    "title": "Este split não existe mais",
+    "notFound": "Não encontramos este split",
+    "byAdmin": "{{by}} excluiu “{{name}}”. As despesas, os acertos e as fotos foram apagados para todo mundo.",
+    "empty": "“{{name}}” ficou 15 dias sem ninguém e foi apagado automaticamente.",
+    "unknown": "O link pode estar errado, o split pode ter sido apagado ou você não faz parte dele.",
+    "create": "Criar um split",
+    "home": "Ir para o início"
   }
 }

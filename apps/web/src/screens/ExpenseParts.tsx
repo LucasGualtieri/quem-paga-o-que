@@ -1,11 +1,13 @@
-import type { ReactNode } from 'react';
+import type { ChangeEvent, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Cents, ExpenseErrorCode, SplitMode } from '@qpq/calc';
-import { Avatar, AvatarToggle, avatarColor, Icon, Segmented, Stepper } from '../components/index.ts';
+import { AvatarToggle, avatarColor, Icon, Segmented, Stepper } from '../components/index.ts';
 import { itemWithMode, type ItemForm, type WeightText } from '../data/expenseForm.ts';
 import type { Member } from '../data/model.ts';
-import type { Lang } from '../i18n/index.ts';
+import { useLang, type Lang } from '../i18n/index.ts';
 import { formatCents, parseCents } from '../lib/money.ts';
+import { MemberAvatar } from './Photos.tsx';
+import { amountInput } from './common.tsx';
 
 export const SPLIT_MODES: SplitMode[] = ['equal', 'frac', 'pct', 'exact'];
 
@@ -57,6 +59,7 @@ interface WeightRowsProps {
 /** Um controle por pessoa: stepper de pedaços, % ou valor exato (R$). */
 export function WeightRows({ mode, people, w, onChange, caption, compact, whoName }: WeightRowsProps) {
   const { t } = useTranslation();
+  const lang = useLang();
   return (
     <>
       {people.map((p) => {
@@ -70,18 +73,16 @@ export function WeightRows({ mode, people, w, onChange, caption, compact, whoNam
             <div className="minibox">
               {mode === 'exact' && <span>R$</span>}
               <input
-                inputMode={mode === 'exact' ? 'numeric' : 'decimal'}
-                value={w[p.id] ?? ''}
+                {...(mode === 'exact' ? amountInput(w[p.id] ?? '', lang, (v) => onChange(p.id, v)) : { inputMode: 'decimal' as const, value: w[p.id] ?? '', onChange: (e: ChangeEvent<HTMLInputElement>) => onChange(p.id, e.target.value) })}
                 aria-label={t('expense.form.weightAria', { name })}
                 style={{ width: mode === 'pct' ? 48 : 62 }}
-                onChange={(e) => onChange(p.id, e.target.value)}
               />
               {mode === 'pct' && <span>%</span>}
             </div>
           );
         return compact ? (
           <div key={p.id} className="iwrow">
-            <Avatar name={p.name} color={avatarColor(p.joinOrder)} size="sm" />
+            <MemberAvatar member={p} size="sm" />
             <span className="mid">
               <span className="ttl" style={{ fontSize: 14 }}>
                 {name}
@@ -92,7 +93,7 @@ export function WeightRows({ mode, people, w, onChange, caption, compact, whoNam
           </div>
         ) : (
           <div key={p.id} className="row">
-            <Avatar name={p.name} color={avatarColor(p.joinOrder)} />
+            <MemberAvatar member={p} />
             <span className="mid">
               <span className="ttl">{name}</span>
               {caption && <span className="cap amt">{caption(p.id)}</span>}
@@ -128,7 +129,7 @@ export function WhoToggles({ people, selected, onChange, whoName, label, expande
         <span className="avsep" aria-hidden="true" />
         <div className={`avscroll ${expanded ? 'exp' : ''}`}>
           {people.map((p) => (
-            <AvatarToggle key={p.id} name={whoName(p.id)} avatarName={p.name} color={avatarColor(p.joinOrder)} selected={set.has(p.id)} onClick={() => toggle(p.id)} />
+            <AvatarToggle key={p.id} name={whoName(p.id)} avatarName={p.name} color={avatarColor(p.joinOrder)} avatar={<MemberAvatar member={p} />} selected={set.has(p.id)} onClick={() => toggle(p.id)} />
           ))}
         </div>
       </div>

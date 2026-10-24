@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Avatar, avatarColor, Button, Icon } from '../components/index.ts';
+import { Button, Icon } from '../components/index.ts';
 import { pairsView, type PairCard, type PairEntry } from '../data/balance.ts';
 import { canSeeProof, membersInOrder, type ExpenseDoc, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
 import { useLang } from '../i18n/index.ts';
@@ -10,6 +10,7 @@ import { EmptyArt, useBalanceView, useWho } from './common.tsx';
 import { EntryIconView } from './EntryIcon.tsx';
 import type { usePayFlow } from './PaySheet.tsx';
 import { CopyPixButton } from './Pix.tsx';
+import { MemberAvatar } from './Photos.tsx';
 
 type Flow = ReturnType<typeof usePayFlow>['flow'];
 
@@ -61,7 +62,6 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
   const fmt = (c: number) => formatCents(c, lang);
   const signed = (c: number) => formatCents(c, lang, { signed: true });
   const nameOf = (id: string) => split.members[id]?.name ?? '?';
-  const colorOf = (id: string) => avatarColor(split.members[id]?.joinOrder ?? 0);
   // "você devia…" só quando é a própria pessoa e ela prefere "Você" ao nome.
   const asYou = self && who(me.id) !== nameOf(me.id);
 
@@ -251,7 +251,7 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
           return (
             <div key={o} className={`pcard ${c.status === 'zero' ? 'zero' : ''}`}>
               <button type="button" className="pchead" aria-expanded={opened} onClick={() => setOpen((s) => ({ ...s, [o]: !opened }))}>
-                <Avatar name={nameOf(o)} color={colorOf(o)} />
+                <MemberAvatar member={split.members[o]} />
                 <span className="mid">
                   <span className="ttl">{who(o)}</span>
                   <span className="cap">{caption(c)}</span>

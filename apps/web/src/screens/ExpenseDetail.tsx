@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router';
-import { Avatar, avatarColor, Badge, Button, Icon, Sheet, SkeletonCard } from '../components/index.ts';
+import { Badge, Button, Icon, Sheet, SkeletonCard } from '../components/index.ts';
 import { useExpenses, useHistory, useSplit, type HistoryEntry } from '../data/hooks.ts';
 import { canSeeProof, myMember, sharesOf, type ExpenseDoc, type Member, type SplitDoc } from '../data/model.ts';
 import { markRead, useNotifications } from '../data/notifications.ts';
@@ -13,6 +13,7 @@ import { BackLink, useWho } from './common.tsx';
 import { EntryIconView } from './EntryIcon.tsx';
 import { PhotoBox, usePayFlow } from './PaySheet.tsx';
 import { hasPayments, useExpenseActions } from './useExpenseActions.ts';
+import { MemberAvatar } from './Photos.tsx';
 
 function useWhen() {
   const lang = useLang();
@@ -114,7 +115,7 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc: ExpenseDoc
             <div className="nbanner" role="status">
               <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                 <span className="avsel">
-                  <Avatar name={member?.name ?? banner.fromName} color={avatarColor(member?.joinOrder ?? 0)} />
+                  <MemberAvatar member={member} name={member?.name ?? banner.fromName} />
                   <span className="nbadge" aria-hidden="true">
                     <Icon name="in" />
                   </span>
@@ -206,7 +207,7 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc: ExpenseDoc
               return (
                 <div key={id} className={`row2 ${id === me.id ? 'me-row' : ''} ${hl === id ? 'hlrow' : ''}`}>
                   <div className="top">
-                    <Avatar name={m?.name ?? '?'} color={avatarColor(m?.joinOrder ?? 0)} size="lg" />
+                    <MemberAvatar member={m} size="lg" />
                     <span className="mid">
                       <span className="ttl">{who(id)}</span>
                       <span className="cap amt">{caption(id)}</span>

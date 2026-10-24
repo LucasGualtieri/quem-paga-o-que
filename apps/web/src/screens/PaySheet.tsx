@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ProofInfo } from '@qpq/shared';
-import { Avatar, avatarColor, Button, Icon, Sheet } from '../components/index.ts';
+import { Button, Icon, Sheet } from '../components/index.ts';
 import { usePhoto } from '../data/files.ts';
 import { useProfile } from '../data/hooks.ts';
 import { canSeeProof, sharesOf, type ExpenseDoc, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
@@ -9,6 +9,7 @@ import { useSession } from '../data/session.ts';
 import { useLang } from '../i18n/index.ts';
 import { formatCents } from '../lib/money.ts';
 import { usePayActions } from './usePayActions.ts';
+import { MemberAvatar } from './Photos.tsx';
 
 /** O que a folha de pagamento confirma: parte de despesa, acerto novo ou comprovante depois. */
 type PayTarget =
@@ -112,9 +113,9 @@ export function usePayFlow(split: SplitDoc, me: Member, who: (id: string) => str
       <Sheet open title={title} onClose={close}>
         <div className="paysum">
           <span className="avpair" aria-hidden="true">
-            <Avatar name={fromM?.name ?? '?'} color={avatarColor(fromM?.joinOrder ?? 0)} />
+            <MemberAvatar member={fromM} />
             <Icon name="arrow" size="sm" />
-            <Avatar name={toM?.name ?? '?'} color={avatarColor(toM?.joinOrder ?? 0)} />
+            <MemberAvatar member={toM} />
           </span>
           <span className="mid">
             <span className="sugtxt amt">{text}</span>

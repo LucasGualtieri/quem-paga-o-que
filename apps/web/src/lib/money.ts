@@ -42,8 +42,17 @@ export function parseCents(input: string): number | null {
   return Number(digits) * 100 + Number(cents);
 }
 
-/** Centavos → texto para editar no campo (sem milhar, duas casas). */
+/** Centavos → texto para editar no campo (com milhar, duas casas, sem "R$"). */
 export function formatInputCents(cents: number, lang: Lang): string {
-  const body = `${Math.floor(cents / 100)}${lang === 'en' ? '.' : ','}${String(cents % 100).padStart(2, '0')}`;
-  return body;
+  return formatCents(cents, lang).replace('R$ ', '');
+}
+
+/**
+ * Campo de valor como no caixa eletrônico: o primeiro dígito é centavo e cada dígito novo empurra
+ * os outros uma casa para a esquerda ("1", "12", "123" → 0,01 · 0,12 · 1,23). Apagar faz o
+ * caminho inverso. Devolve o texto do campo (vazio sem nenhum dígito além de zeros).
+ */
+export function typeAmount(raw: string, lang: Lang): string {
+  const digits = raw.replace(/\D/g, '').replace(/^0+/, '').slice(0, 11);
+  return digits === '' ? '' : formatInputCents(Number(digits), lang);
 }

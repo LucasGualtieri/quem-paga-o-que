@@ -29,7 +29,7 @@ describe('formatCents', () => {
   });
 });
 
-import { formatInputCents, parseCents } from './money.ts';
+import { formatInputCents, parseCents, typeAmount } from './money.ts';
 
 describe('parseCents (campo de valor)', () => {
   it('reais inteiros e com centavos, vírgula ou ponto', () => {
@@ -64,9 +64,27 @@ describe('parseCents (campo de valor)', () => {
 
 describe('formatInputCents', () => {
   it('sempre com duas casas, no separador do idioma e sem milhar', () => {
-    expect(formatInputCents(120050, 'pt-BR')).toBe('1200,50');
-    expect(formatInputCents(120050, 'en')).toBe('1200.50');
+    expect(formatInputCents(120050, 'pt-BR')).toBe('1.200,50');
+    expect(formatInputCents(120050, 'en')).toBe('1,200.50');
     expect(formatInputCents(5, 'pt-BR')).toBe('0,05');
-    expect(formatInputCents(120000, 'pt-BR')).toBe('1200,00');
+    expect(formatInputCents(120000, 'pt-BR')).toBe('1.200,00');
+  });
+});
+
+describe('typeAmount (caixa eletrônico)', () => {
+  it('cada dígito entra pelos centavos e empurra os outros', () => {
+    const typed = ['1', '12', '123', '1234', '12345', '123456'].map((d) => typeAmount(d, 'pt-BR'));
+    expect(typed).toEqual(['0,01', '0,12', '1,23', '12,34', '123,45', '1.234,56']);
+    // O campo já formatado ganha um dígito no fim, ou perde o último ao apagar.
+    expect(typeAmount('1.234,567', 'pt-BR')).toBe('12.345,67');
+    expect(typeAmount('12,3', 'pt-BR')).toBe('1,23');
+    expect(typeAmount('90,00', 'en')).toBe('90.00');
+  });
+  it('só zeros ou nada deixa o campo vazio; para em 11 dígitos', () => {
+    expect(typeAmount('0,0', 'pt-BR')).toBe('');
+    expect(typeAmount('', 'pt-BR')).toBe('');
+    expect(typeAmount('R$ abc', 'pt-BR')).toBe('');
+    expect(typeAmount('123456789012', 'pt-BR')).toBe('123.456.789,01');
+    expect(parseCents(typeAmount('123456789012', 'pt-BR'))).toBe(12345678901);
   });
 });

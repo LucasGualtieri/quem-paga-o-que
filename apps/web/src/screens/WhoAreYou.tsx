@@ -8,6 +8,7 @@ import { trackJoin } from '../data/local.ts';
 import { continueAsGuest, useSession } from '../data/session.ts';
 import { BackLink } from './common.tsx';
 import { useReasonText } from './reasons.ts';
+import { SplitGone } from './SplitGone.tsx';
 
 type State = { status: 'loading' } | { status: 'ready'; data: PreviewInviteResponse } | { status: 'error'; details: ErrorDetails | null };
 
@@ -39,6 +40,8 @@ export default function WhoAreYou() {
   }, [code, session.status]);
 
   if (state.status === 'ready' && state.data.alreadyMember) return <Navigate to={`/s/${state.data.splitId}`} replace />;
+  // Convite de um split apagado: explica o que aconteceu.
+  if (state.status === 'error' && state.details?.reason === 'split-gone' && state.details.splitId) return <SplitGone splitId={state.details.splitId} />;
 
   const data = state.status === 'ready' ? state.data : null;
   const typed = cleanName(newName);

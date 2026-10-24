@@ -14,7 +14,7 @@ async function setup(browser: Parameters<typeof guest>[0], people = ['Beatriz', 
 
 async function startExpense(page: Page, name: string, amount: string) {
   await page.locator('#ad-desc').fill(name);
-  await page.locator('#ad-amt').fill(amount);
+  await page.locator('#ad-amt').fill(`${amount},00`);
 }
 
 test('estado vazio → lançar despesa igualmente → aparece na hora, com Desfazer', async ({ browser }) => {
@@ -31,6 +31,14 @@ test('estado vazio → lançar despesa igualmente → aparece na hora, com Desfa
   await expect(lucas.getByText('Dê um nome para a despesa')).toBeVisible();
   await expect(lucas.getByText('Informe um valor maior que zero')).toBeVisible();
 
+  // Valor como no caixa eletrônico: 8, 80, 800, 8000 → R$ 80,00; apagar volta uma casa.
+  const amt = lucas.locator('#ad-amt');
+  await amt.pressSequentially('8');
+  await expect(amt).toHaveValue('0,08');
+  await amt.pressSequentially('0001');
+  await expect(amt).toHaveValue('800,01');
+  await amt.press('Backspace');
+  await expect(amt).toHaveValue('80,00');
   await startExpense(lucas, 'Pizza', '80');
   // Prévia: 80 ÷ 3 = 26,67, centavos pela ordem de entrada.
   await expect(lucas.locator('.result .big')).toHaveText('R$ 26,67');
@@ -78,10 +86,16 @@ test('frações, porcentagem e valor exato: só salva quando fecha', async ({ br
 
   // Valor exato que fecha salva.
   await lucas.getByRole('group', { name: 'Como dividir' }).getByRole('button', { name: 'Valor exato' }).click();
-  await lucas.getByLabel('Você', { exact: true }).fill('50');
-  await lucas.getByLabel('Beatriz', { exact: true }).fill('10');
-  await lucas.getByLabel('Catarina', { exact: true }).fill('10');
-  await lucas.getByLabel('Fellipe', { exact: true }).fill('10');
+  // Como no caixa eletrônico: os dígitos entram pelos centavos.
+  const you = lucas.getByLabel('Você', { exact: true });
+  await you.fill('');
+  await you.pressSequentially('5');
+  await expect(you).toHaveValue('0,05');
+  await you.pressSequentially('000');
+  await expect(you).toHaveValue('50,00');
+  await lucas.getByLabel('Beatriz', { exact: true }).fill('10,00');
+  await lucas.getByLabel('Catarina', { exact: true }).fill('10,00');
+  await lucas.getByLabel('Fellipe', { exact: true }).fill('10,00');
   await lucas.getByRole('button', { name: /Salvar despesa/ }).click();
   await expect(toast(lucas)).toContainText('Despesa adicionada');
   await expect(lucas.locator('.txrow', { hasText: 'Pizza' })).toContainText('valores exatos');
@@ -94,7 +108,7 @@ test('dividir por itens com resto da compra', async ({ browser }) => {
   await lucas.getByRole('button', { name: /Dividir por itens/ }).click();
 
   await lucas.getByLabel('Nome do item').fill('Cerveja');
-  await lucas.getByLabel('Valor do item').fill('30');
+  await lucas.getByLabel('Valor do item').fill('30,00');
   // Só Lucas e Beatriz tomaram cerveja: tira Catarina.
   await lucas.getByRole('group', { name: 'Quem consumiu Cerveja' }).getByRole('button', { name: 'Catarina' }).click();
   // O resto (R$ 70) vai para os três.
@@ -136,7 +150,7 @@ test('detalhe, editar com histórico, excluir com Desfazer', async ({ browser })
 
   await lucas.getByRole('link', { name: 'Editar', exact: true }).first().click();
   await expect(lucas.locator('#ad-desc')).toHaveValue('Gasolina');
-  await lucas.locator('#ad-amt').fill('150');
+  await lucas.locator('#ad-amt').fill('150,00');
   await lucas.getByRole('button', { name: /Salvar alterações/ }).click();
   await expect(lucas.getByText('R$ 150,00').first()).toBeVisible();
   await expect(lucas.getByText('Lucas mudou o valor de R$ 120,00 para R$ 150,00')).toBeVisible();
@@ -212,11 +226,11 @@ test('duas pessoas editando a mesma despesa: aviso de conflito, ver a nova ou sa
 
   await bia.locator('.txrow', { hasText: 'Sorvete' }).click();
   await bia.getByRole('link', { name: 'Editar', exact: true }).first().click();
-  await bia.locator('#ad-amt').fill('15');
+  await bia.locator('#ad-amt').fill('15,00');
   await bia.getByRole('button', { name: /Salvar alterações/ }).click();
   await expect(bia.getByText('R$ 15,00').first()).toBeVisible();
 
-  await lucas.locator('#ad-amt').fill('20');
+  await lucas.locator('#ad-amt').fill('20,00');
   await lucas.getByRole('button', { name: /Salvar alterações/ }).click();
   const sheet = lucas.getByRole('dialog', { name: 'Beatriz alterou esta despesa enquanto você editava.' });
   await expect(sheet).toBeVisible();
@@ -227,7 +241,7 @@ test('duas pessoas editando a mesma despesa: aviso de conflito, ver a nova ou sa
 
   // De novo, agora salvando por cima.
   await lucas.getByRole('link', { name: 'Editar', exact: true }).first().click();
-  await lucas.locator('#ad-amt').fill('20');
+  await lucas.locator('#ad-amt').fill('20,00');
   await bia.locator('#ad-amt').count();
   await lucas.getByRole('button', { name: /Salvar alterações/ }).click();
   await expect(lucas.getByText('R$ 20,00').first()).toBeVisible();

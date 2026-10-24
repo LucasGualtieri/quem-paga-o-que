@@ -56,6 +56,11 @@ describe('textos das notificações (spec 07)', () => {
     expect(viewOf({ ...base, kind: 'disputed', from: 'm1', fromName: 'Lucas' }, t, name, money)).toMatchObject({ title: 'Lucas avisou que não recebeu R$ 40,00', sub: 'Pizza · Ano Novo' });
   });
 
+  it('split excluído: leva à explicação, mesmo sem o split na lista', () => {
+    const del = { ...base, kind: 'splitDeleted' as const, from: 'm1', fromName: 'Lucas', amount: 0, expId: null, expName: null, memberId: null };
+    expect(viewOf(del, t, () => '', money)).toEqual({ title: 'Lucas excluiu o split Ano Novo', sub: 'As despesas e os acertos foram apagados', to: '/s/s1' });
+  });
+
   it('sino conta até "9+"', () => {
     expect(bellCount(3)).toBe('3');
     expect(bellCount(10)).toBe('9+');

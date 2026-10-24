@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ChangeEvent, ReactNode, SyntheticEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { Icon, type IconName } from '../components/index.ts';
@@ -7,7 +7,7 @@ import type { Member, SplitDoc } from '../data/model.ts';
 import { useSession } from '../data/session.ts';
 import { useLang, type Lang } from '../i18n/index.ts';
 import { dateOf, shortDay } from '../lib/dates.ts';
-import { formatCents } from '../lib/money.ts';
+import { formatCents, typeAmount } from '../lib/money.ts';
 
 /** Ilustração dos estados vazios; o "+" amarelo só aparece quando há ação. */
 export function EmptyArt({ plus }: { plus?: { label: string; onClick: () => void } }) {
@@ -93,4 +93,21 @@ export function dayLabel(date: string, today: string, lang: Lang, t: (k: string)
 export function todayStr(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/**
+ * Campo de valor em R$ como no caixa eletrônico: cada dígito entra pelos centavos e empurra os
+ * outros; o cursor fica sempre no fim (a não ser que a pessoa selecione um trecho).
+ */
+export function amountInput(value: string, lang: Lang, onValue: (value: string) => void) {
+  return {
+    inputMode: 'numeric' as const,
+    value,
+    onChange: (e: ChangeEvent<HTMLInputElement>) => onValue(typeAmount(e.target.value, lang)),
+    onSelect: (e: SyntheticEvent<HTMLInputElement>) => {
+      const el = e.currentTarget;
+      const end = el.value.length;
+      if (el.selectionStart === el.selectionEnd && el.selectionStart !== end) el.setSelectionRange(end, end);
+    },
+  };
 }

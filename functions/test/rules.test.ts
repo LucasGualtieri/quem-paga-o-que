@@ -173,3 +173,19 @@ describe('notificações (Fase 7)', () => {
     await assertFails(deleteDoc(doc(as('ana'), 'notifications/n1')));
   });
 });
+
+describe('split apagado (lápide)', () => {
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'deletedSplits/s9'), { name: 'Ano Novo', emoji: '🎆', cause: 'admin', byName: 'Lucas' });
+    });
+  });
+
+  it('quem tem o link lê pelo id; ninguém lista nem escreve', async () => {
+    await assertSucceeds(getDoc(doc(as('zé'), 'deletedSplits/s9')));
+    await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), 'deletedSplits/s9')));
+    await assertFails(getDocs(collection(as('zé'), 'deletedSplits')));
+    await assertFails(setDoc(doc(as('zé'), 'deletedSplits/s9'), { name: 'x' }));
+    await assertFails(deleteDoc(doc(as('zé'), 'deletedSplits/s9')));
+  });
+});

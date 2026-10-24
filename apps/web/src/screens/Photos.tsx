@@ -2,11 +2,11 @@ import { deleteObject, ref } from 'firebase/storage';
 import { useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
 import { avatarPath, coverPath, coverColor } from '@qpq/shared';
-import { Avatar, Cover, useToast } from '../components/index.ts';
+import { Avatar, avatarColor, Cover, useToast } from '../components/index.ts';
 import { api, detailsOf } from '../data/api.ts';
 import { previewPhoto, uploadPhoto, usePhoto } from '../data/files.ts';
 import { saveProfile } from '../data/hooks.ts';
-import type { SplitDoc } from '../data/model.ts';
+import type { MemberDoc, SplitDoc } from '../data/model.ts';
 import { firebase } from '../firebase.ts';
 import { ImageError, photoName } from '../lib/image.ts';
 import { useReasonText } from './reasons.ts';
@@ -63,6 +63,12 @@ export function ProfileAvatar({ name, photoPath, size, className }: { name: stri
   return <Avatar name={name || '?'} color={1} {...(size ? { size } : {})} {...(className ? { className } : {})} src={photo?.status === 'ready' ? photo.url : null} />;
 }
 
+/** Avatar de quem está no split: a foto de perfil, se tiver; senão a inicial na cor da pessoa. */
+export function MemberAvatar({ member, name, size, className }: { member: Pick<MemberDoc, 'name' | 'joinOrder' | 'photo'> | null | undefined; name?: string; size?: 'sm' | 'lg'; className?: string }) {
+  const photo = usePhoto(member?.photo ?? null);
+  return <Avatar name={name ?? member?.name ?? '?'} color={avatarColor(member?.joinOrder ?? 0)} {...(size ? { size } : {})} {...(className ? { className } : {})} src={photo?.status === 'ready' ? photo.url : null} />;
+}
+
 /** "Trocar foto": a foto nova vale na hora (cache local do Firestore); se não subir, volta a anterior. */
 export function useChangeProfilePhoto(uid: string, current: string | null) {
   const { t } = useTranslation();
@@ -71,15 +77,18 @@ export function useChangeProfilePhoto(uid: string, current: string | null) {
     const path = avatarPath(uid, photoName());
     previewPhoto(path, file);
     void saveProfile(uid, { photoPath: path });
-    uploadPhoto(path, file).then(
-      () => {
-        toast.show({ text: t('photo.saved') });
-        if (current) void deleteObject(ref(firebase().storage, current)).catch(() => {});
-      },
-      (error: unknown) => {
-        void saveProfile(uid, { photoPath: current });
-        toast.show({ kind: 'error', text: error instanceof ImageError ? t('pay.imageError') : t('errors.saveFailed') });
-      },
-    );
+    // Depois de subir, o servidor espelha a foto nos splits (quem divide o split vê no avatar).
+    uploadPhoto(path, file)
+      .then(() => api.setProfilePhoto({ path }))
+      .then(
+        () => {
+          toast.show({ text: t('photo.saved') });
+          if (current) void deleteObject(ref(firebase().storage, current)).catch(() => {});
+        },
+        (error: unknown) => {
+          void saveProfile(uid, { photoPath: current });
+          toast.show({ kind: 'error', text: error instanceof ImageError ? t('pay.imageError') : t('errors.saveFailed') });
+        },
+      );
   };
 }

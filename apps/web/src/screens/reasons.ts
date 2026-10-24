@@ -41,6 +41,7 @@ export function useReasonText() {
       case 'proof-exists':
       case 'proof-invalid':
       case 'payment-missing':
+      case 'split-gone':
         return t(`reasons.${details.reason}`, { name });
       default:
         return t('errors.saveFailed');

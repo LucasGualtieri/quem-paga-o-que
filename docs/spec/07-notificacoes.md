@@ -10,6 +10,7 @@ A notificação principal é uma só: "Beatriz pagou R$ 40,00 pra você", enviad
 | Alguém registra um acerto pelo cartão da Minha visão | A outra pessoa do acerto (quem recebe confirma ou diz "Não recebi"; "Não recebi" avisa quem pagou) |
 | Alguém envia comprovante depois | A outra pessoa do pagamento |
 | Quem recebe toca "Não recebi" | Quem marcou que pagou ("o pagamento não chegou") |
+| Um admin exclui o split | Todos que estavam no split, menos quem excluiu ("Lucas excluiu o split Churras de sábado"; abre a explicação) |
 
 **Canais (Sua conta → Notificações):**
 
