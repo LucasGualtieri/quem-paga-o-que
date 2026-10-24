@@ -1,5 +1,5 @@
 import { shares as calcShares, ledger, type Cents, type Expense, type ExpenseMode, type JoinOrder, type MemberId, type Payment, type SplitMode, type Weights } from '@qpq/calc';
-import type { ErrorReason, ProofInfo, ProofVisibility } from '@qpq/shared';
+import type { ErrorReason, PixKey, ProofInfo, ProofVisibility } from '@qpq/shared';
 
 /** Participante como está no Firestore (splits/{id}.members). */
 export interface MemberDoc {
@@ -9,6 +9,8 @@ export interface MemberDoc {
   admin: boolean;
   joinOrder: number;
   isNew: boolean;
+  /** Chave Pix de quem está ligado ao nome (só quem está no split lê). */
+  pix?: PixKey | null;
 }
 
 export interface SplitDoc {

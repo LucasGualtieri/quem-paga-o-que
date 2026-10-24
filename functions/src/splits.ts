@@ -28,6 +28,7 @@ import {
   newId,
   opts,
   passAdmin,
+  pixOf,
   readMoney,
   requireAdmin,
   requireMember,
@@ -97,6 +98,8 @@ export const createSplit = onCall(opts, async (req): Promise<CreateSplitResponse
   });
 
   const code = await db().runTransaction(async (tx) => {
+    const pix = await pixOf(tx, uid);
+    if (pix) members[selfId] = { ...members[selfId]!, pix };
     const code = await freshCode(tx);
     tx.create(db().doc(`inviteCodes/${code}`), { splitId: ref.id });
     tx.create(ref, {
@@ -143,6 +146,7 @@ export const joinSplit = onCall(opts, async (req): Promise<JoinSplitResponse> =>
     const { ref, split } = await splitByCode(tx, data.code);
     const mine = memberOf(split, uid);
     if (mine) return { splitId: ref.id, memberId: mine[0] };
+    const pix = await pixOf(tx, uid);
 
     const members = { ...split.members };
     const now = FieldValue.serverTimestamp();
@@ -153,14 +157,14 @@ export const joinSplit = onCall(opts, async (req): Promise<JoinSplitResponse> =>
       const m = members[memberId] ?? fail('invalid-input');
       // Decisão 3: o nome trava para quem o escolheu primeiro.
       if (m.uid) fail('name-claimed', { name: m.name });
-      members[memberId] = { ...m, uid, joinedAt: now };
+      members[memberId] = { ...m, uid, joinedAt: now, pix };
     } else {
       const name = cleanName(text(data.newName));
       if (!isValidName(name)) fail('invalid-input');
       const key = nameKey(name);
       if (Object.values(members).some((m) => m.nameKey === key)) fail('name-taken', { name });
       memberId = newId();
-      members[memberId] = { name, nameKey: key, uid, admin: false, joinOrder: nextJoinOrder++, joinedAt: now, isNew: true };
+      members[memberId] = { name, nameKey: key, uid, admin: false, joinOrder: nextJoinOrder++, joinedAt: now, isNew: true, pix };
     }
     // Split sem admin (o último saiu sem ninguém para herdar): quem entra vira admin (decisão 4).
     if (!Object.values(members).some((m) => m.admin && m.uid)) members[memberId] = { ...members[memberId]!, admin: true };
@@ -197,7 +201,7 @@ export const releaseName = onCall(opts, async (req) => {
     if (id === myId) fail('self-action');
     if (!m.uid) fail('not-joined', { name: m.name });
     // Liberar o nome também tira o admin, para ninguém herdar o papel (decisão 3).
-    tx.update(ref, mirrors({ ...split.members, [id]: { ...m, uid: null, admin: false, joinedAt: null } }));
+    tx.update(ref, mirrors({ ...split.members, [id]: { ...m, uid: null, admin: false, joinedAt: null, pix: null } }));
   });
   return { ok: true };
 });
@@ -214,7 +218,7 @@ export const leaveSplit = onCall(opts, async (req) => {
     if (net !== 0) fail('balance-not-zero', { amount: net });
     // Decisão 4: sair desvincula; o nome, as despesas e o histórico ficam. Sendo o último
     // admin, o papel passa para quem entrou primeiro entre os que ficam.
-    tx.update(ref, mirrors(passAdmin({ ...split.members, [id]: { ...m, uid: null, admin: false, joinedAt: null } }, id)));
+    tx.update(ref, mirrors(passAdmin({ ...split.members, [id]: { ...m, uid: null, admin: false, joinedAt: null, pix: null } }, id)));
   });
   return { ok: true };
 });

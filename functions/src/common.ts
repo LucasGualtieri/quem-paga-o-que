@@ -5,7 +5,7 @@ import { getFirestore, type DocumentReference, type Transaction } from 'firebase
 import { getStorage } from 'firebase-admin/storage';
 import { ledger, type Expense, type JoinOrder, type Ledger, type Payment } from '@qpq/calc';
 import { HttpsError, type CallableRequest, type FunctionsErrorCode } from 'firebase-functions/v2/https';
-import type { ErrorDetails, ErrorReason } from '@qpq/shared';
+import type { ErrorDetails, ErrorReason, PixKey } from '@qpq/shared';
 
 export const REGION = 'us-east1';
 
@@ -42,6 +42,8 @@ export interface Member {
   joinOrder: number;
   joinedAt: unknown;
   isNew: boolean;
+  /** Chave Pix de quem está ligado ao nome (espelho do perfil; só quem está no split lê). */
+  pix?: PixKey | null;
 }
 
 export interface SplitData {
@@ -187,6 +189,11 @@ export function ledgerOf(split: SplitData, money: { expenses: Expense[]; payment
 
 export function requireOpen(split: SplitData): void {
   if (split.status !== 'open') fail('split-done');
+}
+
+/** Chave Pix do perfil, para espelhar no participante ao entrar num split. */
+export async function pixOf(tx: Transaction, uid: string): Promise<PixKey | null> {
+  return ((await tx.get(db().doc(`users/${uid}`))).get('pix') as PixKey | undefined) ?? null;
 }
 
 export type { DocumentReference, Transaction };

@@ -1,5 +1,6 @@
 import { collection, doc, onSnapshot, query, setDoc, where } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
+import type { PixKey } from '@qpq/shared';
 import { firebase } from '../firebase.ts';
 import { pruneOps, mergeOps, useOps } from './expenseStore.ts';
 import { activeExpenses, type ExpenseDoc, type PaymentDoc, type SplitDoc } from './model.ts';
@@ -169,9 +170,11 @@ export interface Profile {
   prefs: Prefs;
   /** Link de recuperação ativo (só as Functions escrevem). */
   recovery: { active: boolean; createdAt: Date | null };
+  /** Chave Pix (uma por pessoa; só as Functions gravam). */
+  pix: PixKey | null;
 }
 
-const EMPTY_PROFILE: Profile = { displayName: '', photoPath: null, prefs: {}, recovery: { active: false, createdAt: null } };
+const EMPTY_PROFILE: Profile = { displayName: '', photoPath: null, prefs: {}, recovery: { active: false, createdAt: null }, pix: null };
 
 /** Perfil e preferências do usuário (users/{uid}), em tempo real. */
 export function useProfile(uid: string | null): Loadable<Profile> {
@@ -191,6 +194,7 @@ export function useProfile(uid: string | null): Loadable<Profile> {
             photoPath: (d.photoPath as string | undefined) ?? null,
             prefs: (d.prefs as Prefs | undefined) ?? {},
             recovery: { active: !!rec.active, createdAt: rec.createdAt?.toDate() ?? null },
+            pix: (d.pix as PixKey | null | undefined) ?? null,
           },
         });
       },

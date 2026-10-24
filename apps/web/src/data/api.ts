@@ -6,6 +6,8 @@ import type {
   CreatePaymentResponse,
   PaymentRef,
   PayWriteResponse,
+  SetPixKeyRequest,
+  SetPixKeyResponse,
   SetProofVisibilityRequest,
   SetReceiptRequest,
   SetSplitPhotoRequest,
@@ -74,6 +76,7 @@ export const api = {
   prepareMerge: callable<Record<string, never>, PrepareMergeResponse>('prepareMerge'),
   previewMerge: callable<MergeTokenRequest, PreviewMergeResponse>('previewMerge'),
   mergeGuest: callable<MergeGuestRequest, unknown>('mergeGuest'),
+  setPixKey: callable<SetPixKeyRequest, SetPixKeyResponse>('setPixKey'),
 };
 
 /** O motivo da recusa enviado pela Function, se houver. */

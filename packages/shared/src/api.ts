@@ -1,4 +1,5 @@
 import type { ExpenseMode, MemberId, SplitMode, Weights } from '@qpq/calc';
+import type { PixKey } from './pix.ts';
 
 /**
  * Contrato das Cloud Functions chamáveis (região us-east1).
@@ -327,4 +328,12 @@ export interface NotificationData {
   status: NotificationStatus;
   /** Despesa excluída ou pagamento desfeito: some da lista (decisão 7); Desfazer traz de volta. */
   hidden: boolean;
+}
+
+/** Chave Pix da pessoa (uma na v1); `null` tira. Ver `pix.ts`. */
+export interface SetPixKeyRequest {
+  key: string | null;
+}
+export interface SetPixKeyResponse {
+  pix: PixKey | null;
 }

@@ -1,7 +1,9 @@
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { onCall, type CallableRequest } from 'firebase-functions/v2/https';
+import { normalizePixKey, type PixKey } from '@qpq/shared';
 import type {
   CreateRecoveryResponse,
+  SetPixKeyResponse,
   MergeConflict,
   PrepareMergeResponse,
   PreviewMergeResponse,
@@ -120,6 +122,10 @@ export const mergeGuest = onCall(opts, async (req) => {
     if (c && keep[d.id] !== c.guest.id && keep[d.id] !== c.account.id) fail('merge-choice');
   }
 
+  // Chave Pix: vale a da conta; a do convidado entra só se a conta não tiver uma.
+  const [guestDoc, accountDoc] = await Promise.all([db().doc(`users/${guestUid}`).get(), db().doc(`users/${uid}`).get()]);
+  const pix = (accountDoc.get('pix') as PixKey | null | undefined) ?? (guestDoc.get('pix') as PixKey | null | undefined) ?? null;
+
   for (const d of docs) {
     await db().runTransaction(async (tx) => {
       const snap = await tx.get(d.ref);
@@ -129,22 +135,22 @@ export const mergeGuest = onCall(opts, async (req) => {
       const members = { ...split.members };
       const account = memberOf(split, uid);
       if (!account) {
-        members[guest[0]] = { ...guest[1], uid };
+        members[guest[0]] = { ...guest[1], uid, pix };
       } else {
         const [keptId, kept] = keep[d.id] === guest[0] ? guest : account;
         const [otherId, other] = keptId === guest[0] ? account : guest;
         // O nome que fica herda o admin: a fusão nunca deixa o split sem admin.
-        members[keptId] = { ...kept, uid, admin: kept.admin || other.admin };
-        members[otherId] = { ...other, uid: null, admin: false, joinedAt: null };
+        members[keptId] = { ...kept, uid, admin: kept.admin || other.admin, pix };
+        members[otherId] = { ...other, uid: null, admin: false, joinedAt: null, pix: null };
       }
       tx.update(d.ref, mirrors(members));
     });
   }
 
   // Preferências da conta valem; o nome do convidado só entra se a conta não tiver um.
-  const [guestDoc, accountDoc] = await Promise.all([db().doc(`users/${guestUid}`).get(), db().doc(`users/${uid}`).get()]);
   const guestName = guestDoc.get('displayName') as string | undefined;
   if (guestName && !accountDoc.get('displayName')) await db().doc(`users/${uid}`).set({ displayName: guestName }, { merge: true });
+  if (pix && !accountDoc.get('pix')) await db().doc(`users/${uid}`).set({ pix }, { merge: true });
 
   await revokeAll(guestUid);
   await Promise.all([db().doc(`users/${guestUid}`).delete(), db().doc(`mergeTokens/${hash}`).delete()]);
@@ -152,4 +158,25 @@ export const mergeGuest = onCall(opts, async (req) => {
     .deleteUser(guestUid)
     .catch(() => {});
   return { ok: true };
+});
+
+/**
+ * Chave Pix (uma por pessoa, convidado também): fica no perfil e é espelhada em cada split em que
+ * a pessoa está, porque só quem divide um split com ela pode ver (o perfil é só do dono).
+ * `key: null` (ou vazio) tira a chave.
+ */
+export const setPixKey = onCall(opts, async (req): Promise<SetPixKeyResponse> => {
+  const uid = uidOf(req);
+  const data = input(req);
+  const pix = data.key === null || data.key === '' ? null : (normalizePixKey(text(data.key)) ?? fail('invalid-input'));
+  await db().doc(`users/${uid}`).set({ pix }, { merge: true });
+  const splits = await db().collection('splits').where('uids', 'array-contains', uid).get();
+  for (const d of splits.docs) {
+    await db().runTransaction(async (tx) => {
+      const split = (await tx.get(d.ref)).data() as SplitData | undefined;
+      const mine = split && memberOf(split, uid);
+      if (mine) tx.update(d.ref, { [`members.${mine[0]}.pix`]: pix });
+    });
+  }
+  return { pix };
 });

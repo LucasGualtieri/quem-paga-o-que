@@ -729,5 +729,26 @@
     "stepNext": "You’re the last admin and nobody else has joined yet: the next person to join becomes admin.",
     "done": "{{name}} is now an admin",
     "doneNone": "You’re no longer an admin"
+  },
+  "pix": {
+    "title": "Your Pix key",
+    "why": "People who share a split with you see this key and copy the Pix with the amount filled in.",
+    "label": "Pix key",
+    "placeholder": "CPF, phone, email or random key",
+    "save": "Save",
+    "change": "Change",
+    "remove": "Remove",
+    "saved": "Pix key saved",
+    "invalid": "Check the key: CPF, CNPJ, phone with area code, email or random key.",
+    "copy": "Copy Pix",
+    "copied": "Pix of {{amount}} to {{name}} copied. Paste it in your bank app.",
+    "copyFailed": "Couldn’t copy the Pix.",
+    "types": {
+      "cpf": "CPF",
+      "cnpj": "CNPJ",
+      "email": "Email",
+      "phone": "Phone",
+      "evp": "Random key"
+    }
   }
 }

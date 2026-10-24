@@ -729,5 +729,26 @@
     "stepNext": "Você é o último admin e ninguém mais entrou ainda: a próxima pessoa que entrar no split vira admin.",
     "done": "{{name}} agora é admin",
     "doneNone": "Você deixou de ser admin"
+  },
+  "pix": {
+    "title": "Sua chave Pix",
+    "why": "Quem divide um split com você vê esta chave e copia o Pix já com o valor.",
+    "label": "Chave Pix",
+    "placeholder": "CPF, celular, e-mail ou chave aleatória",
+    "save": "Salvar",
+    "change": "Trocar",
+    "remove": "Remover",
+    "saved": "Chave Pix salva",
+    "invalid": "Confira a chave: CPF, CNPJ, celular com DDD, e-mail ou chave aleatória.",
+    "copy": "Copiar Pix",
+    "copied": "Pix de {{amount}} para {{name}} copiado. Cole no app do banco.",
+    "copyFailed": "Não deu para copiar o Pix.",
+    "types": {
+      "cpf": "CPF",
+      "cnpj": "CNPJ",
+      "email": "E-mail",
+      "phone": "Celular",
+      "evp": "Chave aleatória"
+    }
   }
 }

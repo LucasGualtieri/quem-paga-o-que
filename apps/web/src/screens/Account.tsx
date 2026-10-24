@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router';
-import { cleanName, isValidName } from '@qpq/shared';
+import { cleanName, isValidName, type PixKey } from '@qpq/shared';
 import { Button, Card, Icon, Segmented, Sheet, SkeletonCard, useToast, type IconName } from '../components/index.ts';
 import { sendPasswordReset } from '../data/account.ts';
 import { api } from '../data/api.ts';
@@ -12,6 +12,7 @@ import { useOptimisticAction, useOptimisticValue } from '../lib/optimistic.ts';
 import { setTheme, useTheme, type Theme } from '../theme/theme.ts';
 import { BackLink } from './common.tsx';
 import { ProfileAvatar, useChangeProfilePhoto } from './Photos.tsx';
+import { PixField } from './Pix.tsx';
 import { useShortDate } from './Recovery.tsx';
 
 /** "Por e-mail" fica escondido até existir domínio de remetente (decisão 10). */
@@ -45,6 +46,7 @@ function AccountBody({
   hasPassword,
   name,
   photoPath,
+  pix,
   prefs,
   recovery,
 }: {
@@ -54,6 +56,7 @@ function AccountBody({
   hasPassword: boolean;
   name: string;
   photoPath: string | null;
+  pix: PixKey | null;
   prefs: Prefs;
   recovery: { active: boolean; createdAt: Date | null };
 }) {
@@ -229,6 +232,9 @@ function AccountBody({
         <div className="list">
           <SwitchRow icon="camera" title={t('account.askProofT')} caption={askProof ? t('account.askProofOn') : t('account.askProofOff')} checked={askProof} onChange={setAskProof} />
         </div>
+        <div style={{ marginTop: 12 }}>
+          <PixField current={pix} />
+        </div>
       </section>
 
       <section>
@@ -310,6 +316,7 @@ export default function Account() {
           hasPassword={session.hasPassword}
           name={profile.data.displayName}
           photoPath={profile.data.photoPath}
+          pix={profile.data.pix}
           prefs={profile.data.prefs}
           recovery={profile.data.recovery}
         />
