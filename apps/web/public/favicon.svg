@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Favicon provisório (25/10/2026): duas moedas com o selo de "pago".
+       Cores copiadas de tokens.css (--accent, --sun, --sun-ink, --pos): o navegador não lê as
+       variáveis do app. Mudou a paleta? Ajuste aqui e rode node scripts/make-favicons.mjs. -->
+  <rect width="64" height="64" rx="16" fill="#5534E0"/>
+  <circle cx="23" cy="36" r="15" fill="#FFCF3F"/>
+  <circle cx="23" cy="36" r="10" fill="none" stroke="#3A2A00" stroke-opacity="0.22" stroke-width="2.5"/>
+  <circle cx="38" cy="26" r="15" fill="#FFCF3F" stroke="#5534E0" stroke-width="4"/>
+  <circle cx="38" cy="26" r="10" fill="none" stroke="#3A2A00" stroke-opacity="0.22" stroke-width="2.5"/>
+  <circle cx="47" cy="47" r="12" fill="#0B7A43" stroke="#5534E0" stroke-width="4"/>
+  <path d="M41.5 47.5l4 4 7.5-8" fill="none" stroke="#FFFFFF" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

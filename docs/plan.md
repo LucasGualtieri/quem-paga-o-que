@@ -274,6 +274,7 @@ Decisão: 10 ✅ (Resend, agrupado em 10 min, resumo + botão, sem foto; **e-mai
   - "?" com explicação (componente `InfoTip`) em "Liberar nome", "Ver como" e "compensado no saldo".
   - Capa sorteada entre 24 ícones curados na criação (`AUTO_COVER_ICONS`, `pickCover`); splits antigos sem escolha usam `autoCover(id)`; "Remover" põe o ícone de pessoas.
   - Ajustes depois do teste à mão: "Salvar despesa" diz o que falta ("Falta: descrição e valor") e, tocado, leva ao primeiro campo com problema; "?" dentro de texto centrado na linha; em "Ver como", a explicação destaca "admins" no lilás do selo de Admin; folga no fim da aba Despesas para o "+" não cobrir o último cartão.
+  - Favicon provisório: duas moedas com o selo de "pago" (`apps/web/public/favicon.svg`, com PNG de 32 px e o ícone de 180 px do iPhone gerados por `node scripts/make-favicons.mjs`). As cores são cópias de `tokens.css`, porque o navegador não lê as variáveis do app.
   - Teste à mão no celular: `npm run dev:lan` (emuladores na rede local e split de exemplo). O id de despesa nova deixou de usar `crypto.randomUUID`, que não existe fora de HTTPS.
 
 ## 5. Ações que só o Lucas pode fazer
