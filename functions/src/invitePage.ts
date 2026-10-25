@@ -30,7 +30,7 @@ export async function invitePreview(path: string): Promise<InvitePreview> {
   if (!invite.exists || invite.get('gone')) return generic;
   const split = (await db().doc(`splits/${invite.get('splitId') as string}`).get()).data() as SplitData | undefined;
   if (!split) return generic;
-  const cover = splitCover(split);
+  const cover = splitCover({ ...split, id: invite.get('splitId') as string });
   const emoji = cover.kind === 'emoji' ? cover.value : '';
   return { title: emoji ? `${split.name} ${emoji}` : split.name, description: generic.description, target };
 }

@@ -14,7 +14,7 @@ async function setup(browser: Parameters<typeof guest>[0]) {
   await lucas.getByRole('button', { name: 'Adicionar despesa' }).click();
   await lucas.locator('#ad-desc').fill('Pizza');
   await lucas.locator('#ad-amt').fill('90,00');
-  await lucas.getByRole('button', { name: /Salvar despesa/ }).click();
+  await lucas.locator('.bottombar [type=submit]').click();
   await expect(toast(lucas)).toContainText('Despesa adicionada');
 
   const bia = await joinAs(browser, code, 'Beatriz');

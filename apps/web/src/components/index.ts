@@ -12,3 +12,4 @@ export { Stepper } from './Stepper.tsx';
 export { Switch } from './Switch.tsx';
 export { TextField } from './TextField.tsx';
 export { ToastProvider, ToastView, useToast } from './Toast.tsx';
+export { InfoTip } from './InfoTip.tsx';

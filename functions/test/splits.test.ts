@@ -1,6 +1,6 @@
 import { doc, getDoc } from 'firebase/firestore';
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { JoinSplitResponse, PreviewInviteResponse } from '@qpq/shared';
+import { autoCover, type JoinSplitResponse, type PreviewInviteResponse } from '@qpq/shared';
 import { admin, clearFirestore, createSplit, detailsOf, memberIdByName, newUser, reasonOf, splitDoc, type TestUser } from './helpers.ts';
 
 beforeEach(clearFirestore);
@@ -60,14 +60,15 @@ describe('createSplit', () => {
     expect(await reasonOf(createSplit(lucas, { icon: { kind: 'emoji', value: 'abc' } }))).toBe('invalid-input');
   });
 
-  it('capa com ícone ou emoji; sem escolha, o ícone de pessoas', async () => {
+  it('capa com ícone ou emoji; sem escolha, a automática', async () => {
     const lucas = await newUser();
     const a = await createSplit(lucas, { icon: { kind: 'emoji', value: '🦄' } });
     const b = await createSplit(lucas, { icon: { kind: 'icon', name: 'beach' } });
     const c = await createSplit(lucas, { icon: null });
     expect((await splitDoc(a.splitId) as unknown as { icon: unknown }).icon).toEqual({ kind: 'emoji', value: '🦄' });
     expect((await lucas.call<{ icon: unknown }>('previewInvite', { code: b.code })).icon).toEqual({ kind: 'icon', name: 'beach' });
-    expect((await lucas.call<{ icon: unknown }>('previewInvite', { code: c.code })).icon).toEqual({ kind: 'icon', name: 'people' });
+    // Sem escolha nenhuma: a capa automática, fixa para o split.
+    expect((await lucas.call<{ icon: unknown }>('previewInvite', { code: c.code })).icon).toEqual(autoCover(c.splitId));
     // Split antigo (só com o emoji) continua com ele.
     expect((await lucas.call<{ icon: unknown }>('previewInvite', { code: (await createSplit(lucas)).code })).icon).toEqual({ kind: 'emoji', value: '🎆' });
     expect(await reasonOf(createSplit(lucas, { people: ['ok', ''] }))).toBe('invalid-input');

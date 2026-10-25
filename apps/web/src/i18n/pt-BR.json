@@ -498,7 +498,13 @@
         "exact": "Valor"
       },
       "eachOf": "{{amount}} cada · {{n}} de {{total}}",
-      "minSub": "{{mode}} · {{n}} de {{total}}"
+      "minSub": "{{mode}} · {{n}} de {{total}}",
+      "missing": "Falta: {{list}}",
+      "missDesc": "descrição",
+      "missAmount": "valor",
+      "missWho": "com quem dividir",
+      "missSplit": "a divisão fechar com o valor",
+      "missItems": "acertar os itens"
     },
     "detail": {
       "shareOf": "Parte de cada um",
@@ -786,7 +792,8 @@
     "choose": "Escolher ícone da despesa",
     "chooseItem": "Escolher ícone do item",
     "coverTitle": "Capa do split",
-    "photo": "Enviar foto"
+    "photo": "Enviar foto",
+    "removeCover": "Remover"
   },
   "del": {
     "menu": "Excluir split",
@@ -825,5 +832,13 @@
     "title": "Editar split",
     "save": "Salvar",
     "saved": "Split atualizado"
+  },
+  "tips": {
+    "releaseLabel": "O que é Liberar nome?",
+    "release": "Desliga a pessoa deste nome. O nome, as despesas e o saldo continuam no split, e quem entrar pelo convite pode escolher esse nome de novo. A pessoa deixa de ver o split.",
+    "viewAsLabel": "O que é Ver como?",
+    "viewAs": "Mostra o Meu saldo como essa pessoa vê, só os pares dela. Você pode registrar acertos e confirmar pagamentos por ela. Só <b>admins</b> têm esta opção; os outros participantes veem apenas o próprio saldo.",
+    "offsetLabel": "O que é compensado no saldo?",
+    "offset": "Essa parte não foi paga, mas o saldo entre vocês já zerou ou virou para o outro lado, então ela não pesa mais."
   }
 }

@@ -26,6 +26,15 @@
         "emulators"
       ],
       "port": 4000
+    },
+    {
+      "name": "local-celular",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev:lan"
+      ],
+      "port": 5173
     }
   ]
 }

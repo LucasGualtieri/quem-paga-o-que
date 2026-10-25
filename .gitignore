@@ -14,3 +14,4 @@ ui-debug.log
 storage-debug.log
 .firebase/
 functions/lib/
+.firebase.lan.json

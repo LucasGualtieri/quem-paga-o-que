@@ -16,7 +16,7 @@ async function setup(browser: Parameters<typeof guest>[0]) {
   await lucas.getByRole('button', { name: 'Adicionar despesa' }).click();
   await lucas.locator('#ad-desc').fill('Pizza');
   await lucas.locator('#ad-amt').fill('90,00');
-  await lucas.getByRole('button', { name: /Salvar despesa/ }).click();
+  await lucas.locator('.bottombar [type=submit]').click();
   await expect(toast(lucas)).toContainText('Despesa adicionada');
   const bia = await joinAs(browser, code, 'Beatriz');
   return { lucas, bia, code };
@@ -151,6 +151,8 @@ test('acerto do par: Beatriz paga o saldo com o Lucas; ele confirma; Desfazer vo
   const settle = card.locator('.pcentry.done', { hasText: 'Acerto de contas' });
   await expect(settle).toContainText('esperando Lucas confirmar');
   await expect(card.locator('.pcentry', { hasText: 'Pizza' })).toContainText('compensado no saldo');
+  await card.locator('.pcentry', { hasText: 'Pizza' }).getByRole('button', { name: 'O que é compensado no saldo?' }).click();
+  await expect(bia.locator('.infotip-bubble')).toContainText('Essa parte não foi paga');
   await shot(bia, 'meu-saldo-acerto');
 
   await tab(lucas, 'Meu saldo').click();
@@ -191,7 +193,9 @@ test('"Não recebi" no acerto: some dos dois lados e avisa quem pagou', async ({
 test('admin vê como outra pessoa e registra o acerto por ela', async ({ browser }) => {
   const { lucas, bia } = await setup(browser);
   await tab(lucas, 'Meu saldo').click();
-  await lucas.getByLabel('Ver como').selectOption({ label: 'Beatriz' });
+  await lucas.getByRole('button', { name: 'O que é Ver como?' }).click();
+  await expect(lucas.locator('.infotip-bubble')).toContainText('Mostra o Meu saldo como essa pessoa vê');
+  await lucas.getByLabel('Ver como', { exact: true }).selectOption({ label: 'Beatriz' });
   await expect(lucas.locator('.viewbanner')).toContainText('Vendo como Beatriz');
   await expect(lucas.locator('.card', { hasText: 'Saldo de Beatriz neste split' })).toContainText('−R$ 30,00');
   const card = lucas.locator('.pcard', { has: lucas.locator('.pchead .ttl', { hasText: 'Você' }) });
@@ -207,7 +211,7 @@ test('admin vê como outra pessoa e registra o acerto por ela', async ({ browser
   await tab(bia, 'Meu saldo').click();
   await expect(bia.locator('.pcard', { has: bia.locator('.pchead .ttl', { hasText: 'Lucas' }) }).locator('.pchead')).toContainText('Tudo certo');
   // Quem não é admin não tem o seletor.
-  await expect(bia.getByLabel('Ver como')).toHaveCount(0);
+  await expect(bia.getByLabel('Ver como', { exact: true })).toHaveCount(0);
 });
 
 test('"Só os envolvidos e admins": Catarina não abre o comprovante da Beatriz', async ({ browser }) => {

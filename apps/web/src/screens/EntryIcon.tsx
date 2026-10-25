@@ -40,7 +40,22 @@ export function resetEmojiCache(): void {
  * Seletor como o do Notion: aba "Ícones" (coleção do app) ou "Emoji" (todos), com busca;
  * "Remover" volta para o automático. Com `photo` (capa do split), também oferece "Enviar foto".
  */
-export function IconPicker({ open, value, onChange, onClose, photo }: { open: boolean; value: EntryIcon | null | undefined; onChange: (icon: EntryIcon | null) => void; onClose: () => void; photo?: { has: boolean; onFile: (file: File) => void } }) {
+export function IconPicker({
+  open,
+  value,
+  onChange,
+  onClose,
+  photo,
+  removeTo,
+}: {
+  open: boolean;
+  value: EntryIcon | null | undefined;
+  onChange: (icon: EntryIcon | null) => void;
+  onClose: () => void;
+  photo?: { has: boolean; onFile: (file: File) => void };
+  /** Capa do split: "Remover" põe este ícone (o de pessoas) em vez de voltar ao automático. */
+  removeTo?: EntryIcon;
+}) {
   const { t } = useTranslation();
   const lang = useLang();
   const [tab, setTab] = useState<'icon' | 'emoji'>(value?.kind === 'emoji' ? 'emoji' : 'icon');
@@ -116,8 +131,8 @@ export function IconPicker({ open, value, onChange, onClose, photo }: { open: bo
         {((tab === 'icon' && icons.length === 0) || (tab === 'emoji' && emojis && emojiShown.length === 0)) && <p className="cap">{t('iconPicker.none')}</p>}
       </div>
       <div className="sheet-acts">
-        <button type="button" className="btn btn-g btn-block" disabled={!value && !photo?.has} onClick={() => pick(null)}>
-          {t('iconPicker.remove')}
+        <button type="button" className="btn btn-g btn-block" disabled={!photo?.has && (removeTo ? JSON.stringify(value) === JSON.stringify(removeTo) : !value)} onClick={() => pick(removeTo ?? null)}>
+          {removeTo ? t('iconPicker.removeCover') : t('iconPicker.remove')}
         </button>
       </div>
     </Sheet>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Badge, Button, Icon, Sheet, useToast } from '../components/index.ts';
+import { Badge, Button, Icon, InfoTip, Sheet, useToast } from '../components/index.ts';
 import { api, detailsOf } from '../data/api.ts';
 import { useProfile } from '../data/hooks.ts';
 import { useSession } from '../data/session.ts';
@@ -151,7 +151,7 @@ export function PeopleTab({ split, money, me, act }: { split: SplitDoc; money: M
                       {mine && !selfName ? t('people.youSuffix') : ''}
                     </span>
                     <span className="cap amt">
-                      {c === 0 ? t('people.settled') : t('people.balance', { amount: formatCents(c, lang, { signed: true }) })}
+                      {c === 0 ? t('people.settled') : t('people.balance', { amount: formatCents(c, lang, { signed: true }).replace(' ', '\u00a0') })}
                       {status ? ` · ${status}` : ''}
                     </span>
                   </span>
@@ -165,9 +165,12 @@ export function PeopleTab({ split, money, me, act }: { split: SplitDoc; money: M
                       </Button>
                     )}
                     {m.uid && (
-                      <Button variant="secondary" size="sm" onClick={() => release(m)}>
-                        {t('people.release')}
-                      </Button>
+                      <span className="act-tip">
+                        <Button variant="secondary" size="sm" onClick={() => release(m)}>
+                          {t('people.release')}
+                        </Button>
+                        <InfoTip label={t('tips.releaseLabel')} text={t('tips.release')} />
+                      </span>
                     )}
                     <Button variant="danger" size="sm" aria-label={t('people.removeAria', { name: m.name })} icon={<Icon name="trash" size="sm" />} onClick={() => remove(m)}>
                       {t('people.remove')}

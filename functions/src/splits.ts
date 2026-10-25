@@ -137,7 +137,7 @@ export const previewInvite = onCall(opts, async (req): Promise<PreviewInviteResp
     return {
       splitId: ref.id,
       name: split.name,
-      icon: splitCover(split),
+      icon: splitCover({ ...split, id: ref.id }),
       createdByName: split.members[split.createdBy]?.name ?? '',
       alreadyMember: memberOf(split, uid) !== null,
       members: Object.entries(split.members)

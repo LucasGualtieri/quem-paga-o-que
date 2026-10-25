@@ -182,7 +182,7 @@
 .viewas-field {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 .viewas-field .cap {
   font-weight: 700;

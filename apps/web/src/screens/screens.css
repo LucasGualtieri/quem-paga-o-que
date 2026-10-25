@@ -22,6 +22,10 @@
 .content.with-tabs {
   padding-bottom: 120px;
 }
+/* Com o "+" flutuante (aba Despesas): o fim da lista sobe acima dele (100 px do chão + 60 px do botão + folga). */
+.content.with-tabs.with-fab {
+  padding-bottom: calc(176px + env(safe-area-inset-bottom));
+}
 .hdr {
   display: flex;
   align-items: center;
@@ -988,4 +992,20 @@ body:has(.bottombar) .toast-region {
 .home-actions {
   display: flex;
   flex-direction: column;
+}
+
+/* Legendas com valor (Saldo +R$ …) quebram linha em vez de passar por baixo do selo à direita. */
+.mid .cap.amt {
+  white-space: normal;
+}
+.row2 .top > .badge,
+.row .badge {
+  flex: none;
+}
+
+/* Botão com "?" ao lado (Liberar nome) */
+.act-tip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }

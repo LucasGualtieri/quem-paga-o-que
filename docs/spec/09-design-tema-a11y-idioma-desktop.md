@@ -23,6 +23,12 @@ Os tokens da Folha de estilo são a referência; nenhuma cor deve ser escrita di
 
 **Idioma:** PT-BR padrão e EN completo. Moeda sempre em R$ ("R$ 1.200,00"; em EN, "R$ 1,200.00").
 
+**Explicações "?"** (25/10/2026): ao lado do que não é óbvio ("Liberar nome", "Ver como", "compensado no saldo"), um "?" abre um balão curto; no celular por toque (tocar fora fecha), no computador também ao passar o mouse. O texto fica ligado ao botão para leitores de tela. Dentro de uma frase, o "?" tem o tamanho da letra, fica centrado na linha e não vai sozinho para a linha de baixo. Na explicação de "Ver como", a palavra "admins" aparece no lilás do selo de Admin.
+
+**Botão "+" flutuante:** a lista tem folga no fim para o último cartão sempre subir acima dele.
+
+**Selos à direita** (Membro, Admin): a legenda ao lado quebra linha em vez de passar por baixo do selo.
+
 **"Eu" nas listas:** avatar redondo igual ao dos outros, com o nome em negrito embaixo. Sem anel extra, sem bolinha (parece notificação) e sem avatar quadrado.
 
 **Desktop:** a mesma interface do celular, numa coluna centralizada (até 560 px). Sem barra lateral nem colunas lado a lado; mesmas telas, regras, permissões e ações. Não existe matriz. (Decidido em 24/10/2026; o `reference/design/Desktop.dc.html` não vale mais.)

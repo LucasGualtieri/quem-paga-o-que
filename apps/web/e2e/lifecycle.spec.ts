@@ -29,6 +29,13 @@ test('foto de perfil da Beatriz aparece no avatar dela para o Lucas; abas ocupam
   const row = lucas.locator('.row2', { hasText: 'Beatriz' });
   await expect(row.locator('.av.has-img img')).toBeVisible({ timeout: 15_000 });
   await expect(lucas.locator('.row2', { hasText: 'Catarina' }).locator('.av img')).toHaveCount(0);
+  // "?" ao lado de Liberar nome explica o que acontece.
+  await row.getByRole('button', { name: 'O que é Liberar nome?' }).click();
+  await expect(lucas.locator('.infotip-bubble')).toContainText('Desliga a pessoa deste nome');
+  // O selo não tampa a legenda: ela fica à esquerda dele.
+  const cap = await row.locator('.mid .cap').boundingBox();
+  const badge = await row.locator('.top > .badge').boundingBox();
+  expect(cap!.x + cap!.width).toBeLessThanOrEqual(badge!.x + 1);
   await shot(lucas, 'pessoas-com-foto');
 
   // Três abas, cada uma com um terço da barra (nada sobrando à direita).
@@ -77,7 +84,7 @@ test('admin exclui o split digitando o nome; quem estava nele e o convite explic
   await expect(ze.getByRole('heading', { name: 'Não encontramos este split' })).toBeVisible({ timeout: 15_000 });
 });
 
-test('capa do split: ícone de pessoas por padrão, emoji pelo seletor ou foto recortada', async ({ browser }) => {
+test('capa do split: ícone sorteado por padrão, emoji pelo seletor ou foto recortada', async ({ browser }) => {
   const lucas = await guest(browser);
   await lucas.getByRole('link', { name: 'Novo split' }).click();
   const pick = lucas.getByRole('button', { name: 'Escolher a capa do split (opcional)' });
@@ -88,9 +95,14 @@ test('capa do split: ícone de pessoas por padrão, emoji pelo seletor ou foto r
   await picker.getByLabel('Buscar').fill('pizza');
   await picker.getByRole('option').first().click();
   await expect(pick.locator('.cover')).toHaveText('🍕');
+  // "Remover" põe o ícone de pessoas (e depois fica desabilitado).
+  await pick.click();
+  await picker.getByRole('button', { name: 'Remover' }).click();
+  await expect(pick.locator('.cover svg')).toBeVisible();
+  await pick.click();
+  await expect(picker.getByRole('button', { name: 'Remover' })).toBeDisabled();
 
   // Foto: passa pelo recorte e vira a capa.
-  await pick.click();
   await picker.locator('input[type=file]').setInputFiles({ name: 'grupo.png', mimeType: 'image/png', buffer: PNG });
   const crop = lucas.getByRole('dialog', { name: 'Ajustar foto' });
   await expect(crop.locator('.crop-pv .cover img')).toHaveCount(3);
@@ -118,7 +130,7 @@ test('item minimizado mostra o ícone; Meu saldo mostra o negativo com "−"', a
   // O item anterior minimizou e continua mostrando o ícone.
   await expect(lucas.locator('.itemcard .imin').first().locator('.tagico')).toBeVisible();
   await lucas.getByRole('button', { name: 'Remover Item 2' }).click();
-  await lucas.getByRole('button', { name: /Salvar despesa/ }).click();
+  await lucas.locator('.bottombar [type=submit]').click();
   await expect(toast(lucas)).toContainText('Despesa adicionada');
 
   await tab(lucas, 'Meu saldo').click();

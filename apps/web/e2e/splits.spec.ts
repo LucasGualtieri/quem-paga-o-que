@@ -99,7 +99,7 @@ test('admin promove, deixa de ser admin, libera nome e remove; membro sai do spl
 
   // Beatriz (admin) libera o nome do Lucas: ele perde o acesso e volta para a home.
   const lucasRow = bia.locator('.row2', { hasText: 'Lucas' });
-  await lucasRow.getByRole('button', { name: 'Liberar nome' }).click();
+  await lucasRow.getByRole('button', { name: 'Liberar nome', exact: true }).click();
   await expect(toast(bia)).toContainText('O nome Lucas ficou livre');
   await expect(lucas.getByRole('heading', { name: 'Meus splits' })).toBeVisible();
 

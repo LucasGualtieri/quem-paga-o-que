@@ -498,7 +498,13 @@
         "exact": "Exact"
       },
       "eachOf": "{{amount}} each · {{n}} of {{total}}",
-      "minSub": "{{mode}} · {{n}} of {{total}}"
+      "minSub": "{{mode}} · {{n}} of {{total}}",
+      "missing": "Missing: {{list}}",
+      "missDesc": "description",
+      "missAmount": "amount",
+      "missWho": "who to split with",
+      "missSplit": "the split to match the amount",
+      "missItems": "fixing the items"
     },
     "detail": {
       "shareOf": "Each person’s share",
@@ -786,7 +792,8 @@
     "choose": "Choose the expense icon",
     "chooseItem": "Choose the item icon",
     "coverTitle": "Split cover",
-    "photo": "Upload photo"
+    "photo": "Upload photo",
+    "removeCover": "Remove"
   },
   "del": {
     "menu": "Delete split",
@@ -825,5 +832,13 @@
     "title": "Edit split",
     "save": "Save",
     "saved": "Split updated"
+  },
+  "tips": {
+    "releaseLabel": "What does Release name do?",
+    "release": "Unlinks the person from this name. The name, expenses and balance stay in the split, and whoever joins through the invite can pick this name again. The person stops seeing the split.",
+    "viewAsLabel": "What is View as?",
+    "viewAs": "Shows My balance the way this person sees it, only their pairs. You can record settle-ups and confirm payments for them. Only <b>admins</b> have this option; other participants see just their own balance.",
+    "offsetLabel": "What does netted in the balance mean?",
+    "offset": "This share wasn’t paid, but the balance between you already reached zero or flipped to the other side, so it no longer counts."
   }
 }

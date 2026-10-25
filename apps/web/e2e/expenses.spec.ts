@@ -26,8 +26,10 @@ test('estado vazio → lançar despesa igualmente → aparece na hora, com Desfa
   await expect(lucas.getByRole('heading', { name: 'Nova despesa' })).toBeVisible();
   await shot(lucas, 'form-vazio');
 
-  // Descrição e valor são obrigatórios.
-  await lucas.getByRole('button', { name: /Salvar despesa/ }).click();
+  // Descrição e valor são obrigatórios: o botão diz o que falta e, tocado, leva até o campo.
+  await expect(lucas.locator('.bottombar [type=submit]')).toHaveText('Falta: descrição e valor');
+  await lucas.locator('.bottombar [type=submit]').click();
+  await expect(lucas.locator('#ad-desc')).toBeFocused();
   await expect(lucas.getByText('Dê um nome para a despesa')).toBeVisible();
   await expect(lucas.getByText('Informe um valor maior que zero')).toBeVisible();
 
@@ -43,7 +45,7 @@ test('estado vazio → lançar despesa igualmente → aparece na hora, com Desfa
   // Prévia: 80 ÷ 3 = 26,67, centavos pela ordem de entrada.
   await expect(lucas.locator('.result .big')).toHaveText('R$ 26,67');
   await shot(lucas, 'form-igual');
-  await lucas.getByRole('button', { name: /Salvar despesa/ }).click();
+  await lucas.locator('.bottombar [type=submit]').click();
 
   await expect(toast(lucas)).toContainText('Despesa adicionada');
   const row = lucas.locator('.txrow', { hasText: 'Pizza' });
@@ -79,7 +81,7 @@ test('frações, porcentagem e valor exato: só salva quando fecha', async ({ br
   await lucas.getByRole('group', { name: 'Como dividir' }).getByRole('button', { name: 'Porcent.' }).click();
   await lucas.getByLabel('Você', { exact: true }).fill('50');
   await expect(lucas.getByText(/passou|faltam/).first()).toBeVisible();
-  await lucas.getByRole('button', { name: /Salvar despesa/ }).click();
+  await lucas.locator('.bottombar [type=submit]').click();
   await expect(lucas.getByText('A divisão não fecha com o valor. Ajuste os valores acima.')).toBeVisible();
   await expect(lucas.getByRole('heading', { name: 'Nova despesa' })).toBeVisible();
   await shot(lucas, 'form-pct-erro');
@@ -96,7 +98,7 @@ test('frações, porcentagem e valor exato: só salva quando fecha', async ({ br
   await lucas.getByLabel('Beatriz', { exact: true }).fill('10,00');
   await lucas.getByLabel('Catarina', { exact: true }).fill('10,00');
   await lucas.getByLabel('Fellipe', { exact: true }).fill('10,00');
-  await lucas.getByRole('button', { name: /Salvar despesa/ }).click();
+  await lucas.locator('.bottombar [type=submit]').click();
   await expect(toast(lucas)).toContainText('Despesa adicionada');
   await expect(lucas.locator('.txrow', { hasText: 'Pizza' })).toContainText('valores exatos');
 });
@@ -118,11 +120,11 @@ test('dividir por itens com resto da compra', async ({ browser }) => {
   await expect(lucas.locator('.itemcard').first().locator('.imin')).toBeVisible();
 
   // Item sem valor: o aviso aparece ao tentar salvar e o item reabre sozinho.
-  await lucas.getByRole('button', { name: /Salvar despesa/ }).click();
+  await lucas.locator('.bottombar [type=submit]').click();
   await expect(lucas.getByText('Informe o valor do item')).toBeVisible();
   await lucas.getByLabel('Valor do item').last().fill('0');
   await lucas.getByRole('button', { name: 'Remover Item 2' }).click();
-  await lucas.getByRole('button', { name: /Salvar despesa/ }).click();
+  await lucas.locator('.bottombar [type=submit]').click();
   await expect(toast(lucas)).toContainText('Despesa adicionada');
   await expect(lucas.locator('.txrow', { hasText: 'Mercado' })).toContainText('por itens');
 
@@ -139,7 +141,7 @@ test('detalhe, editar com histórico, excluir com Desfazer', async ({ browser })
   await lucas.getByRole('button', { name: /Mais detalhes/ }).click();
   await lucas.getByRole('button', { name: 'Transporte' }).click();
   await lucas.locator('#ad-note').fill('Ida e volta');
-  await lucas.getByRole('button', { name: /Salvar despesa/ }).click();
+  await lucas.locator('.bottombar [type=submit]').click();
 
   await lucas.locator('.txrow', { hasText: 'Gasolina' }).click();
   await expect(lucas.getByRole('heading', { name: 'Gasolina' })).toBeVisible();
@@ -171,9 +173,14 @@ test('busca e filtros por pessoa e tag, com contagem', async ({ browser }) => {
     await startExpense(lucas, name, amount);
     await lucas.getByRole('button', { name: /Mais detalhes/ }).click();
     await lucas.getByRole('button', { name: tag, exact: true }).click();
-    await lucas.getByRole('button', { name: /Salvar despesa/ }).click();
+    await lucas.locator('.bottombar [type=submit]').click();
     await expect(lucas.locator('.txrow', { hasText: name })).toBeVisible();
   }
+  // Rolando até o fim, o último cartão fica acima do "+" (nunca escondido atrás dele).
+  await lucas.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  const last = await lucas.locator('.txrow').last().boundingBox();
+  const fab = await lucas.locator('.fab').boundingBox();
+  expect(last!.y + last!.height).toBeLessThanOrEqual(fab!.y);
   await lucas.getByRole('searchbox', { name: 'Buscar' }).fill('cerv');
   await expect(lucas.locator('.txrow')).toHaveCount(1);
   await lucas.getByRole('searchbox', { name: 'Buscar' }).fill('comida');
@@ -196,7 +203,7 @@ test('membro lança, mas só autor ou admin edita; as outras pessoas veem o avis
   const bia = await joinAs(browser, code, 'Beatriz');
   await bia.getByRole('button', { name: 'Adicionar despesa' }).click();
   await startExpense(bia, 'Sorvete', '12');
-  await bia.getByRole('button', { name: /Salvar despesa/ }).click();
+  await bia.locator('.bottombar [type=submit]').click();
   await expect(bia.locator('.txrow', { hasText: 'Sorvete' })).toContainText('R$ 12,00');
   // Em tempo real no outro aparelho.
   await expect(lucas.locator('.txrow', { hasText: 'Sorvete' })).toBeVisible();
@@ -216,7 +223,7 @@ test('duas pessoas editando a mesma despesa: aviso de conflito, ver a nova ou sa
   const bia = await joinAs(browser, code, 'Beatriz');
   await bia.getByRole('button', { name: 'Adicionar despesa' }).click();
   await startExpense(bia, 'Sorvete', '12');
-  await bia.getByRole('button', { name: /Salvar despesa/ }).click();
+  await bia.locator('.bottombar [type=submit]').click();
   await expect(bia.locator('.txrow', { hasText: 'Sorvete' })).toBeVisible();
 
   // Lucas (admin) abre a edição; Beatriz salva antes dele.

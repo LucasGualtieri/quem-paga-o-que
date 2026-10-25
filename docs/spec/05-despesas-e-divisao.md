@@ -4,6 +4,8 @@ Uma despesa se lança em uma tela só: a divisão abre dentro do formulário, nu
 
 **Campos:** descrição (obrigatória), valor (obrigatório, maior que zero), Pago por (escolha única; padrão é você), Dividir com, Como dividir e "Mais detalhes" (data, tags, descrição longa, comprovante, nota). Sem tag escolhida, a despesa recebe "Outros". O comprovante da despesa (foto, como uma nota fiscal) é só imagem, qualquer participante vê e fica guardada no máximo 15 dias (apagada ao finalizar o split; decisão 9). Tags: Comida, Bebidas, Transporte, Hospedagem, Diversão e Outros.
 
+**Botão de salvar** (25/10/2026): enquanto falta algo, fica cinza e diz o quê ("Falta: descrição e valor", "Falta: a divisão fechar com o valor"); tocado mesmo assim, a tela rola até o primeiro campo com problema, foca nele e mostra os avisos. Completo, volta a "Salvar despesa · R$ 90,00". Vale também para "Salvar alterações".
+
 **Campos em R$** (valor da despesa, valor exato por pessoa e valor do item) funcionam como no caixa eletrônico: o primeiro dígito é centavo e cada dígito novo empurra os outros uma casa (1 → 0,01; 12 → 0,12; 1234 → 12,34); apagar faz o caminho inverso. Teclado numérico, vírgula e milhar sempre no lugar (decidido em 24/10/2026).
 
 **Dividir com:**

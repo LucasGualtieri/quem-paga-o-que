@@ -80,7 +80,8 @@ export function TxTab({ split, me, expenses, loaded, canAdd, onAdd, lastAdded }:
   const noActive = loaded && expenses.length === 0;
 
   return (
-    <div className="content with-tabs" style={{ paddingTop: 2 }}>
+    // Com o "+" na tela, folga no fim da lista para o último cartão nunca ficar atrás dele.
+    <div className={`content with-tabs ${canAdd && expenses.length > 0 ? 'with-fab' : ''}`} style={{ paddingTop: 2 }}>
       <div>
         <div className="search">
           <Icon name="search" />

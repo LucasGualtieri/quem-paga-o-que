@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useNavigate, useParams } from 'react-router';
 import { TAGS } from '@qpq/shared';
@@ -19,7 +19,8 @@ import { ReceiptField } from './ReceiptField.tsx';
 import { usePayActions } from './usePayActions.ts';
 import { MemberAvatar } from './Photos.tsx';
 
-const newExpenseId = () => crypto.randomUUID().replaceAll('-', '').slice(0, 20);
+// getRandomValues (e não randomUUID): funciona também fora de HTTPS, como no teste pela rede local.
+const newExpenseId = () => Array.from(crypto.getRandomValues(new Uint8Array(10)), (b) => b.toString(16).padStart(2, '0')).join('');
 
 function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc?: ExpenseDoc }) {
   const { t } = useTranslation();
@@ -38,6 +39,17 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc?: ExpenseDo
 
   const [form, setForm] = useState<FormState>(() => (doc ? fromDoc(doc, lang) : initialForm(people, me.id, todayStr())));
   const [showErrors, setShowErrors] = useState(false);
+  // Tocar em Salvar com algo faltando leva até o primeiro campo com problema.
+  const formRef = useRef<HTMLFormElement>(null);
+  const [jump, setJump] = useState(0);
+  useEffect(() => {
+    if (!jump) return;
+    const el = formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"], .err, .errmsg');
+    if (!el) return;
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    const input = el.matches('input, textarea') ? el : el.querySelector<HTMLElement>('input, textarea');
+    input?.focus({ preventScroll: true });
+  }, [jump]);
   const [withOpen, setWithOpen] = useState(people.length <= 5);
   const [more, setMore] = useState(!!doc && (doc.note !== '' || doc.longDesc !== '' || !!doc.receipt || doc.tags.some((k) => k !== 'other')));
 
@@ -57,6 +69,7 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc?: ExpenseDo
   const submit = () => {
     if (!a.ok) {
       setShowErrors(true);
+      setJump((n) => n + 1);
       // Itens com problema reabrem sozinhos.
       setForm((f) => ({ ...f, items: f.items.map((it, i) => (a.itemErrors[String(i)] ? { ...it, min: false } : it)) }));
       return;
@@ -85,6 +98,14 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc?: ExpenseDo
   const per = selected.length ? Math.round(a.total / selected.length) : 0;
   const errText = splitErrorText(a.splitError, (k) => t(k));
   const showSplitErr = !!errText && (showErrors || form.mode !== 'equal') && a.total > 0;
+  // O que falta, no próprio botão (ele fica lá embaixo, longe dos campos).
+  const missing = [
+    a.nameError && t('expense.form.missDesc'),
+    a.amountError && t('expense.form.missAmount'),
+    a.splitError === 'no-members' ? t('expense.form.missWho') : a.splitError && form.mode !== 'items' ? t('expense.form.missSplit') : null,
+    (Object.keys(a.itemErrors).length > 0 || (form.mode === 'items' && a.splitError)) && t('expense.form.missItems'),
+  ].filter((x): x is string => !!x);
+  const missingText = missing.length ? t('expense.form.missing', { list: new Intl.ListFormat(lang === 'en' ? 'en' : 'pt-BR', { type: 'conjunction' }).format(missing) }) : null;
 
   return (
     <main className="page">
@@ -97,6 +118,7 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc?: ExpenseDo
       </header>
 
       <form
+        ref={formRef}
         className="content form-stack"
         style={{ paddingTop: 4, paddingBottom: 150 }}
         noValidate
@@ -332,9 +354,13 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc?: ExpenseDo
         </div>
 
         <div className="bottombar">
-          <Button type="submit" block>
-            {doc ? t('expense.form.saveChanges') : t('expense.form.save')}
-            {a.total > 0 && <span style={{ opacity: 0.8, fontWeight: 600 }}>· {fmt(a.total)}</span>}
+          <Button type="submit" block className={missingText ? 'btn-pending' : undefined}>
+            {missingText ?? (
+              <>
+                {doc ? t('expense.form.saveChanges') : t('expense.form.save')}
+                {a.total > 0 && <span style={{ opacity: 0.8, fontWeight: 600 }}>· {fmt(a.total)}</span>}
+              </>
+            )}
           </Button>
         </div>
       </form>

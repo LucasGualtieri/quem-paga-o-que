@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
-import { cleanName, isValidName, SPLIT_NAME_MAX, splitCover, type EntryIcon } from '@qpq/shared';
+import { cleanName, isValidName, SPLIT_DEFAULT_ICON, SPLIT_NAME_MAX, splitCover, type EntryIcon } from '@qpq/shared';
 import { Button, Cover, Icon, Sheet, TextField, useToast, type IconName } from '../components/index.ts';
 import { api, detailsOf } from '../data/api.ts';
 import { hideSplit } from '../data/local.ts';
@@ -186,7 +186,7 @@ function EditSplitSheet({ split, onClose, onSave }: { split: SplitDoc; onClose: 
   const [cropFile, setCropFile] = useState<File | null>(null);
   const clean = cleanName(name);
   const valid = isValidName(clean, SPLIT_NAME_MAX);
-  const shownIcon = icon === undefined ? splitCover(split) : (icon ?? splitCover({}));
+  const shownIcon = icon === undefined ? splitCover(split) : splitCover({ id: split.id, icon });
   const hasPhoto = !!photo || (!!split.photo && !clearPhoto);
 
   const save = () => {
@@ -210,7 +210,8 @@ function EditSplitSheet({ split, onClose, onSave }: { split: SplitDoc; onClose: 
       </div>
       <IconPicker
         open={picking}
-        value={icon === undefined ? (split.icon ?? null) : icon}
+        value={shownIcon}
+        removeTo={SPLIT_DEFAULT_ICON}
         onClose={() => setPicking(false)}
         onChange={(next) => {
           setIcon(next);

@@ -18,7 +18,8 @@
     "e2e": "npm run bundle -w @qpq/functions && firebase emulators:exec --only auth,firestore,functions,storage --project demo-qpq \"npm run e2e -w @qpq/web\"",
     "emulators": "npm run bundle -w @qpq/functions && firebase emulators:start --project demo-qpq",
     "test:emulators": "npm run bundle -w @qpq/functions && firebase emulators:exec --only auth,firestore,functions,storage --project demo-qpq \"npm run test:integration -w @qpq/functions\"",
-    "deploy:staging": "firebase deploy --only firestore:rules,firestore:indexes,storage,functions,hosting --project staging"
+    "deploy:staging": "firebase deploy --only firestore:rules,firestore:indexes,storage,functions,hosting --project staging",
+    "dev:lan": "node scripts/dev-lan.mjs"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "6.0.0",

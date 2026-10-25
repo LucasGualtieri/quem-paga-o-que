@@ -6,6 +6,7 @@ Marcar como pago vale na hora (atualização otimista); quem recebe pode confirm
 
 **Aba Meu saldo** (revista em 24/10/2026):
 
+- **Sinal:** todo valor a receber (verde) tem "+" e todo valor a pagar (vermelho) tem "−" (25/10/2026). Valores resolvidos (cinza) e totais de despesa ficam sem sinal.
 - No topo, "Seu saldo neste split": verde = a receber, vermelho = deve, cinza = quitado. Ao mudar, o número faz um fade com 4 px de subida (nada de contador girando).
 - Abaixo, **um cartão por pessoa do split** com o saldo do par (você ↔ ela), calculado de todas as despesas e acertos pelo `@qpq/calc`. Ordem: primeiro quem você deve, depois quem te deve (maiores primeiro), quitados por último. Botão "Expandir todos" / "Minimizar todos"; os cartões começam fechados.
 - **Você deve:** "Copiar Pix" (se a pessoa cadastrou chave; Pix copia e cola com o valor do par) e "Marcar como pago", que paga **o saldo do par num acerto só**.

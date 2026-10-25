@@ -14,6 +14,9 @@ Web app de divisão de despesas em grupo. Front estático no GitHub Pages, back-
 - typecheck: npm run typecheck
 - testes: npm test (Vitest com cobertura; packages/calc exige 100%)
 - dev: npm run dev (http://localhost:5173; telas de revisão em /#/dev)
+- teste à mão no computador e no celular (mesma rede Wi-Fi): npm run dev:lan
+  (emuladores abertos para a rede local, app com --host e um split de exemplo;
+  imprime os links de convite para entrar como "Lucas")
 - regras e Functions: npm run test:emulators (sobe os emuladores sozinho)
 - e2e: npm run e2e (sobe os emuladores; Playwright em 390 e 1440 px;
   screenshots em apps/web/test-results)

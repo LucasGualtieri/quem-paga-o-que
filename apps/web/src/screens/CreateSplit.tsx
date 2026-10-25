@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
-import { cleanName, findDuplicate, isValidName, nameKey, SPLIT_DEFAULT_ICON, SPLIT_NAME_MAX, type EntryIcon } from '@qpq/shared';
+import { cleanName, findDuplicate, isValidName, nameKey, pickCover, SPLIT_DEFAULT_ICON, SPLIT_NAME_MAX, splitCover, type EntryIcon } from '@qpq/shared';
 import { Avatar, avatarColor, Badge, Button, Cover, Icon, TextField, useToast } from '../components/index.ts';
 import { api, detailsOf } from '../data/api.ts';
-import { useProfileName } from '../data/hooks.ts';
+import { useMySplits, useProfileName } from '../data/hooks.ts';
 import { useSession } from '../data/session.ts';
 import { BackLink } from './common.tsx';
 import { CreatedView } from './Created.tsx';
@@ -22,8 +22,19 @@ export default function CreateSplit() {
   const profileName = useProfileName(session.status === 'ready' ? session.uid : null);
 
   const [name, setName] = useState('');
-  // Capa: ícone ou emoji (sem escolha, o ícone de pessoas) ou foto recortada.
+  // Capa: ícone ou emoji ou foto recortada. Sem escolha, um ícone sorteado entre os curados,
+  // evitando os que você já usa (para os splits não ficarem todos iguais na lista).
   const [icon, setIcon] = useState<EntryIcon | null>(null);
+  const mySplits = useMySplits(session.status === 'ready' ? session.uid : null);
+  const [auto, setAuto] = useState<EntryIcon>(() => pickCover([]));
+  const autoChecked = useRef(false);
+  useEffect(() => {
+    if (mySplits.status !== 'ready' || autoChecked.current) return;
+    autoChecked.current = true;
+    const taken = mySplits.data.map(splitCover);
+    if (taken.some((c) => JSON.stringify(c) === JSON.stringify(auto))) setAuto(pickCover(taken));
+  }, [mySplits, auto]);
+  const cover = icon ?? auto;
   const [picking, setPicking] = useState(false);
   const [cropFile, setCropFile] = useState<File | null>(null);
   const [selfName, setSelfName] = useState('');
@@ -84,9 +95,9 @@ export default function CreateSplit() {
       return;
     }
     // Otimista: a tela do convite abre na hora; link e código chegam em seguida.
-    setCreated({ name: cleanName(name), icon: icon ?? SPLIT_DEFAULT_ICON });
+    setCreated({ name: cleanName(name), icon: cover });
     try {
-      const res = await api.createSplit({ name, icon, selfName, people });
+      const res = await api.createSplit({ name, icon: cover, selfName, people });
       if (photo) uploadCover(res.splitId, photo);
       if (mounted.current) void navigate(`/s/${res.splitId}/pronto`, { replace: true });
     } catch (error) {
@@ -107,7 +118,7 @@ export default function CreateSplit() {
       <div className="content form">
         <div className="name-cover">
           <button type="button" className="cover-pick" aria-label={t('create.coverPick')} title={t('create.coverPick')} onClick={() => setPicking(true)}>
-            <Cover icon={icon ?? SPLIT_DEFAULT_ICON} src={photoUrl} />
+            <Cover icon={cover} src={photoUrl} />
             <span className="cover-edit" aria-hidden="true">
               <Icon name="pencil" size="sm" />
             </span>
@@ -116,7 +127,8 @@ export default function CreateSplit() {
         </div>
         <IconPicker
           open={picking}
-          value={icon}
+          value={cover}
+          removeTo={SPLIT_DEFAULT_ICON}
           onClose={() => setPicking(false)}
           onChange={(next) => {
             setIcon(next);
@@ -128,7 +140,7 @@ export default function CreateSplit() {
           file={cropFile}
           kind="cover"
           name={name}
-          icon={icon ?? SPLIT_DEFAULT_ICON}
+          icon={cover}
           onCancel={() => setCropFile(null)}
           onDone={(cropped) => {
             setPhoto(cropped);

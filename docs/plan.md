@@ -268,6 +268,13 @@ Decisão: 10 ✅ (Resend, agrupado em 10 min, resumo + botão, sem foto; **e-mai
   - Placeholder "Nome do amigo (opcional)"; aba "Transações" virou **Despesas**.
   - Editar o split (nome e capa; só admin; Function `updateSplit`), pelo menu ou tocando na capa/nome do cabeçalho.
   - Ações do split na home ("⋯" e toque longo): Editar, Convidar, Finalizar/Reabrir, Excluir e Sair, com as mesmas folhas de dentro do split (`screens/SplitActions.tsx`). Edições, finalizar e reabrir otimistas valem na home e dentro do split (`data/splitEdits.ts`).
+- **Sexta leva (25/10/2026):**
+  - "+" em todo valor a receber (o "−" já valia para o que se deve).
+  - Legenda em Pessoas quebra linha em vez de passar por baixo do selo Membro/Admin.
+  - "?" com explicação (componente `InfoTip`) em "Liberar nome", "Ver como" e "compensado no saldo".
+  - Capa sorteada entre 24 ícones curados na criação (`AUTO_COVER_ICONS`, `pickCover`); splits antigos sem escolha usam `autoCover(id)`; "Remover" põe o ícone de pessoas.
+  - Ajustes depois do teste à mão: "Salvar despesa" diz o que falta ("Falta: descrição e valor") e, tocado, leva ao primeiro campo com problema; "?" dentro de texto centrado na linha; em "Ver como", a explicação destaca "admins" no lilás do selo de Admin; folga no fim da aba Despesas para o "+" não cobrir o último cartão.
+  - Teste à mão no celular: `npm run dev:lan` (emuladores na rede local e split de exemplo). O id de despesa nova deixou de usar `crypto.randomUUID`, que não existe fora de HTTPS.
 
 ## 5. Ações que só o Lucas pode fazer
 

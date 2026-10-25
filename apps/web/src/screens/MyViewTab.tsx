@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Button, Icon } from '../components/index.ts';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
+import { Button, Icon, InfoTip } from '../components/index.ts';
 import { pairsView, type PairCard, type PairEntry } from '../data/balance.ts';
 import { canSeeProof, membersInOrder, type ExpenseDoc, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
 import { useLang } from '../i18n/index.ts';
@@ -53,6 +53,7 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
   const when = useWhen();
   const view = useBalanceView();
   const [chosen, setChosen] = useState(me.id);
+  const viewAsId = useId();
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const viewer = me.admin && split.members[chosen] ? chosen : me.id;
   const self = viewer === me.id;
@@ -166,7 +167,15 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
             <span className="ttl">{e.name}</span>
             <span className="cap" style={{ whiteSpace: 'normal' }}>
               {debtText(x.debtor, x.creditor)} · {day}
-              {x.state === 'offset' && ` · ${t('my.offset')}`}
+              {x.state === 'offset' && (
+                <>
+                  {' · '}
+                  {/* O "?" nunca vai sozinho para a linha de baixo. */}
+                  <span className="nowrap">
+                    {t('my.offset')} <InfoTip inline label={t('tips.offsetLabel')} text={t('tips.offset')} />
+                  </span>
+                </>
+              )}
             </span>
           </span>
           <span className="side">
@@ -187,10 +196,14 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
     <div className="content with-tabs" style={{ gap: 18 }}>
       {me.admin && (
         <div className="viewas">
-          <label className="viewas-field">
-            <span className="cap">{t('my.viewAs')}</span>
+          <div className="viewas-field">
+            <label className="cap" htmlFor={viewAsId}>
+              {t('my.viewAs')}
+            </label>
+            {/* Só admin vê esta opção: a explicação destaca "admins" no lilás do selo de Admin. */}
+            <InfoTip label={t('tips.viewAsLabel')} text={<Trans i18nKey="tips.viewAs" components={{ b: <span className="tip-admin" /> }} />} />
             <span className="viewas-sel">
-              <select value={viewer} onChange={(e) => setChosen(e.target.value)}>
+              <select id={viewAsId} value={viewer} onChange={(e) => setChosen(e.target.value)}>
                 {membersInOrder(split).map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.id === me.id ? t('common.you') : m.name}
@@ -199,7 +212,7 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
               </select>
               <Icon name="down" size="sm" />
             </span>
-          </label>
+          </div>
           {!self && (
             <div className="banner viewbanner" role="status">
               <Icon name="user" size="sm" />
@@ -263,7 +276,7 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
                       {t('balance.settled')}
                     </span>
                   ) : (
-                    <span className={`amt strong ${tone}`}>{fmt(c.status === 'owe' ? -c.amount : c.amount)}</span>
+                    <span className={`amt strong ${tone}`}>{signed(c.status === 'owe' ? -c.amount : c.amount)}</span>
                   )}
                 </span>
                 <Icon name="down" size="sm" className={opened ? 'up' : ''} />

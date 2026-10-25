@@ -95,7 +95,7 @@ function conflictOf(splitId: string, split: SplitData, guestUid: string, uid: st
   return {
     splitId,
     splitName: split.name,
-    icon: splitCover(split),
+    icon: splitCover({ ...split, id: splitId }),
     guest: { id: guest[0], name: guest[1].name },
     account: { id: account[0], name: account[1].name },
   };

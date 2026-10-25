@@ -105,7 +105,7 @@ export function MyViewPreview() {
             <span className="cap">{t('my.cOwed')}</span>
           </span>
           <span className="right">
-            <span className="amt strong pos">{fmt(8450)}</span>
+            <span className="amt strong pos">{signed(8450)}</span>
           </span>
           <Icon name="down" size="sm" />
         </div>
