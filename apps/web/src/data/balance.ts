@@ -31,6 +31,8 @@ export type PairEntry =
       pending: boolean;
       /** Quando foi paga (só para partes pagas depois de 24/10/2026). */
       paidAt: Date | null;
+      /** Paga num acerto do Meu saldo (modo detalhado): o id do acerto. */
+      via: string | null;
     }
   | { kind: 'payment'; payment: PaymentDoc; out: boolean };
 
@@ -87,14 +89,17 @@ export function pairsView(split: SplitDoc, expenses: readonly ExpenseDoc[], paym
         state: due <= 0 ? 'paid' : openFor(pair) ? 'open' : 'offset',
         pending: paid > 0 && !!e.pendConf[pair],
         paidAt: at ? new Date(at) : null,
+        via: due <= 0 ? (e.via?.[pair] ?? null) : null,
       });
     }
     for (const p of payments) {
+      // Acerto antigo incorporado por um acerto do modo detalhado: aparece só o acerto que o incorporou.
+      if (p.absorbedBy) continue;
       if (p.from === viewer && p.to === o) entries.push({ kind: 'payment', payment: p, out: true });
       else if (p.from === o && p.to === viewer) entries.push({ kind: 'payment', payment: p, out: false });
     }
     entries.sort((a, b) => entryTime(a) - entryTime(b));
-    const toConfirm = entries.filter((x) => (x.kind === 'share' ? x.pending && x.creditor === viewer : !x.out && !!x.payment.pendConf)).length;
+    const toConfirm = entries.filter((x) => (x.kind === 'share' ? x.pending && x.creditor === viewer && !x.via : !x.out && !!x.payment.pendConf)).length;
     return { other: o, status, amount: Math.abs(pairNet), net: pairNet, entries, toConfirm };
   });
   const rank: Record<PairStatus, number> = { owe: 0, owed: 1, zero: 2 };

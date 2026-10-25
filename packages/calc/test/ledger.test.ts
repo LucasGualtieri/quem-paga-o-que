@@ -146,3 +146,18 @@ describe('ledger · participante desconhecido', () => {
     expect(() => run([], [{ from: 'lucas', to: 'zé', amount: 100 }])).toThrow(/zé/);
   });
 });
+
+describe('ledger · acerto que marca as partes (modo detalhado)', () => {
+  it('o recibo do acerto não conta de novo: quem zera o par são as partes pagas', () => {
+    // Pizza: Lucas devia R$ 30,00 à Bia; Gasolina: Bia devia R$ 20,00 ao Lucas. O acerto de R$ 10,00
+    // marca as duas partes como pagas; o recibo (viaShares) fica fora da conta.
+    const pizza: Expense = { amount: 6000, payer: 'bia', members: ['lucas', 'bia'], mode: 'equal', paid: { lucas: 3000 } };
+    const gasolina: Expense = { amount: 4000, payer: 'lucas', members: ['lucas', 'bia'], mode: 'equal', paid: { bia: 2000 } };
+    const { M, net } = run([pizza, gasolina], [{ from: 'lucas', to: 'bia', amount: 1000, viaShares: true }]);
+    expect(M.lucas?.bia).toBe(0);
+    expect(M.bia?.lucas).toBe(0);
+    expect(net).toEqual({ lucas: 0, bia: 0, cat: 0, fel: 0 });
+    // Um acerto comum (modo simplificado) continua contando.
+    expect(run([{ ...pizza, paid: {} }], [{ from: 'lucas', to: 'bia', amount: 3000 }]).net.lucas).toBe(0);
+  });
+});

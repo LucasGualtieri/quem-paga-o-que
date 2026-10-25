@@ -118,6 +118,7 @@ export const createSplit = onCall(opts, async (req): Promise<CreateSplitResponse
       code,
       photo: null,
       proofVisibility: 'all',
+      payMode: 'simple',
       createdAt: now,
       createdBy: selfId,
       nextJoinOrder: people.length + 1,
@@ -262,7 +263,7 @@ export const finalizeSplit = onCall(opts, async (req) => {
     const { ref, split } = await loadSplit(tx, splitId);
     requireAdmin(split, uid);
     if (split.status === 'done') return;
-    tx.update(ref, { status: 'done', doneAt: FieldValue.serverTimestamp() });
+    tx.update(ref, { status: 'done', doneAt: FieldValue.serverTimestamp(), autoFinalized: false });
   });
   // Também se já estava finalizado: termina de apagar o que uma tentativa anterior não apagou.
   await purgeSplitProofs(splitId);
@@ -277,7 +278,8 @@ export const reopenSplit = onCall(opts, async (req) => {
     const { ref, split } = await loadSplit(tx, data.splitId);
     requireAdmin(split, uid);
     if (split.status === 'open') return;
-    tx.update(ref, { status: 'open', doneAt: null });
+    // Reabrir recomeça a contagem da finalização automática (senão finalizaria de novo na hora).
+    tx.update(ref, { status: 'open', doneAt: null, autoFinalized: false, moneyAt: FieldValue.serverTimestamp() });
   });
   return {};
 });

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { createSplit, guest, joinAs, openCreated } from './helpers.ts';
+import { createSplit, guest, joinAs, openCreated, setPayMode } from './helpers.ts';
 
 // Fase 7: notificações no app, entre duas pessoas em navegadores diferentes.
 const toast = (page: Page) => page.locator('.toast-region');
@@ -16,6 +16,8 @@ async function setup(browser: Parameters<typeof guest>[0]) {
   await lucas.locator('#ad-amt').fill('90,00');
   await lucas.locator('.bottombar [type=submit]').click();
   await expect(toast(lucas)).toContainText('Despesa adicionada');
+  // Marcar a parte de uma despesa só existe no modo detalhado.
+  await setPayMode(lucas, 'Detalhado');
 
   const bia = await joinAs(browser, code, 'Beatriz');
   await tab(bia, 'Meu saldo').click();

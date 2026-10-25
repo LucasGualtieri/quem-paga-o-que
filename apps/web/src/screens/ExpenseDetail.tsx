@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router';
 import { Badge, Button, Icon, Sheet, SkeletonCard } from '../components/index.ts';
-import { useExpenses, useHistory, useSplit, type HistoryEntry } from '../data/hooks.ts';
-import { canSeeProof, itemsBreakdown, myMember, sharesOf, type ExpenseDoc, type ItemPart, type Member, type SplitDoc } from '../data/model.ts';
+import { useHistory, useMoney, useSplit, type HistoryEntry } from '../data/hooks.ts';
+import { canSeeProof, itemsBreakdown, myMember, payModeOf, sharesOf, type ExpenseDoc, type ItemPart, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
+import { coveredExpenses, settlementOf, touchesSettled } from '../data/settlements.ts';
 import { markRead, useNotifications } from '../data/notifications.ts';
 import { useSession } from '../data/session.ts';
 import { useLang } from '../i18n/index.ts';
@@ -20,7 +21,7 @@ function useWhen() {
   return (d: Date | null) => (d ? shortDayTime(d, lang) : '');
 }
 
-function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc: ExpenseDoc }) {
+function Body({ split, me, doc, expenses, payments }: { split: SplitDoc; me: Member; doc: ExpenseDoc; expenses: readonly ExpenseDoc[]; payments: readonly PaymentDoc[] }) {
   const { t } = useTranslation();
   const lang = useLang();
   const navigate = useNavigate();
@@ -53,7 +54,11 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc: ExpenseDoc
   const pendingCount = rows.filter(([id, v]) => id !== doc.payer && (doc.paid[id] ?? 0) < v).length;
   const canEdit = split.status === 'open' && (doc.author === me.id || me.admin);
   const authorName = split.members[doc.author]?.name ?? '';
-  const blocked = hasPayments(doc);
+  // Simplificado: paga-se só no Meu saldo; aqui ficam só os valores (spec 06).
+  const simple = payModeOf(split) === 'simple';
+  // Detalhado: com parte paga não exclui (decisão 7). Simplificado: exclui, mas avisa se o par já acertou.
+  const blocked = !simple && hasPayments(doc);
+  const warnSettled = simple && touchesSettled(doc, split, payments);
 
   const weights = Object.values(doc.w ?? {});
   const modeChip =
@@ -101,6 +106,7 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc: ExpenseDoc
     if (h.kind === 'confirmed') return t('expense.detail.hConfirmed', { name, who: whoName });
     if (h.kind === 'disputed') return t('expense.detail.hDisputed', { name, who: whoName });
     if (h.kind === 'proof') return t('expense.detail.hProof', { name });
+    if (h.kind === 'settled') return t('expense.detail.hSettled', { name, who: whoName });
     if (h.kind === 'created') return t('expense.detail.hCreated', { name, amount: fmt(h.to ?? doc.amount) });
     if (h.kind === 'edited') return h.from !== undefined && h.to !== undefined ? t('expense.detail.hEditedAmount', { name, from: fmt(h.from), to: fmt(h.to) }) : t('expense.detail.hEdited', { name });
     if (h.kind === 'deleted') return t('expense.detail.hDeleted', { name });
@@ -209,7 +215,7 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc: ExpenseDoc
         <section>
           <div className="sec-h">
             <h2 className="h4">{t('expense.detail.shareOf')}</h2>
-            <span className="cap amt">{pendingCount > 0 ? t('expense.detail.pending', { count: pendingCount }) : t('my.allPaid')}</span>
+            {!simple && <span className="cap amt">{pendingCount > 0 ? t('expense.detail.pending', { count: pendingCount }) : t('my.allPaid')}</span>}
           </div>
           <div className="list">
             {rows.map(([id, v]) => {
@@ -217,15 +223,21 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc: ExpenseDoc
               const isPayer = id === doc.payer;
               const paid = !isPayer && (doc.paid[id] ?? 0) >= v;
               const proof = doc.proof[id];
+              // Parte paga num acerto do Meu saldo (modo detalhado): "Paga" ou "Compensada no acerto".
+              const settlement = paid ? settlementOf(doc, id, payments) : null;
               // Pendência vem do estado (pendConf), não do caminho de entrada (spec 07).
               const toCheck = paid && !!doc.pendConf[id] && doc.payer === me.id;
-              const canAct = !isPayer && isOpen && (me.admin || id === me.id || doc.payer === me.id);
-              const canAttach = paid && !proof && isOpen && (id === me.id || doc.payer === me.id || me.admin);
+              const canAct = !simple && !isPayer && isOpen && (me.admin || id === me.id || doc.payer === me.id);
+              const canAttach = !simple && !settlement && paid && !proof && isOpen && (id === me.id || doc.payer === me.id || me.admin);
               const canView = paid && !!proof?.path && canSeeProof(split, me, id, doc.payer);
               const expired = paid && !!proof && !proof.path;
               // Com o banner aberto, Confirmar / Não recebi saem da linha (sem ações repetidas).
               const lineCheck = toCheck && isOpen && banner?.memberId !== id;
-              const showActs = (canAct && !toCheck) || canAttach || canView || expired || lineCheck;
+              const showActs = !simple && ((canAct && !toCheck) || canAttach || canView || expired || lineCheck);
+              // No acerto, Confirmar / Não recebi / Desfazer valem para o acerto inteiro.
+              const undo = () => (settlement ? flow.undoSettlement(settlement, coveredExpenses(settlement, expenses)) : flow.unmark(doc, id));
+              const confirmLine = () => (settlement ? flow.confirmPayment(settlement) : flow.confirm(doc, id));
+              const disputeLine = () => (settlement ? flow.disputePayment(settlement) : flow.dispute(doc, id));
               return (
                 <div key={id} className={`row2 ${id === me.id ? 'me-row' : ''} ${hl === id ? 'hlrow' : ''}`}>
                   <div className="top">
@@ -240,9 +252,13 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc: ExpenseDoc
                         <Badge tone="acc" icon="check">
                           {t('expense.detail.paidAcc')}
                         </Badge>
-                      ) : toCheck ? (
+                      ) : simple ? null : toCheck ? (
                         <Badge tone="acc" icon="clock">
-                          {t('expense.detail.paidConfirm')}
+                          {settlement ? t('expense.detail.paidSettleConfirm') : t('expense.detail.paidConfirm')}
+                        </Badge>
+                      ) : settlement ? (
+                        <Badge tone="zero" icon="check">
+                          {settlement.from === id ? t('expense.detail.paidSettle') : t('expense.detail.offsetSettle')}
                         </Badge>
                       ) : paid ? (
                         <Badge tone="zero" icon="check">
@@ -270,16 +286,16 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc: ExpenseDoc
                         </Button>
                       )}
                       {canAct && !toCheck && (
-                        <Button size="sm" variant={!paid && id === me.id ? 'primary' : 'secondary'} onClick={() => (paid ? flow.unmark(doc, id) : flow.markShare(doc, id))}>
+                        <Button size="sm" variant={!paid && id === me.id ? 'primary' : 'secondary'} onClick={() => (paid ? undo() : flow.markShare(doc, id))}>
                           {paid ? t('common.undo') : doc.payer === me.id ? t('pay.markRecv') : t('pay.markPaid')}
                         </Button>
                       )}
                       {lineCheck && (
                         <>
-                          <Button size="sm" variant="secondary" onClick={() => flow.dispute(doc, id)}>
+                          <Button size="sm" variant="secondary" onClick={disputeLine}>
                             {t('pay.notRecv')}
                           </Button>
-                          <Button size="sm" onClick={() => flow.confirm(doc, id)}>
+                          <Button size="sm" onClick={confirmLine}>
                             {t('pay.confirmShort')}
                           </Button>
                         </>
@@ -399,7 +415,15 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc: ExpenseDoc
             <span>{t('expense.detail.blocked')}</span>
           </div>
         ) : (
-          <p className="muted">{t('expense.detail.delB')}</p>
+          <>
+            <p className="muted">{t('expense.detail.delB')}</p>
+            {warnSettled && (
+              <div className="info">
+                <Icon name="alert" />
+                <span>{t('expense.changesSettled')}</span>
+              </div>
+            )}
+          </>
         )}
         <div className="sheet-acts">
           {!blocked && (
@@ -433,7 +457,7 @@ export default function ExpenseDetail() {
   const uid = session.status === 'ready' ? session.uid : null;
   const result = useSplit(id, uid);
   const split = result.status === 'ready' ? result.data : null;
-  const { expenses, loaded } = useExpenses(id, !!split);
+  const { expenses, payments, loaded } = useMoney(id, !!split, split);
 
   if (result.status === 'denied') return <Navigate to="/" replace />;
   if (!split || !uid || !loaded) {
@@ -463,5 +487,5 @@ export default function ExpenseDetail() {
       </main>
     );
   }
-  return <Body split={split} me={me} doc={doc} />;
+  return <Body split={split} me={me} doc={doc} expenses={expenses} payments={payments} />;
 }

@@ -5,7 +5,7 @@ import { useToast } from '../components/index.ts';
 import { api, detailsOf } from '../data/api.ts';
 import { enqueue } from '../data/expenseStore.ts';
 import { previewPhoto, uploadPhoto } from '../data/files.ts';
-import { sharesOf, type ExpenseDoc, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
+import { payModeOf, sharesOf, type ExpenseDoc, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
 import { confirmShareOp, settlePaymentOp, settleReceiptOp, startPayOp, type PaymentOp, type ReceiptOp, type ShareOp, type SharePatch } from '../data/payStore.ts';
 import { ImageError, photoName } from '../lib/image.ts';
 import { useReasonText } from './reasons.ts';
@@ -191,13 +191,15 @@ export function usePayActions(split: SplitDoc, me: Member) {
       const id = newPaymentId();
       // Registrado por quem recebe já vale; senão espera quem recebe confirmar (como no servidor).
       const doc: PaymentDoc = { id, from, to, amount, by: me.id, when: new Date(), proof: null, pendConf: me.id !== to };
+      // No modo detalhado, o acerto marca as partes do par (spec 06): o aparelho já mostra isso.
+      if (payModeOf(split) === 'detailed') doc.viaShares = true;
       void paymentChange({ kind: 'payment', splitId, id, doc }, async () => (await api.createPayment({ splitId, id, from, to })).amount > 0);
       if (file) attachPayment(doc, file, false);
       // Quem paga avisa quem recebe.
       const to_ = from === me.id ? notified(to) : null;
       toast.show({ text: to_ ? t('pay.recordedTo', { name: to_ }) : t('pay.recorded'), onUndo: () => undoPayment(doc) });
     },
-    [splitId, me.id, paymentChange, attachPayment, undoPayment, toast, t, notified],
+    [splitId, split, me.id, paymentChange, attachPayment, undoPayment, toast, t, notified],
   );
 
   /** Comprovante (foto) da despesa: troca na hora; `null` tira. */

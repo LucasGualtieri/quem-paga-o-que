@@ -11,6 +11,8 @@ import type { PixKey } from './pix.ts';
 export type ErrorReason =
   | 'invalid-input'
   | 'invalid-code'
+  /** Split no modo simplificado: pagar só pelo acerto do par, no Meu saldo (spec 06). */
+  | 'mode-simple'
   /** O split do link ou do convite foi apagado (`splitId` leva à explicação). */
   | 'split-gone'
   | 'name-taken'
@@ -322,7 +324,9 @@ export type NotificationKind =
   /** "Não recebi" (vai para quem marcou que pagou). */
   | 'disputed'
   /** Um admin excluiu o split (vai para todos que estavam nele; sem link). */
-  | 'splitDeleted';
+  | 'splitDeleted'
+  /** O split finalizou sozinho: todos quitados há AUTO_FINALIZE_DAYS dias (vai para todos). */
+  | 'autoFinalized';
 
 export type NotificationStatus = 'new' | 'confirmed' | 'disputed';
 
@@ -379,4 +383,17 @@ export interface DeletedSplitData {
   cause: 'admin' | 'empty';
   /** Nome de quem excluiu (só `admin`). */
   byName: string | null;
+}
+
+/** Com todos quitados, a sugestão "Finalizar o split?" aparece aos admins depois destas horas. */
+export const FINALIZE_SUGGEST_HOURS = 24;
+/** E o split finaliza sozinho depois destes dias quitado (contados da última mudança no dinheiro). */
+export const AUTO_FINALIZE_DAYS = 7;
+
+/** Como o split registra pagamentos (spec 06): só o acerto do par, ou também despesa por despesa. */
+export type PayMode = 'simple' | 'detailed';
+export const PAY_MODES: readonly PayMode[] = ['simple', 'detailed'];
+export interface SetPayModeRequest {
+  splitId: string;
+  mode: PayMode;
 }

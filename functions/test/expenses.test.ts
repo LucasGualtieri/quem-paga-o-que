@@ -196,8 +196,9 @@ describe('deleteExpense e restoreExpense (decisão 7)', () => {
     expect((await history(w, id)).map((h) => h.kind)).toEqual(['created', 'deleted', 'restored']);
   });
 
-  it('com parte paga ou pendência de confirmação, bloqueia', async () => {
+  it('no modo detalhado, com parte paga ou pendência de confirmação, bloqueia', async () => {
     const w = await world();
+    await w.lucas.call('setPayMode', { splitId: w.splitId, mode: 'detailed' });
     const { id } = await create(w.lucas, w, pizza(w));
     const ref = admin().doc(`splits/${w.splitId}/expenses/${id}`);
     await ref.update({ paid: { [w.beatriz]: 334 } });
@@ -205,6 +206,13 @@ describe('deleteExpense e restoreExpense (decisão 7)', () => {
     await ref.update({ paid: {}, pendConf: { [w.beatriz]: true } });
     expect(await reasonOf(w.lucas.call('deleteExpense', { splitId: w.splitId, expenseId: id }))).toBe('has-payments');
     await ref.update({ pendConf: {} });
+    expect(await reasonOf(w.lucas.call('deleteExpense', { splitId: w.splitId, expenseId: id }))).toBeNull();
+  });
+
+  it('no modo simplificado, exclui mesmo com parte paga (spec 05)', async () => {
+    const w = await world();
+    const { id } = await create(w.lucas, w, pizza(w));
+    await admin().doc(`splits/${w.splitId}/expenses/${id}`).update({ paid: { [w.beatriz]: 333 }, pendConf: { [w.beatriz]: true } });
     expect(await reasonOf(w.lucas.call('deleteExpense', { splitId: w.splitId, expenseId: id }))).toBeNull();
   });
 

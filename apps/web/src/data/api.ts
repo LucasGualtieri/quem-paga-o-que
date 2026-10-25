@@ -9,6 +9,7 @@ import type {
   SetPixKeyRequest,
   SetPixKeyResponse,
   SetProfilePhotoRequest,
+  SetPayModeRequest,
   SetProofVisibilityRequest,
   SetReceiptRequest,
   SetSplitPhotoRequest,
@@ -73,6 +74,7 @@ export const api = {
   disputePayment: callable<PaymentRef, unknown>('disputePayment'),
   attachProof: callable<AttachProofRequest, Partial<PayWriteResponse>>('attachProof'),
   setProofVisibility: callable<SetProofVisibilityRequest, unknown>('setProofVisibility'),
+  setPayMode: callable<SetPayModeRequest, unknown>('setPayMode'),
   setReceipt: callable<SetReceiptRequest, unknown>('setReceipt'),
   setSplitPhoto: callable<SetSplitPhotoRequest, unknown>('setSplitPhoto'),
   // Contas (decisões 5 e 6).

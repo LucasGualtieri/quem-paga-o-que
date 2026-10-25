@@ -217,7 +217,7 @@ function HomeSplitActions({ split, uid }: { split: SplitDoc; uid: string }) {
 
 function HomeSplitActionsFor({ split, me }: { split: SplitDoc; me: NonNullable<ReturnType<typeof myMember>> }) {
   const { t } = useTranslation();
-  const money = useMoney(split.id, true);
+  const money = useMoney(split.id, true, split);
   const a = useSplitActions(split, me, money, false);
   const [open, setOpen] = useState(true);
   return (

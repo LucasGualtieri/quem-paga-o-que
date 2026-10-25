@@ -144,6 +144,7 @@ export async function splitDoc(splitId: string) {
     adminUids: string[];
     nextJoinOrder: number;
     proofVisibility?: string;
+    payMode?: string;
     photo?: unknown;
   };
 }

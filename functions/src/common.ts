@@ -5,7 +5,7 @@ import { FieldValue, getFirestore, type DocumentReference, type Transaction } fr
 import { getStorage } from 'firebase-admin/storage';
 import { ledger, type Expense, type JoinOrder, type Ledger, type Payment } from '@qpq/calc';
 import { HttpsError, type CallableRequest, type FunctionsErrorCode } from 'firebase-functions/v2/https';
-import type { EntryIcon, ErrorDetails, ErrorReason, PixKey } from '@qpq/shared';
+import type { EntryIcon, ErrorDetails, ErrorReason, PayMode, PixKey } from '@qpq/shared';
 
 export const REGION = 'us-east1';
 
@@ -62,6 +62,8 @@ export interface SplitData {
   proofVisibility?: 'all' | 'involved';
   /** Capa com foto (caminho no Storage). */
   photo?: string | null;
+  /** Como registrar pagamentos (spec 06); ausente = simplificado. */
+  payMode?: PayMode;
   /** Capa com ícone ou emoji (24/10/2026); sem ela, o `emoji` dos splits antigos ou o ícone de pessoas. */
   icon?: EntryIcon | null;
 }
@@ -191,6 +193,21 @@ export function orderOf(split: SplitData): JoinOrder {
 /** Saldos do split, sempre pelo motor compartilhado (@qpq/calc). */
 export function ledgerOf(split: SplitData, money: { expenses: Expense[]; payments: Payment[] }): Ledger {
   return ledger({ order: orderOf(split), ...money });
+}
+
+/**
+ * O dinheiro do split mudou (despesa, parte paga ou acerto): marca a hora. Com todos quitados,
+ * é desta hora que contam as 24 h da sugestão de finalizar e os 7 dias da finalização automática.
+ */
+export function touchMoney(tx: Transaction, doc: DocumentReference): void {
+  // A despesa ou o acerto ficam em splits/{id}/…: o split é o avô do documento.
+  const split = doc.parent.id === 'splits' ? doc : doc.parent.parent!;
+  tx.update(split, { moneyAt: FieldValue.serverTimestamp() });
+}
+
+/** Modo de pagamento do split (spec 06); sem escolha, o simplificado. */
+export function payModeOf(split: SplitData): PayMode {
+  return split.payMode === 'detailed' ? 'detailed' : 'simple';
 }
 
 export function requireOpen(split: SplitData): void {

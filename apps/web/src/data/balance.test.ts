@@ -120,6 +120,15 @@ describe('pairsView (Meu saldo)', () => {
       ['m3', 'zero'],
     ]);
   });
+  it('acerto do modo detalhado: partes pagas nele levam o `via`, contam só uma vez para conferir; acerto incorporado some', () => {
+    const pz = { ...pizza, paid: { m1: 3000 }, via: { m1: 'p1' }, pendConf: { m1: true } };
+    const gs = { ...gasolina, paid: { m2: 2000 }, via: { m2: 'p1' } };
+    const p1 = pay('p1', 'm1', 'm2', 1000, 1, { viaShares: true, pendConf: true, covers: [] });
+    const old = pay('old', 'm1', 'm2', 500, 0, { viaShares: true, absorbedBy: 'p1' });
+    const [bia] = pairsView(split, [pz, gs], [p1, old], 'm2').cards;
+    expect(bia).toMatchObject({ status: 'zero', toConfirm: 1 });
+    expect(bia!.entries.map((e) => (e.kind === 'share' ? [e.expense.id, e.state, e.via] : e.payment.id))).toEqual(['p1', ['pizza', 'paid', 'p1'], ['gasolina', 'paid', 'p1']]);
+  });
 });
 
 describe('pendingChecks ("1 pagamento p/ conferir")', () => {

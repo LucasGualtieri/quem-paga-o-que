@@ -6,11 +6,13 @@ import { pruneOps, mergeOps, useOps } from './expenseStore.ts';
 import { pruneSplitEdits } from './splitEdits.ts';
 import { activeExpenses, type ExpenseDoc, type PaymentDoc, type SplitDoc } from './model.ts';
 import { applyPaymentOps, applyShareOps, prunePaymentOps, pruneShareOps, usePayOps } from './payStore.ts';
+import { applySettlements } from './settlements.ts';
 
 /** Documento do Firestore → split (a data de finalização vira Date). */
 export function toSplitDoc(id: string, d: Record<string, unknown>): SplitDoc {
   const done = d.doneAt as { toDate?: () => Date } | null | undefined;
-  return { ...(d as unknown as SplitDoc), id, doneAt: done?.toDate ? done.toDate() : null };
+  const money = d.moneyAt as { toDate?: () => Date } | null | undefined;
+  return { ...(d as unknown as SplitDoc), id, doneAt: done?.toDate ? done.toDate() : null, moneyAt: money?.toDate ? money.toDate() : null };
 }
 
 export type Loadable<T> = { status: 'loading' } | { status: 'ready'; data: T } | { status: 'denied' };
@@ -143,9 +145,12 @@ export function toPaymentDoc(id: string, d: Record<string, unknown>): PaymentDoc
   return { ...(d as unknown as PaymentDoc), id, when: stamp(d.when), proof: (d.proof as PaymentDoc['proof'] | undefined) ?? null, pendConf: !!d.pendConf };
 }
 
-/** Despesas e acertos do split; o saldo nunca é guardado, sempre calculado deles (e sem as excluídas). */
-export function useMoney(splitId: string, enabled: boolean): { expenses: ExpenseDoc[]; payments: readonly PaymentDoc[]; loaded: boolean } {
-  const { expenses, loaded } = useExpenses(splitId, enabled);
+/**
+ * Despesas e acertos do split; o saldo nunca é guardado, sempre calculado deles (e sem as excluídas).
+ * Com o split à mão, os acertos do modo detalhado já aparecem nas partes antes do servidor responder.
+ */
+export function useMoney(splitId: string, enabled: boolean, split: SplitDoc | null = null): { expenses: ExpenseDoc[]; payments: readonly PaymentDoc[]; loaded: boolean } {
+  const { expenses: all, loaded } = useExpenses(splitId, enabled);
   const [server, setServer] = useState<readonly PaymentDoc[]>(NO_PAYMENTS);
   const payOps = usePayOps();
   useEffect(() => {
@@ -160,7 +165,14 @@ export function useMoney(splitId: string, enabled: boolean): { expenses: Expense
       () => {},
     );
   }, [splitId, enabled]);
-  const payments = useMemo(() => applyPaymentOps(splitId, server, payOps), [splitId, server, payOps]);
+  const withOps = useMemo(() => applyPaymentOps(splitId, server, payOps), [splitId, server, payOps]);
+  const settled = useMemo(() => {
+    if (!split) return { expenses: all, payments: withOps };
+    // Acertos do servidor que o aparelho já desfez: as partes que eles marcaram voltam.
+    const undone = server.filter((p) => p.viaShares && !withOps.some((q) => q.id === p.id));
+    return applySettlements(split, all, withOps, undone);
+  }, [split, all, server, withOps]);
+  const { expenses, payments } = settled;
   return useMemo(() => ({ expenses: activeExpenses(expenses), payments, loaded }), [expenses, payments, loaded]);
 }
 

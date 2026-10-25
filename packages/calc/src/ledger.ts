@@ -28,7 +28,8 @@ export function ledger(input: { order: JoinOrder; expenses: readonly Expense[]; 
       else if (owed < 0) bump(e.payer, id, -owed);
     }
   }
-  for (const p of input.payments) bump(p.from, p.to, -p.amount);
+  // Acerto que já marcou as partes como pagas não conta de novo (modo detalhado, spec 06).
+  for (const p of input.payments) if (!p.viaShares) bump(p.from, p.to, -p.amount);
 
   const M = zeros(ids);
   const net: Record<MemberId, Cents> = {};

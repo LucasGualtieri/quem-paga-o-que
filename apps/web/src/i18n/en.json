@@ -551,7 +551,11 @@
       "pending_one": "{{count}} pending",
       "pending_other": "{{count}} pending",
       "eachFor": "{{amount}} each · {{names}}",
-      "restWhat": "What wasn’t in the items"
+      "restWhat": "What wasn’t in the items",
+      "paidSettle": "Paid in settle-up",
+      "offsetSettle": "Offset in settle-up",
+      "paidSettleConfirm": "Paid in settle-up · confirm it",
+      "hSettled": "{{name}} recorded a settle-up: {{who}}'s share is now paid"
     },
     "added": "Expense added",
     "deleted": "Expense deleted",
@@ -561,7 +565,8 @@
       "seeNew": "See the new version",
       "overwrite": "Save mine on top",
       "someone": "Someone"
-    }
+    },
+    "changesSettled": "This changes the balance of people who already settled up."
   },
   "pay": {
     "recorded": "Payment recorded",
@@ -604,7 +609,11 @@
     "now": "just now",
     "recordedTo": "Payment recorded · we notified {{name}}",
     "proofSentTo": "Receipt sent · we notified {{name}}",
-    "disputedTo": "We let {{name}} know it didn’t arrive"
+    "disputedTo": "We let {{name}} know it didn’t arrive",
+    "undoSettleT": "Undo the settle-up?",
+    "undoSettleB_one": "The {{amount}} settle-up from {{from}} to {{to}} marked this expense as paid. Undoing it leaves it open again:",
+    "undoSettleB_other": "The {{amount}} settle-up from {{from}} to {{to}} marked {{count}} expenses as paid. Undoing it leaves all of them open again:",
+    "undoSettle": "Undo settle-up"
   },
   "my": {
     "allPaid": "all paid",
@@ -692,7 +701,9 @@
     "youConfirmed": "You confirmed receipt",
     "youSaidNo": "You said it didn’t arrive",
     "splitDeleted": "{{name}} deleted the split {{split}}",
-    "splitDeletedSub": "Its expenses and settle-ups were erased"
+    "splitDeletedSub": "Its expenses and settle-ups were erased",
+    "autoFinalized": "{{split}} was finalized: everyone is square",
+    "autoFinalizedSub": "An admin can reopen it if needed"
   },
   "fin": {
     "menu": "Close split",
@@ -708,7 +719,13 @@
     "reopened": "Split reopened",
     "banner": "Closed on {{date}}",
     "lock": "Split is closed: reopen to edit.",
-    "pair": "{{from}} → {{to}}"
+    "pair": "{{from}} → {{to}}",
+    "bannerAuto": "Finalized automatically on {{date}}: everyone is square",
+    "suggestT": "Everyone is square. Finalize the split?",
+    "suggestPending": "All square, but not everything is confirmed.",
+    "suggestAuto": "If nothing changes, it finalizes on its own on {{date}}.",
+    "suggestYes": "Finalize",
+    "suggestNo": "Not now"
   },
   "handover": {
     "leaveHeir": "You’re the last admin. When you leave, {{name}} becomes admin.",
@@ -830,7 +847,6 @@
     "other": "Choose another"
   },
   "editSplit": {
-    "menu": "Edit split",
     "title": "Edit split",
     "save": "Save",
     "saved": "Split updated"
@@ -842,5 +858,25 @@
     "viewAs": "Shows My balance the way this person sees it, only their pairs. You can record settle-ups and confirm payments for them. Only <b>admins</b> have this option; other participants see just their own balance.",
     "offsetLabel": "What does netted in the balance mean?",
     "offset": "This share wasn’t paid, but the balance between you already reached zero or flipped to the other side, so it no longer counts."
+  },
+  "config": {
+    "menu": "Split settings",
+    "title": "Split settings",
+    "identity": "Name and cover",
+    "edit": "Edit",
+    "payTitle": "How payments are recorded",
+    "default": "default",
+    "mode": {
+      "simple": "Simple",
+      "detailed": "Detailed"
+    },
+    "modeSub": {
+      "simple": "Everyone pays their balance with each person in one go, in My balance. Expenses only show each person's share.",
+      "detailed": "You can pay expense by expense. Settling up in My balance marks every open expense between the two people as paid."
+    },
+    "modeNote": "You can switch anytime: nobody's balance changes.",
+    "modeSaved": "Payments: {{value}}",
+    "adminOnly": "Only admins can change the split settings.",
+    "doneNote": "Split finished: reopen it to change the name, cover and payment mode."
   }
 }

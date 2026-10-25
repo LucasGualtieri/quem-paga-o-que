@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { createSplit, guest, joinAs, openCreated } from './helpers.ts';
+import { createSplit, guest, joinAs, openCreated, setPayMode } from './helpers.ts';
 
 // Fase 6: pagamentos entre duas (ou três) pessoas, cada uma no próprio navegador.
 const toast = (page: Page) => page.locator('.toast-region');
@@ -8,8 +8,11 @@ const shot = (page: Page, name: string) => page.screenshot({ path: test.info().o
 // Uma foto de verdade (PNG 8×8) para o comprovante: o app reduz e regrava em JPEG antes de subir.
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAEUlEQVR4nGMIsLmDFTEMLQkAB9VaASlkXi8AAAAASUVORK5CYII=', 'base64');
 
-/** Lucas cria o split com Beatriz e Catarina, lança Pizza R$ 90,00 (R$ 30,00 cada) e Beatriz entra. */
-async function setup(browser: Parameters<typeof guest>[0]) {
+/**
+ * Lucas cria o split com Beatriz e Catarina, lança Pizza R$ 90,00 (R$ 30,00 cada) e Beatriz entra.
+ * Pagar despesa por despesa só existe no modo detalhado; o acerto do par vale nos dois (spec 06).
+ */
+async function setup(browser: Parameters<typeof guest>[0], mode: 'Simplificado' | 'Detalhado' = 'Detalhado') {
   const lucas = await guest(browser);
   const code = await createSplit(lucas, ['Beatriz', 'Catarina']);
   await openCreated(lucas);
@@ -18,6 +21,7 @@ async function setup(browser: Parameters<typeof guest>[0]) {
   await lucas.locator('#ad-amt').fill('90,00');
   await lucas.locator('.bottombar [type=submit]').click();
   await expect(toast(lucas)).toContainText('Despesa adicionada');
+  if (mode === 'Detalhado') await setPayMode(lucas, mode);
   const bia = await joinAs(browser, code, 'Beatriz');
   return { lucas, bia, code };
 }
@@ -138,7 +142,7 @@ test('parte paga vira linha resolvida no mesmo lugar; quem recebeu confirma ali 
 });
 
 test('acerto do par: Beatriz paga o saldo com o Lucas; ele confirma; Desfazer volta', async ({ browser }) => {
-  const { lucas, bia } = await setup(browser);
+  const { lucas, bia } = await setup(browser, 'Simplificado');
   await tab(bia, 'Meu saldo').click();
   const card = bia.locator('.pcard', { has: bia.locator('.pchead .ttl', { hasText: 'Lucas' }) });
   // Lucas não tem chave Pix: sem "Copiar Pix".
@@ -175,7 +179,7 @@ test('acerto do par: Beatriz paga o saldo com o Lucas; ele confirma; Desfazer vo
 });
 
 test('"Não recebi" no acerto: some dos dois lados e avisa quem pagou', async ({ browser }) => {
-  const { lucas, bia } = await setup(browser);
+  const { lucas, bia } = await setup(browser, 'Simplificado');
   await tab(bia, 'Meu saldo').click();
   const card = bia.locator('.pcard', { has: bia.locator('.pchead .ttl', { hasText: 'Lucas' }) });
   await card.locator('.pcmain').getByRole('button', { name: 'Marcar como pago' }).click();
@@ -191,7 +195,7 @@ test('"Não recebi" no acerto: some dos dois lados e avisa quem pagou', async ({
 });
 
 test('admin vê como outra pessoa e registra o acerto por ela', async ({ browser }) => {
-  const { lucas, bia } = await setup(browser);
+  const { lucas, bia } = await setup(browser, 'Simplificado');
   await tab(lucas, 'Meu saldo').click();
   await lucas.getByRole('button', { name: 'O que é Ver como?' }).click();
   await expect(lucas.locator('.infotip-bubble')).toContainText('Mostra o Meu saldo como essa pessoa vê');
@@ -223,10 +227,13 @@ test('"Só os envolvidos e admins": Catarina não abre o comprovante da Beatriz'
   await sheet.getByRole('button', { name: 'Enviar comprovante' }).click();
   await expect(toast(bia)).toContainText('Comprovante enviado');
 
-  await tab(lucas, 'Pessoas').click();
+  // "Quem vê comprovantes" fica nas Configurações do split.
+  await lucas.getByRole('button', { name: 'Mais opções' }).click();
+  await lucas.getByRole('menuitem', { name: 'Configurações do split' }).click();
   await lucas.getByRole('radio', { name: /Só os envolvidos e admins/ }).check();
   await expect(lucas.getByRole('radio', { name: /Só os envolvidos e admins/ })).toBeChecked();
-  await shot(lucas, 'pessoas-comprovantes');
+  await expect(toast(lucas)).toContainText('Pronto: Só os envolvidos e admins', { timeout: 15_000 });
+  await shot(lucas, 'config-comprovantes');
 
   const cat = await joinAs(browser, code, 'Catarina');
   await cat.locator('.txrow', { hasText: 'Pizza' }).click();
@@ -234,7 +241,72 @@ test('"Só os envolvidos e admins": Catarina não abre o comprovante da Beatriz'
   await expect(share).toContainText('Pago · comprovante');
   await expect(share.getByRole('button', { name: 'Ver comprovante' })).toHaveCount(0);
   // O admin continua vendo.
-  await lucas.goto(lucas.url().replace(/\/pessoas$/, ''));
+  await lucas.goto(lucas.url().replace(/\/config$/, ''));
   await lucas.locator('.txrow', { hasText: 'Pizza' }).click();
   await expect(lucas.locator('.row2', { hasText: 'Beatriz' }).getByRole('button', { name: 'Ver comprovante' })).toBeVisible();
+});
+
+test('modo simplificado: despesas só com a parte de cada um; paga-se o saldo do par no Meu saldo', async ({ browser }) => {
+  const { lucas, bia } = await setup(browser, 'Simplificado');
+  const row = bia.locator('.txrow', { hasText: 'Pizza' });
+  await expect(row).toContainText('sua parte R$ 30,00');
+  await expect(row.locator('.mine')).toHaveClass(/muted/);
+  await row.click();
+  // Detalhe: só os valores, sem botões de pagamento.
+  await expect(bia.locator('.row2', { hasText: 'Você' })).toContainText('R$ 30,00');
+  await expect(bia.getByRole('button', { name: 'Marcar como pago' })).toHaveCount(0);
+  await expect(bia.locator('.row2', { hasText: 'Você' })).not.toContainText('Pendente');
+  await shot(bia, 'simplificado-detalhe');
+  await bia.getByRole('link', { name: 'Voltar' }).click();
+
+  const card = await openCard(bia, 'Lucas');
+  // Dentro do cartão, as despesas são só leitura; o acerto fica no topo.
+  await expect(card.locator('.pcentry', { hasText: 'Pizza' }).getByRole('button')).toHaveCount(0);
+  await card.locator('.pcmain').getByRole('button', { name: 'Marcar como pago' }).click();
+  await expect(card.locator('.pchead')).toContainText('Tudo certo');
+  await shot(bia, 'simplificado-meu-saldo');
+
+  // Excluir a despesa continua permitido, com aviso para quem já acertou.
+  await lucas.locator('.txrow', { hasText: 'Pizza' }).click();
+  await lucas.getByRole('button', { name: 'Excluir', exact: true }).first().click();
+  const del = lucas.getByRole('dialog', { name: 'Excluir “Pizza”?' });
+  await expect(del).toContainText('Isso muda o saldo de quem já acertou.', { timeout: 15_000 });
+  await shot(lucas, 'simplificado-excluir');
+});
+
+test('modo detalhado: o acerto marca as despesas do par; Desfazer numa delas desfaz o acerto inteiro', async ({ browser }) => {
+  const { lucas, bia } = await setup(browser);
+  // Beatriz também pagou uma despesa: Uber R$ 20,00 entre ela e o Lucas (Lucas deve R$ 10,00).
+  await bia.getByRole('link', { name: 'Adicionar despesa' }).click();
+  await bia.locator('#ad-desc').fill('Uber');
+  await bia.locator('#ad-amt').fill('20,00');
+  await bia.getByRole('group', { name: 'Dividir com' }).getByRole('button', { name: /Catarina/ }).click();
+  await bia.locator('.bottombar [type=submit]').click();
+  await expect(toast(bia)).toContainText('Despesa adicionada');
+
+  const card = await openCard(bia, 'Lucas');
+  await expect(card.locator('.pchead')).toContainText('R$ 20,00');
+  await card.locator('.pcmain').getByRole('button', { name: 'Marcar como pago' }).click();
+  await expect(card.locator('.pchead')).toContainText('Tudo certo');
+  const pizza = card.locator('.pcentry', { hasText: 'Pizza' });
+  await expect(pizza).toHaveClass(/done/);
+  await expect(pizza).toContainText('Paga no acerto');
+  await expect(card.locator('.pcentry', { hasText: 'Uber' })).toContainText('Compensada no acerto');
+  await shot(bia, 'detalhado-acerto');
+
+  // Lucas vê as partes marcadas no detalhe da despesa.
+  await lucas.locator('.txrow', { hasText: 'Pizza' }).click();
+  await expect(lucas.locator('.row2', { hasText: 'Beatriz' })).toContainText('Paga no acerto', { timeout: 15_000 });
+  await lucas.getByRole('link', { name: 'Voltar' }).click();
+
+  // Desfazer numa parte paga no acerto: a folha diz o que o acerto cobre.
+  await pizza.getByRole('button', { name: 'Desfazer' }).click();
+  const sheet = bia.getByRole('dialog', { name: 'Desfazer o acerto?' });
+  await expect(sheet).toContainText('marcou como pagas 2 despesas');
+  await expect(sheet.locator('.covered li')).toHaveText(['Pizza', 'Uber']);
+  await shot(bia, 'detalhado-desfazer');
+  await sheet.getByRole('button', { name: 'Desfazer acerto' }).click();
+  await expect(card.locator('.pchead')).toContainText('Você deve');
+  await expect(pizza).not.toHaveClass(/done/);
+  await expect(lucas.locator('.txrow', { hasText: 'Pizza' })).toContainText('a receber +R$ 60,00', { timeout: 15_000 });
 });

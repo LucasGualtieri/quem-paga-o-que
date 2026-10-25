@@ -360,7 +360,7 @@
   object-fit: cover;
 }
 
-/* Quem vê comprovantes (Pessoas) */
+/* Opções das Configurações do split (modo de pagamento, quem vê comprovantes) */
 .optrow {
   display: flex;
   align-items: flex-start;
@@ -371,6 +371,20 @@
 }
 .optrow:first-child {
   border-top: 0;
+}
+.optrow.ro {
+  cursor: default;
+}
+.config-identity {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+.config-identity .ttl {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  white-space: normal;
 }
 .optrow .mid {
   display: flex;
@@ -584,4 +598,30 @@ a.mi {
 .pix-edit .input {
   flex: 1;
   min-width: 0;
+}
+
+/* Sugestão de finalizar (só admin): todo mundo quitou há 24 h. */
+.banner.fin-suggest {
+  align-items: flex-start;
+}
+.banner.fin-suggest .mid {
+  gap: 4px;
+}
+.banner.fin-suggest .ttl {
+  white-space: normal;
+}
+.fin-suggest-acts {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+/* Folha "Desfazer o acerto?": as despesas que o acerto marcou */
+.covered {
+  margin: 0;
+  padding: 0 0 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 600;
 }

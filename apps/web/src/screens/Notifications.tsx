@@ -15,6 +15,7 @@ const BADGE: Record<NotificationDoc['kind'], { icon: IconName; tone: string }> =
   proof: { icon: 'camera', tone: 'acc' },
   disputed: { icon: 'alert', tone: 'neg' },
   splitDeleted: { icon: 'trash', tone: 'neg' },
+  autoFinalized: { icon: 'flag', tone: 'acc' },
 };
 
 function useUid(): string | null {

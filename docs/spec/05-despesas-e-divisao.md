@@ -35,7 +35,7 @@ Com erro de divisão, a mensagem é "A divisão não fecha com o valor. Ajuste o
 
 **Depois de salvar:** volta para a aba Despesas com a nova despesa destacada, toast "Despesa adicionada" com Desfazer e o saldo animando para o novo valor. Excluir pede confirmação e também oferece Desfazer.
 
-**Excluir com pagamentos:** bloqueado enquanto houver parte paga ou pagamento esperando confirmação ("Esta despesa tem pagamentos marcados. Desmarque-os antes de excluir."). Ao excluir, as notificações da despesa somem da lista; Desfazer traz a despesa e as notificações de volta.
+**Excluir com pagamentos** (modo detalhado; no simplificado é sempre permitido, spec 06): bloqueado enquanto houver parte paga ou pagamento esperando confirmação ("Esta despesa tem pagamentos marcados. Desmarque-os antes de excluir."). Ao excluir, as notificações da despesa somem da lista; Desfazer traz a despesa e as notificações de volta.
 
 **Duas pessoas editando:** ao salvar, se outra pessoa salvou a despesa antes, aparece "Beatriz alterou esta despesa enquanto você editava." com "Ver a versão nova" ou "Salvar a minha por cima". As duas edições entram no Histórico. Marcar parte paga, confirmar e anexar comprovante não são edições da despesa e não geram esse aviso.
 

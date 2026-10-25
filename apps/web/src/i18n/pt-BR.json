@@ -551,7 +551,11 @@
       "pending_one": "{{count}} pendente",
       "pending_other": "{{count}} pendentes",
       "eachFor": "{{amount}} cada · {{names}}",
-      "restWhat": "O que não entrou nos itens"
+      "restWhat": "O que não entrou nos itens",
+      "paidSettle": "Paga no acerto",
+      "offsetSettle": "Compensada no acerto",
+      "paidSettleConfirm": "Paga no acerto · confirme",
+      "hSettled": "{{name}} registrou um acerto: a parte de {{who}} ficou paga"
     },
     "added": "Despesa adicionada",
     "deleted": "Despesa excluída",
@@ -561,7 +565,8 @@
       "seeNew": "Ver a versão nova",
       "overwrite": "Salvar a minha por cima",
       "someone": "Alguém"
-    }
+    },
+    "changesSettled": "Isso muda o saldo de quem já acertou."
   },
   "pay": {
     "recorded": "Pagamento registrado",
@@ -604,7 +609,11 @@
     "now": "agora",
     "recordedTo": "Pagamento registrado · avisamos {{name}}",
     "proofSentTo": "Comprovante enviado · avisamos {{name}}",
-    "disputedTo": "Avisamos {{name}} que o pagamento não chegou"
+    "disputedTo": "Avisamos {{name}} que o pagamento não chegou",
+    "undoSettleT": "Desfazer o acerto?",
+    "undoSettleB_one": "O acerto de {{amount}} de {{from}} para {{to}} marcou como paga esta despesa. Desfazer o acerto volta a deixá-la em aberto:",
+    "undoSettleB_other": "O acerto de {{amount}} de {{from}} para {{to}} marcou como pagas {{count}} despesas. Desfazer o acerto volta a deixar todas em aberto:",
+    "undoSettle": "Desfazer acerto"
   },
   "my": {
     "allPaid": "tudo pago",
@@ -692,7 +701,9 @@
     "youConfirmed": "Você confirmou o recebimento",
     "youSaidNo": "Você avisou que não recebeu",
     "splitDeleted": "{{name}} excluiu o split {{split}}",
-    "splitDeletedSub": "As despesas e os acertos foram apagados"
+    "splitDeletedSub": "As despesas e os acertos foram apagados",
+    "autoFinalized": "{{split}} foi finalizado: todos quitaram",
+    "autoFinalizedSub": "Um admin pode reabrir se precisar"
   },
   "fin": {
     "menu": "Finalizar split",
@@ -708,7 +719,13 @@
     "reopened": "Split reaberto",
     "banner": "Finalizado em {{date}}",
     "lock": "Split finalizado: reabra para editar.",
-    "pair": "{{from}} → {{to}}"
+    "pair": "{{from}} → {{to}}",
+    "bannerAuto": "Finalizado automaticamente em {{date}}: todos quitaram",
+    "suggestT": "Todo mundo quitou. Finalizar o split?",
+    "suggestPending": "Tudo quitado, mas nem tudo confirmado.",
+    "suggestAuto": "Se nada mudar, ele finaliza sozinho em {{date}}.",
+    "suggestYes": "Finalizar",
+    "suggestNo": "Agora não"
   },
   "handover": {
     "leaveHeir": "Você é o último admin. Ao sair, {{name}} vira admin.",
@@ -830,7 +847,6 @@
     "other": "Escolher outra"
   },
   "editSplit": {
-    "menu": "Editar split",
     "title": "Editar split",
     "save": "Salvar",
     "saved": "Split atualizado"
@@ -842,5 +858,25 @@
     "viewAs": "Mostra o Meu saldo como essa pessoa vê, só os pares dela. Você pode registrar acertos e confirmar pagamentos por ela. Só <b>admins</b> têm esta opção; os outros participantes veem apenas o próprio saldo.",
     "offsetLabel": "O que é compensado no saldo?",
     "offset": "Essa parte não foi paga, mas o saldo entre vocês já zerou ou virou para o outro lado, então ela não pesa mais."
+  },
+  "config": {
+    "menu": "Configurações do split",
+    "title": "Configurações do split",
+    "identity": "Nome e capa",
+    "edit": "Editar",
+    "payTitle": "Como registrar pagamentos",
+    "default": "padrão",
+    "mode": {
+      "simple": "Simplificado",
+      "detailed": "Detalhado"
+    },
+    "modeSub": {
+      "simple": "Cada um paga o saldo com cada pessoa de uma vez, no Meu saldo. As despesas mostram só quanto é a parte de cada um.",
+      "detailed": "Dá para pagar despesa por despesa. Acertar o saldo no Meu saldo marca como pagas todas as despesas em aberto entre as duas pessoas."
+    },
+    "modeNote": "Dá para trocar quando quiser: o saldo de ninguém muda.",
+    "modeSaved": "Pagamentos: {{value}}",
+    "adminOnly": "Só admins mudam as configurações do split.",
+    "doneNote": "Split finalizado: reabra para mudar o nome, a capa e o modo de pagamento."
   }
 }

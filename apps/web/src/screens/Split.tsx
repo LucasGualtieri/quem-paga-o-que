@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router';
 import { Button, Icon, SkeletonCard, useToast, type IconName } from '../components/index.ts';
 import { detailsOf } from '../data/api.ts';
 import { useMoney, useSplit } from '../data/hooks.ts';
 import { pendingJoins } from '../data/local.ts';
-import { applyPatches, membersInOrder, myMember, type ExpenseDoc, type Member, type MemberPatch, type Money, type PaymentDoc, type SplitDoc } from '../data/model.ts';
+import { applyPatches, finalizeSuggestion, membersInOrder, myMember, type ExpenseDoc, type Member, type MemberPatch, type Money, type PaymentDoc, type SplitDoc } from '../data/model.ts';
 import { useSplitEdits, withSplitEdits } from '../data/splitEdits.ts';
 import { useSession } from '../data/session.ts';
 import { useOptimisticAction } from '../lib/optimistic.ts';
@@ -99,10 +99,11 @@ export default function Split() {
   const result = useSplit(id, pending ? null : uid);
   const [patched, act] = usePatches(result.status === 'ready' ? result.data : null);
   const edits = useSplitEdits();
-  const view = patched ? withSplitEdits(patched, edits) : null;
-  const money = useMoney(id, result.status === 'ready');
+  const view = useMemo(() => (patched ? withSplitEdits(patched, edits) : null), [patched, edits]);
+  const money = useMoney(id, result.status === 'ready', view);
   const added = (useLocation().state as { added?: string } | null)?.added ?? null;
   const [menu, setMenu] = useState(false);
+  const [, bump] = useState(0);
 
   // Já mostrou este split: perder o acesso depois volta ao início (salvo se ele foi apagado).
   const seen = useRef<string | null>(null);
@@ -119,22 +120,29 @@ export default function Split() {
   if (view && uid && !me && !pending) return <Navigate to="/" replace />;
 
   const count = view ? membersInOrder(view).length : 0;
+  // Sugestão de finalizar (só admin), escondida por "Agora não" até o dinheiro mudar de novo.
+  const suggestKey = view?.moneyAt ? `qpq.finSuggest.${id}` : null;
+  const dismissedSuggestion = suggestKey ? safeGet(suggestKey) === String(view!.moneyAt!.getTime()) : false;
+  const suggestion = view && !dismissedSuggestion ? finalizeSuggestion(view, money, Date.now()) : null;
+  const dismissSuggestion = () => {
+    if (suggestKey && view?.moneyAt) safeSet(suggestKey, String(view.moneyAt.getTime()));
+    bump((n) => n + 1);
+  };
   const isOpen = view?.status !== 'done';
 
   /** Cabeçalho, aviso de finalizado e folhas; com o split carregado, as ações (spec 04). */
   const chrome = (a: SplitActions | null) => {
-    const canEdit = !!a && a.isAdmin && isOpen;
-    const edit = () => a?.perform('edit');
+    const config = () => a?.perform('config');
     return (
       <>
         <header className="hdr hdr-split">
           <Link to="/" className="iconbtn" aria-label={t('common.back')}>
             <Icon name="back" />
           </Link>
-          {/* Admin toca na capa ou no nome para editar o split. */}
+          {/* Tocar na capa ou no nome abre as Configurações do split (membro vê só leitura). */}
           {view &&
-            (canEdit ? (
-              <button type="button" className="hdr-edit" aria-label={t('editSplit.menu')} onClick={edit}>
+            (a ? (
+              <button type="button" className="hdr-edit" aria-label={t('config.title')} onClick={config}>
                 <SplitCover split={view} size="sm" />
               </button>
             ) : (
@@ -142,8 +150,8 @@ export default function Split() {
             ))}
           <div className="hdr-mid">
             <h1 className="h3 clamp2">
-              {canEdit ? (
-                <button type="button" className="hdr-edit-name" onClick={edit}>
+              {a ? (
+                <button type="button" className="hdr-edit-name" onClick={config}>
                   {view?.name ?? ''}
                 </button>
               ) : (
@@ -207,12 +215,33 @@ export default function Split() {
         {view && !isOpen && (
           <div className="banner banner-done" role="status">
             <Icon name="flag" />
-            <span style={{ flex: 1 }}>{t('fin.banner', { date: view.doneAt ? dayMonth(view.doneAt, lang) : '' })}</span>
+            <span style={{ flex: 1 }}>{t(view.autoFinalized ? 'fin.bannerAuto' : 'fin.banner', { date: view.doneAt ? dayMonth(view.doneAt, lang) : '' })}</span>
             {a?.isAdmin && (
               <Button size="sm" variant="secondary" onClick={() => a.perform('reopen')}>
                 {t('fin.reopen')}
               </Button>
             )}
+          </div>
+        )}
+        {suggestion && a?.isAdmin && (
+          // Todo mundo quitou há 24 h: sugere finalizar. "Agora não" só esconde; o prazo não muda.
+          <div className="banner fin-suggest" role="status">
+            <Icon name="flag" />
+            <span className="mid">
+              <span className="ttl">{t('fin.suggestT')}</span>
+              <span className="cap">
+                {suggestion.pending ? `${t('fin.suggestPending')} ` : ''}
+                {t('fin.suggestAuto', { date: dayMonth(suggestion.autoAt, lang) })}
+              </span>
+              <span className="fin-suggest-acts">
+                <Button size="sm" onClick={() => a.perform('finalize')}>
+                  {t('fin.suggestYes')}
+                </Button>
+                <Button size="sm" variant="ghost" onClick={dismissSuggestion}>
+                  {t('fin.suggestNo')}
+                </Button>
+              </span>
+            </span>
           </div>
         )}
         {a?.sheets}
@@ -274,4 +303,20 @@ type SplitActions = ReturnType<typeof useSplitActions>;
 
 function WithSplitActions({ split, me, money, children }: { split: SplitDoc; me: Member; money: Money; children: (a: SplitActions) => ReactNode }) {
   return <>{children(useSplitActions(split, me, money, true))}</>;
+}
+
+function safeGet(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function safeSet(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // Sem armazenamento (aba anônima): a faixa só some até recarregar.
+  }
 }

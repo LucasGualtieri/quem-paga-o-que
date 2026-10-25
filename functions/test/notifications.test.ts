@@ -27,6 +27,8 @@ async function world(): Promise<World> {
   const bia = await newUser();
   const cat = await newUser();
   const { splitId, code } = await createSplit(lucas);
+  // Pagamento por despesa só existe no modo detalhado (spec 06).
+  await lucas.call('setPayMode', { splitId, mode: 'detailed' });
   const beatriz = await memberIdByName(splitId, 'Beatriz');
   const catarina = await memberIdByName(splitId, 'Catarina');
   await bia.call('joinSplit', { code, memberId: beatriz });
@@ -189,6 +191,7 @@ describe('acerto pelo Saldo', () => {
 it('quem ainda não entrou no split não recebe aviso', async () => {
   const lucas = await newUser();
   const { splitId } = await createSplit(lucas);
+  await lucas.call('setPayMode', { splitId, mode: 'detailed' });
   const eu = await memberIdByName(splitId, 'Lucas');
   const beatriz = await memberIdByName(splitId, 'Beatriz');
   const id = newId();

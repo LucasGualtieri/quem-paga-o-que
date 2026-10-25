@@ -15,7 +15,7 @@ import { PhotoCropSheet } from './PhotoCrop.tsx';
 import { clearPendingCover, SplitCover, useUploadCover } from './Photos.tsx';
 import { useReasonText } from './reasons.ts';
 
-export type SplitActionKey = 'edit' | 'invite' | 'finalize' | 'reopen' | 'leave' | 'delete';
+export type SplitActionKey = 'config' | 'edit' | 'invite' | 'finalize' | 'reopen' | 'leave' | 'delete';
 
 export interface SplitActionItem {
   key: SplitActionKey;
@@ -27,8 +27,8 @@ export interface SplitActionItem {
 }
 
 /**
- * As ações do split (spec 04), iguais no menu de dentro do split e no "⋯" da home: Editar,
- * Convidar, Finalizar ou Reabrir, Sair e Excluir. Mesmas folhas e regras nos dois lugares; tudo
+ * As ações do split (spec 04), iguais no menu de dentro do split e no "⋯" da home: Configurações
+ * do split, Convidar, Finalizar ou Reabrir, Sair e Excluir. Mesmas folhas e regras nos dois lugares; tudo
  * otimista. \`inside\`: dentro do split (Finalizar leva ao Meu saldo; Convidar do admin vai a Pessoas).
  */
 export function useSplitActions(split: SplitDoc, me: Member, money: Money, inside: boolean) {
@@ -46,7 +46,8 @@ export function useSplitActions(split: SplitDoc, me: Member, money: Money, insid
   const close = () => setSheet(null);
 
   const items: SplitActionItem[] = [
-    ...(isOpen ? [{ key: 'edit' as const, icon: 'pencil' as const, label: t('editSplit.menu'), adminOnly: true }] : []),
+    // Todos abrem; membro vê só leitura (spec 04).
+    { key: 'config', icon: 'sliders', label: t('config.menu') },
     { key: 'invite', icon: 'link', label: t('menu.invite') },
     isOpen ? { key: 'finalize', icon: 'flag', label: t('fin.menu'), adminOnly: true } : { key: 'reopen', icon: 'reopen', label: t('fin.reopen'), adminOnly: true },
     { key: 'delete', icon: 'trash', label: t('del.menu'), danger: true, adminOnly: true },
@@ -110,7 +111,8 @@ export function useSplitActions(split: SplitDoc, me: Member, money: Money, insid
   };
 
   const perform = (key: SplitActionKey) => {
-    if (key === 'invite') void invite();
+    if (key === 'config') void navigate(`/s/${id}/config`);
+    else if (key === 'invite') void invite();
     else if (key === 'reopen') changeStatus('open');
     else setSheet(key);
   };
@@ -167,7 +169,7 @@ export function useSplitActions(split: SplitDoc, me: Member, money: Money, insid
     </>
   );
 
-  return { items, perform, sheets, isAdmin };
+  return { items, perform, sheets, isAdmin, editSplit };
 }
 
 /**

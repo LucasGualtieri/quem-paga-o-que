@@ -4,8 +4,7 @@ import { Badge, Button, Icon, InfoTip, Sheet, useToast } from '../components/ind
 import { api, detailsOf } from '../data/api.ts';
 import { useProfile } from '../data/hooks.ts';
 import { useSession } from '../data/session.ts';
-import { useOptimisticAction, useOptimisticValue } from '../lib/optimistic.ts';
-import type { ProofVisibility } from '@qpq/shared';
+import { useOptimisticAction } from '../lib/optimistic.ts';
 import { adminContact, adminHandover, balances, membersInOrder, promoteBlock, removeBlock, type Member, type MemberPatch, type Money, type SplitDoc } from '../data/model.ts';
 import { useLang } from '../i18n/index.ts';
 import { formatCents } from '../lib/money.ts';
@@ -99,11 +98,6 @@ export function PeopleTab({ split, money, me, act }: { split: SplitDoc; money: M
   };
 
   const otherAdmins = members.filter((m) => m.admin && m.id !== me.id).map((m) => m.name);
-  const [visibility, setVisibility] = useOptimisticValue<ProofVisibility>(split.proofVisibility ?? 'all', saveVisibility);
-
-  function saveVisibility(value: ProofVisibility) {
-    return api.setProofVisibility({ splitId: split.id, value });
-  }
 
   return (
     <div className="content with-tabs" style={{ gap: 18 }}>
@@ -194,31 +188,6 @@ export function PeopleTab({ split, money, me, act }: { split: SplitDoc; money: M
             );
           })}
         </div>
-      </section>
-
-      <section>
-        <div className="sec-h">
-          <h2 className="h4">{t('proofVis.title')}</h2>
-        </div>
-        {isAdmin ? (
-          <div className="list" role="radiogroup" aria-label={t('proofVis.title')}>
-            {(['all', 'involved'] as const).map((v) => (
-              <label key={v} className="optrow">
-                <input type="radio" name="proof-visibility" checked={visibility === v} onChange={() => setVisibility(v)} />
-                <span className="mid">
-                  <span className="ttl">{t(`proofVis.${v}`)}</span>
-                  <span className="cap" style={{ whiteSpace: 'normal' }}>
-                    {t(v === 'all' ? 'proofVis.allSub' : 'proofVis.involvedSub')}
-                  </span>
-                </span>
-              </label>
-            ))}
-          </div>
-        ) : (
-          <p className="cap" style={{ padding: '0 4px' }}>
-            {t('proofVis.memberNote', { value: t(`proofVis.${visibility}`) })}
-          </p>
-        )}
       </section>
 
       <Sheet open={steppingDown} title={t('handover.stepT')} onClose={() => setSteppingDown(false)}>

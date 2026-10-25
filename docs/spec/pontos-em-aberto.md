@@ -93,7 +93,7 @@ Spec atualizada: `05-despesas-e-divisao.md`.
 
 ### 9. Comprovantes e LGPD — decidido em 23/10/2026
 
-- **Quem vê é escolha do split.** Em Pessoas, o admin escolhe "Quem vê comprovantes": **"Todo o split"** (padrão) ou **"Só os envolvidos e admins"** (quem pagou, quem recebeu e os admins). Membro vê a opção atual, só leitura. A troca vale na hora, inclusive para comprovantes já enviados. Quem não pode ver enxerga só "com comprovante", sem abrir a foto.
+- **Quem vê é escolha do split.** Nas Configurações do split (antes, em Pessoas; mudou em 25/10/2026), o admin escolhe "Quem vê comprovantes": **"Todo o split"** (padrão) ou **"Só os envolvidos e admins"** (quem pagou, quem recebeu e os admins). Membro vê a opção atual, só leitura. A troca vale na hora, inclusive para comprovantes já enviados. Quem não pode ver enxerga só "com comprovante", sem abrir a foto.
 - **Prazo: no máximo 15 dias** a partir do envio, e **apagado assim que o split é finalizado** (reabrir não traz de volta). Também some quando o pagamento é desfeito ou contestado ("Não recebi"). Passado o prazo, a linha mostra "comprovante expirado" e não dá para enviar outro. A folha de anexar avisa: "Comprovantes ficam guardados por 15 dias."
 - **Só imagem.** Foto ou print; o app reduz para no máximo 1600 px e regrava em JPEG de até 1 MB, o que tira os metadados (como a localização da câmera). O servidor aceita só imagem de até 2 MB.
 - **Foto da despesa** (o comprovante em "Mais detalhes" do formulário, como uma nota fiscal): qualquer participante do split vê, independentemente da escolha acima. Mesmo prazo do comprovante de pagamento (15 dias, apagada ao finalizar).

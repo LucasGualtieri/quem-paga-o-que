@@ -4,7 +4,7 @@ import { Link } from 'react-router';
 import { nameKey, TAGS } from '@qpq/shared';
 import { Button, Chip, Icon, SkeletonCard } from '../components/index.ts';
 import { pendingChecks } from '../data/balance.ts';
-import { membersInOrder, sharesOf, type ExpenseDoc, type Member, type SplitDoc } from '../data/model.ts';
+import { membersInOrder, payModeOf, sharesOf, type ExpenseDoc, type Member, type SplitDoc } from '../data/model.ts';
 import { useLang } from '../i18n/index.ts';
 import { formatCents } from '../lib/money.ts';
 import { dayLabel, EmptyArt, todayStr, useWho } from './common.tsx';
@@ -64,9 +64,18 @@ export function TxTab({ split, me, expenses, loaded, canAdd, onAdd, lastAdded }:
   const anyFilter = filters.people.length + filters.tags.length > 0;
   const toggle = (key: keyof Filters, v: string) => setFilters((f) => ({ ...f, [key]: f[key].includes(v) ? f[key].filter((x) => x !== v) : [...f[key], v] }));
 
-  /** Sua parte e o que a pessoa ainda tem a receber, descontando o que já foi pago (decisão 2). */
-  const mineOf = (e: ExpenseDoc): { text: string; tone: 'neg' | 'pos' } | null => {
+  const simple = payModeOf(split) === 'simple';
+
+  /**
+   * Sua parte e o que a pessoa ainda tem a receber, descontando o que já foi pago (decisão 2). No
+   * modo simplificado não se paga por despesa: só a sua parte, em cinza, sem "a receber" (spec 06).
+   */
+  const mineOf = (e: ExpenseDoc): { text: string; tone: 'neg' | 'pos' | 'muted' } | null => {
     const sh = sharesOf(e, split);
+    if (simple) {
+      const part = sh[me.id] ?? 0;
+      return part > 0 ? { text: t('expense.tx.owe', { amount: fmt(part) }), tone: 'muted' } : null;
+    }
     if (e.payer === me.id) {
       const recv = Object.entries(sh).reduce((s, [id, v]) => (id === me.id ? s : s + Math.max(0, v - (e.paid[id] ?? 0))), 0);
       return recv > 0 ? { text: t('expense.tx.recv', { amount: fmt(recv, true) }), tone: 'pos' } : null;
@@ -202,7 +211,7 @@ export function TxTab({ split, me, expenses, loaded, canAdd, onAdd, lastAdded }:
           <div className="list">
             {items.map((e) => {
               const mine = mineOf(e);
-              const pend = e.payer === me.id ? pendingChecks(e) : 0;
+              const pend = e.payer === me.id && !simple ? pendingChecks(e) : 0;
               const note = modeNote(e);
               return (
                 <Link key={e.id} to={`/s/${split.id}/despesa/${e.id}`} className={`row txrow ${lastAdded === e.id ? 'new' : ''}`}>

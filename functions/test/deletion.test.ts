@@ -21,6 +21,8 @@ describe('deleteSplit', () => {
     const lucas = await newUser();
     const bia = await newUser();
     const { splitId, code } = await createSplit(lucas);
+    // Pagamento por despesa só existe no modo detalhado (spec 06).
+    await lucas.call('setPayMode', { splitId, mode: 'detailed' });
     const eu = await memberIdByName(splitId, 'Lucas');
     const beatriz = await memberIdByName(splitId, 'Beatriz');
     await bia.call('joinSplit', { code, memberId: beatriz });

@@ -142,9 +142,11 @@ test('item minimizado mostra o ícone; Meu saldo mostra o negativo com "−"', a
   await expect(lucas).toHaveURL(/\/saldo$/);
 });
 
-test('admin edita nome e capa tocando no cabeçalho; membro não edita', async ({ browser }) => {
+test('tocar no cabeçalho abre as Configurações do split: admin edita nome e capa; membro só lê', async ({ browser }) => {
   const { lucas, bia } = await setup(browser);
-  await lucas.getByRole('button', { name: 'Editar split' }).click();
+  await lucas.getByRole('button', { name: 'Configurações do split' }).click();
+  await expect(lucas.getByRole('heading', { name: 'Configurações do split' })).toBeVisible();
+  await lucas.getByRole('button', { name: 'Editar' }).click();
   const sheet = lucas.getByRole('dialog', { name: 'Editar split' });
   await sheet.getByLabel('Nome do split *').fill('Churras do Lulu');
   await sheet.getByRole('button', { name: 'Escolher a capa do split (opcional)' }).click();
@@ -153,14 +155,22 @@ test('admin edita nome e capa tocando no cabeçalho; membro não edita', async (
   await shot(lucas, 'editar-split');
   await sheet.getByRole('button', { name: 'Salvar' }).click();
   // Na hora, para os dois.
-  await expect(lucas.getByRole('heading', { name: 'Churras do Lulu' })).toBeVisible();
+  await expect(lucas.locator('.config-identity')).toContainText('Churras do Lulu');
   await expect(toast(lucas)).toContainText('Split atualizado', { timeout: 15_000 });
+  await shot(lucas, 'configuracoes-split');
+  await lucas.getByRole('link', { name: 'Voltar' }).click();
+  await expect(lucas.getByRole('heading', { name: 'Churras do Lulu' })).toBeVisible();
   await expect(bia.getByRole('heading', { name: 'Churras do Lulu' })).toBeVisible({ timeout: 15_000 });
 
-  // Membro: o cabeçalho não abre edição e o item do menu fica desabilitado.
-  await expect(bia.getByRole('button', { name: 'Editar split' })).toHaveCount(0);
-  await bia.getByRole('button', { name: 'Mais opções' }).click();
-  await expect(bia.getByRole('menuitem', { name: /Editar split/ })).toBeDisabled();
+  // Membro: abre as mesmas configurações, só para ler.
+  await bia.getByRole('button', { name: 'Churras do Lulu' }).click();
+  await expect(bia.getByRole('heading', { name: 'Configurações do split' })).toBeVisible();
+  await expect(bia.getByRole('note')).toContainText('Só admins mudam as configurações do split.');
+  await expect(bia.getByRole('button', { name: 'Editar' })).toHaveCount(0);
+  await expect(bia.getByRole('radio', { name: /^Simplificado/ })).toBeChecked();
+  await expect(bia.getByRole('radio', { name: /^Detalhado/ })).toBeDisabled();
+  await expect(bia.getByRole('radio', { name: /^Todo o split/ })).toBeDisabled();
+  await shot(bia, 'configuracoes-membro');
 });
 
 test('na home, o ⋯ do cartão faz as ações do split: editar, finalizar, sair e excluir', async ({ browser }) => {
@@ -169,7 +179,7 @@ test('na home, o ⋯ do cartão faz as ações do split: editar, finalizar, sair
   const actions = (page: Page) => page.getByRole('button', { name: 'Ações de Churras de sábado' });
   await actions(lucas).click();
   const menu = lucas.getByRole('dialog', { name: 'Churras de sábado' });
-  await expect(menu.getByRole('menuitem')).toHaveText(['Editar split', 'Convidar', 'Finalizar split', 'Excluir split', 'Sair do split']);
+  await expect(menu.getByRole('menuitem')).toHaveText(['Configurações do split', 'Convidar', 'Finalizar split', 'Excluir split', 'Sair do split']);
   await shot(lucas, 'home-acoes');
   await menu.getByRole('menuitem', { name: 'Finalizar split' }).click();
   await lucas.getByRole('dialog', { name: 'Finalizar “Churras de sábado”?' }).getByRole('button', { name: /Finalizar/ }).click();

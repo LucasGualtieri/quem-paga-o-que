@@ -21,6 +21,7 @@ const Created = lazy(() => import('./screens/Created.tsx'));
 const Join = lazy(() => import('./screens/Join.tsx'));
 const WhoAreYou = lazy(() => import('./screens/WhoAreYou.tsx'));
 const Split = lazy(() => import('./screens/Split.tsx'));
+const SplitSettings = lazy(() => import('./screens/SplitSettings.tsx'));
 const Entry = lazy(() => import('./screens/Entry.tsx'));
 const EmailAuth = lazy(() => import('./screens/EmailAuth.tsx'));
 const Account = lazy(() => import('./screens/Account.tsx'));
@@ -64,6 +65,7 @@ export function App() {
               <Route path="/s/:id/despesa/nova" element={<Gate><ExpenseForm /></Gate>} />
               <Route path="/s/:id/despesa/:expId" element={<Gate><ExpenseDetail /></Gate>} />
               <Route path="/s/:id/despesa/:expId/editar" element={<Gate><ExpenseForm /></Gate>} />
+              <Route path="/s/:id/config" element={<Gate><SplitSettings /></Gate>} />
               <Route path="/s/:id/:tab?" element={<Gate><Split /></Gate>} />
               <Route path="/conta" element={<Gate><Account /></Gate>} />
               <Route path="/notificacoes" element={<Gate><Notifications /></Gate>} />

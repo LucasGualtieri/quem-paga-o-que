@@ -5,8 +5,9 @@ import { TAGS } from '@qpq/shared';
 import type { ExpenseMode } from '@qpq/calc';
 import { avatarColor, Button, Chip, Icon, PersonRow, Segmented, SkeletonCard } from '../components/index.ts';
 import { analyze, fromDoc, initialForm, setMode, toggleMember, toInput, type FormState } from '../data/expenseForm.ts';
-import { useExpenses, useSplit } from '../data/hooks.ts';
-import { membersInOrder, myMember, orderOf, type ExpenseDoc, type Member, type SplitDoc } from '../data/model.ts';
+import { useMoney, useSplit } from '../data/hooks.ts';
+import { membersInOrder, myMember, orderOf, payModeOf, type ExpenseDoc, type Member, type SplitDoc } from '../data/model.ts';
+import { touchesSettled } from '../data/settlements.ts';
 import { useSession } from '../data/session.ts';
 import { useLang } from '../i18n/index.ts';
 import { formatCents } from '../lib/money.ts';
@@ -22,7 +23,7 @@ import { MemberAvatar } from './Photos.tsx';
 // getRandomValues (e não randomUUID): funciona também fora de HTTPS, como no teste pela rede local.
 const newExpenseId = () => Array.from(crypto.getRandomValues(new Uint8Array(10)), (b) => b.toString(16).padStart(2, '0')).join('');
 
-function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc?: ExpenseDoc }) {
+function Body({ split, me, doc, warnSettled = false }: { split: SplitDoc; me: Member; doc?: ExpenseDoc; warnSettled?: boolean }) {
   const { t } = useTranslation();
   const lang = useLang();
   const navigate = useNavigate();
@@ -127,6 +128,12 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc?: ExpenseDo
           submit();
         }}
       >
+        {warnSettled && (
+          <div className="info">
+            <Icon name="alert" />
+            <span>{t('expense.changesSettled')}</span>
+          </div>
+        )}
         <div>
           <label className="label" htmlFor="ad-desc">
             {t('expense.form.desc')} <span className="req" aria-hidden="true">*</span>
@@ -380,7 +387,7 @@ export default function ExpenseForm() {
   const uid = session.status === 'ready' ? session.uid : null;
   const result = useSplit(id, uid);
   const split = result.status === 'ready' ? result.data : null;
-  const { expenses, loaded } = useExpenses(id, !!split);
+  const { expenses, payments, loaded } = useMoney(id, !!split, split);
 
   if (result.status === 'denied') return <Navigate to="/" replace />;
   if (!split || !uid || (expId && !loaded)) {
@@ -400,7 +407,9 @@ export default function ExpenseForm() {
     if (!doc || doc.deletedAt) return <Navigate to={`/s/${id}`} replace />;
     // Só quem lançou ou um admin edita (spec 04).
     if (doc.author !== me.id && !me.admin) return <Navigate to={`/s/${id}/despesa/${expId}`} replace />;
-    return <Body key={doc.id} split={split} me={me} doc={doc} />;
+    // Simplificado: editar é sempre permitido, mas avisa se o par já acertou (spec 06).
+    const warn = payModeOf(split) === 'simple' && touchesSettled(doc, split, payments);
+    return <Body key={doc.id} split={split} me={me} doc={doc} warnSettled={warn} />;
   }
   return <Body split={split} me={me} />;
 }

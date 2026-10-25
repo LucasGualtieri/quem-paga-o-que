@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { adminContact, adminHandover, balances, itemsBreakdown, leaveBlock, membersInOrder, myMember, promoteBlock, removeBlock, type ExpenseDoc, type SplitDoc } from './model.ts';
+import { adminContact, adminHandover, balances, finalizeSuggestion, itemsBreakdown, leaveBlock, membersInOrder, myMember, promoteBlock, removeBlock, type ExpenseDoc, type PaymentDoc, type SplitDoc } from './model.ts';
 
 const split: SplitDoc = {
   id: 's1',
@@ -107,5 +107,30 @@ describe('itemsBreakdown (detalhe por itens)', () => {
     expect(itemsBreakdown(doc({ amount: 5000, items: [{ amount: 5000, members: ['m1'] }], rest: ['m1'] }), split).rest).toBeNull();
     expect(itemsBreakdown(doc({ items: [{ amount: 5000, members: ['m1'] }] }), split).rest).toBeNull();
     expect(itemsBreakdown(doc({}), split)).toEqual({ items: [], rest: null });
+  });
+});
+
+describe('finalizeSuggestion (sugestão de finalizar)', () => {
+  const H = 3600_000;
+  const now = Date.parse('2026-10-25T12:00:00Z');
+  const exp = (over: Partial<ExpenseDoc> = {}): ExpenseDoc => ({ id: 'e1', name: 'Pizza', amount: 6000, payer: 'm1', members: ['m1', 'm2'], mode: 'equal', date: '2026-10-24', tags: [], note: '', longDesc: '', author: 'm1', version: 1, updatedBy: 'm1', deletedAt: null, paid: { m2: 3000 }, pendConf: {}, proof: {}, receipt: null, paySeq: 1, ...over });
+  const quitado = { ...split, moneyAt: new Date(now - 25 * H) };
+
+  it('aparece 24 h depois de todos quitados, com a data da finalização automática (7 dias)', () => {
+    expect(finalizeSuggestion(quitado, { expenses: [exp()], payments: [] }, now)).toEqual({ pending: false, autoAt: new Date(now - 25 * H + 7 * 24 * H) });
+    expect(finalizeSuggestion({ ...split, moneyAt: new Date(now - 23 * H) }, { expenses: [exp()], payments: [] }, now)).toBeNull();
+  });
+
+  it('avisa quando ainda há pagamento esperando confirmação (parte ou acerto)', () => {
+    expect(finalizeSuggestion(quitado, { expenses: [exp({ pendConf: { m2: true } })], payments: [] }, now)?.pending).toBe(true);
+    const p: PaymentDoc = { id: 'p1', from: 'm2', to: 'm1', amount: 3000, by: 'm2', when: null, proof: null, pendConf: true };
+    expect(finalizeSuggestion(quitado, { expenses: [exp({ paid: {} })], payments: [p] }, now)?.pending).toBe(true);
+  });
+
+  it('não aparece com saldo pendente, sem despesa, sem hora ou com o split finalizado', () => {
+    expect(finalizeSuggestion(quitado, { expenses: [exp({ paid: {} })], payments: [] }, now)).toBeNull();
+    expect(finalizeSuggestion(quitado, { expenses: [], payments: [] }, now)).toBeNull();
+    expect(finalizeSuggestion(split, { expenses: [exp()], payments: [] }, now)).toBeNull();
+    expect(finalizeSuggestion({ ...quitado, status: 'done' }, { expenses: [exp()], payments: [] }, now)).toBeNull();
   });
 });

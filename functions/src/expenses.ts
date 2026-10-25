@@ -3,7 +3,7 @@ import { onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { effectiveAmount, validateExpense, type Expense, type ExpenseMode, type JoinOrder, type SplitMode, type Weights } from '@qpq/calc';
 import { cleanName, isValidDate, normalizeTags, parseEntryIcon, type EntryIcon, type ExpenseWriteResponse, type ProofInfo } from '@qpq/shared';
 import { findExpense, setHidden } from './notifications.ts';
-import { db, fail, input, loadSplit, opts, requireMember, requireOpen, text, uidOf, type Member, type SplitData } from './common.ts';
+import { db, fail, input, loadSplit, opts, payModeOf, requireMember, requireOpen, text, touchMoney, uidOf, type Member, type SplitData } from './common.ts';
 
 const MODES: readonly ExpenseMode[] = ['equal', 'frac', 'pct', 'exact', 'items'];
 const SPLIT_MODES: readonly SplitMode[] = ['equal', 'frac', 'pct', 'exact'];
@@ -138,7 +138,7 @@ export function requireEditor(split: SplitData, uid: string, authorId: string): 
   return me;
 }
 
-export type HistoryKind = 'created' | 'edited' | 'deleted' | 'restored' | 'paid' | 'received' | 'unpaid' | 'confirmed' | 'disputed' | 'proof';
+export type HistoryKind = 'created' | 'edited' | 'deleted' | 'restored' | 'paid' | 'received' | 'unpaid' | 'confirmed' | 'disputed' | 'proof' | 'settled';
 
 /** Entrada do Histórico; nas de pagamento, `memberId` é de quem é a parte. */
 export async function addHistory(
@@ -175,6 +175,7 @@ export const createExpense = onCall(opts, async (req): Promise<ExpenseWriteRespo
       receipt: null,
       paySeq: 0,
     });
+    touchMoney(tx, ref);
     await addHistory(tx, ref, { seq: 1, kind: 'created', by: me, to: clean.amount });
   });
   return { version: 1 };
@@ -185,6 +186,13 @@ export async function loadExpense(tx: FirebaseFirestore.Transaction, splitId: st
   const snap = await tx.get(ref);
   if (!snap.exists) fail('expense-missing');
   return { ref, e: snap.data() as Record<string, unknown> & StoredExpense };
+}
+
+/** Despesa com parte paga ou pagamento esperando confirmação não sai (decisão 7). */
+function requireNoPayments(e: StoredExpense): void {
+  const paid = Object.values(e.paid ?? {}).some((v) => v > 0);
+  const pending = Object.values(e.pendConf ?? {}).some(Boolean);
+  if (paid || pending) fail('has-payments');
 }
 
 /** Despesa como está no Firestore (os campos que as Functions leem). */
@@ -231,6 +239,7 @@ export const updateExpense = onCall(opts, async (req): Promise<ExpenseWriteRespo
       updatedAt: FieldValue.serverTimestamp(),
     };
     tx.update(ref, replacement);
+    touchMoney(tx, ref);
     await addHistory(tx, ref, { seq: version, kind: 'edited', by: me, ...(clean.amount !== e.amount ? { from: e.amount, to: clean.amount } : {}) });
     return { version };
   });
@@ -246,14 +255,14 @@ export const deleteExpense = onCall(opts, async (req): Promise<ExpenseWriteRespo
     const [me] = requireEditor(split, uid, e.author);
     requireOpen(split);
     if (e.deletedAt) return { version: e.version };
-    // Decisão 7: com parte paga ou pagamento esperando confirmação, não exclui.
-    const paid = Object.values((e.paid ?? {}) as Record<string, number>).some((v) => v > 0);
-    const pending = Object.values((e.pendConf ?? {}) as Record<string, unknown>).some(Boolean);
-    if (paid || pending) fail('has-payments');
+    // Decisão 7: com parte paga ou pagamento esperando confirmação, não exclui (só no modo
+    // detalhado; no simplificado, excluir é sempre permitido, spec 05).
+    if (payModeOf(split) === 'detailed') requireNoPayments(e);
     // Os avisos da despesa somem junto (decisão 7); Desfazer traz de volta.
     setHidden(tx, await findExpense(tx, splitId, ref.id), true);
     const version = e.version + 1;
     tx.update(ref, { deletedAt: FieldValue.serverTimestamp(), version, updatedBy: me, updatedAt: FieldValue.serverTimestamp() });
+    touchMoney(tx, ref);
     await addHistory(tx, ref, { seq: version, kind: 'deleted', by: me });
     return { version };
   });
@@ -275,6 +284,7 @@ export const restoreExpense = onCall(opts, async (req): Promise<ExpenseWriteResp
     setHidden(tx, await findExpense(tx, splitId, ref.id), false);
     const version = e.version + 1;
     tx.update(ref, { deletedAt: null, version, updatedBy: me, updatedAt: FieldValue.serverTimestamp() });
+    touchMoney(tx, ref);
     await addHistory(tx, ref, { seq: version, kind: 'restored', by: me });
     return { version };
   });

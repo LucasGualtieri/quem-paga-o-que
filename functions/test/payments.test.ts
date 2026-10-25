@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { proofPath, receiptPath, coverPath, type CreatePaymentResponse, type ExpenseInput, type ExpenseWriteResponse, type PayWriteResponse } from '@qpq/shared';
+import { proofPath, receiptPath, coverPath, type CreatePaymentResponse, type ExpenseInput, type ExpenseWriteResponse, type PayMode, type PayWriteResponse } from '@qpq/shared';
 import { purgeExpiredProofs } from '../src/proofs.ts';
 import { admin, clearFirestore, clearStorage, createSplit, exists, memberIdByName, newUser, reasonOf, splitDoc, upload, type TestUser } from './helpers.ts';
 
@@ -22,12 +22,16 @@ interface World {
   catarina: string;
 }
 
-/** Lucas (admin) cria o split; Bia entra como Beatriz e Cat como Catarina (membros). */
-async function world(): Promise<World> {
+/**
+ * Lucas (admin) cria o split; Bia entra como Beatriz e Cat como Catarina (membros). Pagamento por
+ * despesa só existe no modo detalhado, então é nele que o mundo começa (salvo pedido).
+ */
+async function world(mode: PayMode = 'detailed'): Promise<World> {
   const lucas = await newUser();
   const bia = await newUser();
   const cat = await newUser();
   const { splitId, code } = await createSplit(lucas);
+  if (mode === 'detailed') await lucas.call('setPayMode', { splitId, mode });
   const beatriz = await memberIdByName(splitId, 'Beatriz');
   const catarina = await memberIdByName(splitId, 'Catarina');
   await bia.call('joinSplit', { code, memberId: beatriz });
@@ -391,5 +395,148 @@ describe('confirmPayment / disputePayment (acerto com confirmação)', () => {
     expect(await payDoc(w, id)).toBeUndefined();
     expect(await exists(path)).toBe(false);
     expect(await reasonOf(w.lucas.call('disputePayment', { splitId: w.splitId, paymentId: id }))).toBe('payment-missing');
+  });
+});
+
+describe('modos de pagamento (spec 06)', () => {
+  const pay = (u: TestUser, w: World, from: string, to: string, id = newId()) =>
+    u.call<CreatePaymentResponse>('createPayment', { splitId: w.splitId, id, from, to }).then((r) => ({ id, amount: r.amount }));
+  /** Uber de R$ 6,00 que Beatriz pagou, entre ela e Lucas (parte do Lucas: 3,00). */
+  const uber = (w: World) => expense(w.bia, w, { name: 'Uber', amount: 600, payer: w.beatriz, members: [w.eu, w.beatriz] });
+
+  it('split novo começa no simplificado; só admin troca', async () => {
+    const w = await world('simple');
+    expect((await splitDoc(w.splitId)).payMode).toBe('simple');
+    expect(await reasonOf(w.bia.call('setPayMode', { splitId: w.splitId, mode: 'detailed' }))).toBe('not-admin');
+    expect(await reasonOf(w.lucas.call('setPayMode', { splitId: w.splitId, mode: 'outro' }))).toBe('invalid-input');
+    await w.lucas.call('setPayMode', { splitId: w.splitId, mode: 'detailed' });
+    expect((await splitDoc(w.splitId)).payMode).toBe('detailed');
+  });
+
+  it('simplificado: sem pagar por despesa nem comprovante de parte; o acerto não mexe nas partes', async () => {
+    const w = await world('simple');
+    const id = await expense(w.lucas, w);
+    expect(await reasonOf(share(w.bia, 'markShare', w, id, w.beatriz))).toBe('mode-simple');
+    const path = await upload(w.bia, proofPath(w.splitId, w.beatriz, w.eu, 'parte.jpg'));
+    expect(await reasonOf(w.bia.call('attachProof', { splitId: w.splitId, kind: 'share', expenseId: id, memberId: w.beatriz, path }))).toBe('mode-simple');
+    const p = await pay(w.bia, w, w.beatriz, w.eu);
+    expect(p.amount).toBe(333);
+    expect(await payDoc(w, p.id)).not.toHaveProperty('viaShares');
+    expect((await expDoc(w, id)).paid).toEqual({});
+  });
+
+  it('detalhado: o acerto marca as partes abertas do par nos dois sentidos e vira recibo', async () => {
+    const w = await world();
+    const pizzaId = await expense(w.lucas, w);
+    const uberId = await uber(w);
+    // Beatriz devia 3,33 (Pizza) e Lucas 3,00 (Uber): o acerto transfere só 0,33.
+    const p = await pay(w.bia, w, w.beatriz, w.eu);
+    expect(p.amount).toBe(33);
+    expect(await payDoc(w, p.id)).toMatchObject({
+      viaShares: true,
+      pendConf: true,
+      covers: expect.arrayContaining([{ e: pizzaId, m: w.beatriz }, { e: uberId, m: w.eu }]),
+      absorbs: [],
+    });
+    const pz = await expDoc(w, pizzaId);
+    expect(pz.paid).toEqual({ [w.beatriz]: 333 });
+    expect(pz.via).toEqual({ [w.beatriz]: p.id });
+    // Quem pagou o acerto fica "a conferir"; o lado compensado já vale.
+    expect(pz.pendConf).toEqual({ [w.beatriz]: true });
+    const ub = await expDoc(w, uberId);
+    expect(ub.paid).toEqual({ [w.eu]: 300 });
+    expect(ub.pendConf).toEqual({});
+    expect(await kinds(w, pizzaId)).toEqual(['created', 'settled']);
+    // Par zerado; Catarina continua devendo a parte dela.
+    expect((await pay(w.lucas, w, w.beatriz, w.eu)).amount).toBe(0);
+    expect((await pay(w.lucas, w, w.catarina, w.eu)).amount).toBe(333);
+    // Parte paga no acerto não recebe comprovante próprio: o comprovante é do acerto.
+    const path = await upload(w.bia, proofPath(w.splitId, w.beatriz, w.eu, 'parte.jpg'));
+    expect(await reasonOf(w.bia.call('attachProof', { splitId: w.splitId, kind: 'share', expenseId: pizzaId, memberId: w.beatriz, path }))).toBe('proof-invalid');
+  });
+
+  it('confirmar o acerto tira o "a conferir" das partes', async () => {
+    const w = await world();
+    const pizzaId = await expense(w.lucas, w);
+    const p = await pay(w.bia, w, w.beatriz, w.eu);
+    await w.lucas.call('confirmPayment', { splitId: w.splitId, paymentId: p.id });
+    const pz = await expDoc(w, pizzaId);
+    expect(pz.pendConf).toEqual({});
+    expect(pz.paid).toEqual({ [w.beatriz]: 333 });
+  });
+
+  it('Desfazer uma parte paga no acerto desfaz o acerto inteiro; "Não recebi" também', async () => {
+    const w = await world();
+    const pizzaId = await expense(w.lucas, w);
+    const uberId = await uber(w);
+    const p = await pay(w.bia, w, w.beatriz, w.eu);
+    const path = await upload(w.bia, proofPath(w.splitId, w.beatriz, w.eu, 'acerto.jpg'));
+    await w.bia.call('attachProof', { splitId: w.splitId, kind: 'payment', paymentId: p.id, path });
+    await share(w.bia, 'unmarkShare', w, uberId, w.eu);
+    expect(await payDoc(w, p.id)).toBeUndefined();
+    expect(await exists(path)).toBe(false);
+    for (const id of [pizzaId, uberId]) {
+      const e = await expDoc(w, id);
+      expect([e.paid, e.via, e.pendConf]).toEqual([{}, {}, {}]);
+    }
+    expect(await kinds(w, uberId)).toEqual(['created', 'settled', 'unpaid']);
+
+    const again = await pay(w.bia, w, w.beatriz, w.eu);
+    await w.lucas.call('disputePayment', { splitId: w.splitId, paymentId: again.id });
+    expect(await payDoc(w, again.id)).toBeUndefined();
+    expect((await expDoc(w, pizzaId)).paid).toEqual({});
+  });
+
+  it('despesa editada depois do acerto: só a diferença fica aberta; desfazer o segundo acerto volta ao primeiro', async () => {
+    const w = await world();
+    const pizzaId = await expense(w.lucas, w);
+    const first = await pay(w.lucas, w, w.beatriz, w.eu);
+    await w.lucas.call('updateExpense', { splitId: w.splitId, expenseId: pizzaId, expectedVersion: 1, expense: pizza(w, { amount: 1300 }) });
+    const second = await pay(w.lucas, w, w.beatriz, w.eu);
+    expect(second.amount).toBe(100);
+    expect(await payDoc(w, second.id)).toMatchObject({ covers: [{ e: pizzaId, m: w.beatriz, prev: 333, prevVia: first.id }] });
+    expect((await expDoc(w, pizzaId)).paid).toEqual({ [w.beatriz]: 433 });
+    await w.lucas.call('deletePayment', { splitId: w.splitId, paymentId: second.id });
+    const pz = await expDoc(w, pizzaId);
+    expect(pz.paid).toEqual({ [w.beatriz]: 333 });
+    expect(pz.via).toEqual({ [w.beatriz]: first.id });
+  });
+
+  it('detalhado: o acerto incorpora acertos antigos do par, e desfazer devolve', async () => {
+    const w = await world('simple');
+    const pizzaId = await expense(w.lucas, w);
+    // Acerto parcial antigo (dado de antes): Beatriz já tinha mandado 1,00.
+    const old = newId();
+    await admin().doc(`splits/${w.splitId}/payments/${old}`).set({ from: w.beatriz, to: w.eu, amount: 100, by: w.beatriz, proof: null, pendConf: false });
+    await w.lucas.call('setPayMode', { splitId: w.splitId, mode: 'detailed' });
+    // Par ainda com saldo: a troca não mexe nos acertos.
+    expect(await payDoc(w, old)).not.toHaveProperty('viaShares');
+    const p = await pay(w.lucas, w, w.beatriz, w.eu);
+    expect(p.amount).toBe(233);
+    expect(await payDoc(w, p.id)).toMatchObject({ absorbs: [old] });
+    expect(await payDoc(w, old)).toMatchObject({ viaShares: true, absorbedBy: p.id });
+    expect((await expDoc(w, pizzaId)).paid).toEqual({ [w.beatriz]: 333 });
+    await w.lucas.call('deletePayment', { splitId: w.splitId, paymentId: p.id });
+    expect(await payDoc(w, old)).not.toHaveProperty('viaShares');
+    expect((await pay(w.lucas, w, w.beatriz, w.eu)).amount).toBe(233);
+  });
+
+  it('do simplificado para o detalhado: par quitado por acertos tem as partes marcadas no acerto mais recente', async () => {
+    const w = await world('simple');
+    const pizzaId = await expense(w.lucas, w);
+    const p = await pay(w.bia, w, w.beatriz, w.eu);
+    await w.lucas.call('setPayMode', { splitId: w.splitId, mode: 'detailed' });
+    expect(await payDoc(w, p.id)).toMatchObject({ viaShares: true, covers: [{ e: pizzaId, m: w.beatriz }], absorbs: [] });
+    const pz = await expDoc(w, pizzaId);
+    expect(pz.paid).toEqual({ [w.beatriz]: 333 });
+    expect(pz.via).toEqual({ [w.beatriz]: p.id });
+    // O acerto ainda espera Lucas confirmar: a parte fica "a conferir".
+    expect(pz.pendConf).toEqual({ [w.beatriz]: true });
+    // O saldo não muda: Beatriz quitada, Catarina devendo.
+    expect((await pay(w.lucas, w, w.beatriz, w.eu)).amount).toBe(0);
+    expect((await pay(w.lucas, w, w.catarina, w.eu)).amount).toBe(333);
+    // E voltar ao simplificado não muda nada.
+    await w.lucas.call('setPayMode', { splitId: w.splitId, mode: 'simple' });
+    expect((await expDoc(w, pizzaId)).paid).toEqual({ [w.beatriz]: 333, [w.catarina]: 333 });
   });
 });

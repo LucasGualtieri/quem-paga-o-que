@@ -1,11 +1,12 @@
 import { useSyncExternalStore } from 'react';
-import type { EntryIcon } from '@qpq/shared';
+import type { EntryIcon, PayMode, ProofVisibility } from '@qpq/shared';
 import type { SplitDoc } from './model.ts';
 
 /**
  * Mudanças no próprio split que o aparelho mostra antes do servidor responder (UX otimista):
- * editar nome e capa, finalizar e reabrir. Valem na home e dentro do split; saem quando o
- * snapshot do servidor já tem o mesmo valor, ou no primeiro snapshot depois da resposta.
+ * editar nome e capa, modo de pagamento e quem vê comprovantes, finalizar e reabrir. Valem na home
+ * e dentro do split; saem quando o snapshot do servidor já tem o mesmo valor, ou no primeiro
+ * snapshot depois da resposta.
  */
 export interface SplitPatch {
   name?: string;
@@ -13,6 +14,8 @@ export interface SplitPatch {
   clearPhoto?: true;
   status?: 'open' | 'done';
   doneAt?: Date | null;
+  payMode?: PayMode;
+  proofVisibility?: ProofVisibility;
 }
 
 interface Edit {
@@ -46,7 +49,9 @@ function reached(split: SplitDoc, p: SplitPatch): boolean {
     (p.name === undefined || split.name === p.name) &&
     (p.icon === undefined || sameIcon(split.icon, p.icon)) &&
     (!p.clearPhoto || !split.photo) &&
-    (p.status === undefined || split.status === p.status)
+    (p.status === undefined || split.status === p.status) &&
+    (p.payMode === undefined || (split.payMode ?? 'simple') === p.payMode) &&
+    (p.proofVisibility === undefined || (split.proofVisibility ?? 'all') === p.proofVisibility)
   );
 }
 
@@ -60,6 +65,8 @@ export function withSplitEdits(split: SplitDoc, pending: readonly Edit[] = edits
       if (p.clearPhoto) next.photo = null;
       if (p.status !== undefined) next.status = p.status;
       if (p.doneAt !== undefined) next.doneAt = p.doneAt;
+      if (p.payMode !== undefined) next.payMode = p.payMode;
+      if (p.proofVisibility !== undefined) next.proofVisibility = p.proofVisibility;
       return next;
     }, split);
 }

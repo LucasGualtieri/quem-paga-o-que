@@ -43,3 +43,12 @@ export async function openCreated(page: Page): Promise<void> {
   await page.getByRole('link', { name: 'Ir para o split' }).click();
   await expect(page.getByRole('heading', { name: 'Churras de sábado' })).toBeVisible();
 }
+
+/** Admin troca o modo de pagamento nas Configurações do split e volta ao split (spec 06). */
+export async function setPayMode(page: Page, mode: 'Simplificado' | 'Detalhado'): Promise<void> {
+  await page.getByRole('button', { name: 'Mais opções' }).click();
+  await page.getByRole('menuitem', { name: 'Configurações do split' }).click();
+  await page.getByRole('radio', { name: new RegExp(`^${mode}`) }).check();
+  await expect(page.locator('.toast-region')).toContainText(`Pagamentos: ${mode}`, { timeout: 15_000 });
+  await page.getByRole('link', { name: 'Voltar' }).click();
+}

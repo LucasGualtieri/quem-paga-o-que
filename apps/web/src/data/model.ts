@@ -1,5 +1,5 @@
 import { effectiveAmount, shares as calcShares, ledger, type Cents, type Expense, type ExpenseMode, type JoinOrder, type MemberId, type Payment, type SplitMode, type Weights } from '@qpq/calc';
-import type { EntryIcon, ErrorReason, PixKey, ProofInfo, ProofVisibility } from '@qpq/shared';
+import { AUTO_FINALIZE_DAYS, FINALIZE_SUGGEST_HOURS, type EntryIcon, type ErrorReason, type PayMode, type PixKey, type ProofInfo, type ProofVisibility } from '@qpq/shared';
 
 /** Participante como está no Firestore (splits/{id}.members). */
 export interface MemberDoc {
@@ -27,12 +27,18 @@ export interface SplitDoc {
   adminUids: string[];
   /** Quem vê comprovantes (decisão 9); ausente = "all". */
   proofVisibility?: ProofVisibility;
+  /** Como registrar pagamentos (spec 06); ausente = simplificado. */
+  payMode?: PayMode;
   /** Capa com foto (caminho no Storage); sem ela, o ícone ou emoji. */
   photo?: string | null;
   /** Capa com ícone ou emoji; sem ela, o `emoji` dos splits antigos ou o ícone de pessoas. */
   icon?: EntryIcon | null;
   /** Quando foi finalizado (spec 04). */
   doneAt?: Date | null;
+  /** Última mudança no dinheiro (despesa, parte paga, acerto): base da finalização automática. */
+  moneyAt?: Date | null;
+  /** Finalizado sozinho (todos quitados há AUTO_FINALIZE_DAYS dias). */
+  autoFinalized?: boolean;
 }
 
 export type Member = MemberDoc & { id: MemberId };
@@ -102,6 +108,20 @@ export function myMember(split: SplitDoc, uid: string): Member | null {
 export function balances(split: SplitDoc, money: Money): Record<MemberId, Cents> {
   const order: JoinOrder = Object.fromEntries(Object.entries(split.members).map(([id, m]) => [id, m.joinOrder]));
   return ledger({ order, expenses: money.expenses, payments: money.payments }).net;
+}
+
+/**
+ * Sugestão "Todo mundo quitou. Finalizar?" para os admins (spec 04): split aberto, com despesa,
+ * todos com saldo zero há FINALIZE_SUGGEST_HOURS horas. `pending`: ainda há pagamento esperando
+ * confirmação. `autoAt`: quando ele finaliza sozinho se nada mudar.
+ */
+export function finalizeSuggestion(split: SplitDoc, money: { expenses: readonly ExpenseDoc[]; payments: readonly PaymentDoc[] }, now: number): { pending: boolean; autoAt: Date } | null {
+  if (split.status !== 'open' || !split.moneyAt || money.expenses.length === 0) return null;
+  const since = split.moneyAt.getTime();
+  if (now - since < FINALIZE_SUGGEST_HOURS * 3600_000) return null;
+  if (Object.values(balances(split, money)).some((v) => v !== 0)) return null;
+  const pending = money.expenses.some((e) => Object.entries(e.pendConf).some(([id, v]) => v && (e.paid[id] ?? 0) > 0)) || money.payments.some((p) => !!p.pendConf);
+  return { pending, autoAt: new Date(since + AUTO_FINALIZE_DAYS * 24 * 3600_000) };
 }
 
 function linkedAdminsExcept(split: SplitDoc, memberId: MemberId): number {
@@ -207,6 +227,8 @@ export interface ExpenseDoc {
   paidAt?: Record<MemberId, number>;
   /** Pagamento marcado que quem recebeu ainda não confirmou. */
   pendConf: Record<MemberId, boolean>;
+  /** Parte paga num acerto do modo detalhado: o id do acerto (spec 06). */
+  via?: Record<MemberId, string>;
   /** Comprovante de cada parte paga; `path: null` = expirou (decisão 9). */
   proof: Record<MemberId, ProofInfo>;
   /** Comprovante (foto) da despesa. */
@@ -226,6 +248,15 @@ export interface PaymentDoc {
   proof: ProofInfo | null;
   /** Registrado por quem pagou: espera quem recebe confirmar (ou "Não recebi"). */
   pendConf?: boolean;
+  /** Acerto do modo detalhado: marcou as partes (`covers`), então não conta de novo no saldo. */
+  viaShares?: boolean;
+  covers?: Array<{ e: string; m: MemberId; prev?: Cents; prevAt?: number; prevVia?: string }>;
+  /** Acerto antigo incorporado por um acerto do modo detalhado. */
+  absorbedBy?: string;
+}
+
+export function payModeOf(split: Pick<SplitDoc, 'payMode'>): PayMode {
+  return split.payMode ?? 'simple';
 }
 
 /** Despesas que contam (as excluídas ficam de fora). */

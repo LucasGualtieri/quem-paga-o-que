@@ -13,13 +13,13 @@ Cada split tem dois papéis: **admin** (pode haver vários; quem cria é admin) 
 | Desfazer acerto registrado | As duas pessoas do acerto ou admin |  |
 | Anexar comprovante depois | As duas pessoas do pagamento (na parte de despesa, também admin) | Só enquanto não houver comprovante. |
 | Convidar, promover, tirar admin, remover | Só admin. "Tornar admin" só aparece para quem já entrou (escolheu o nome) | Membro vê a aba Pessoas com cadeado e o texto "fale com…" (abaixo). Admin age sobre os outros; sobre si mesmo, ver "Deixar de ser admin". |
-| Quem vê comprovantes | Só admin escolhe; membro vê a opção atual | Em Pessoas: "Todo o split" (padrão) ou "Só os envolvidos e admins" (decisão 9). Vale na hora, inclusive para comprovantes já enviados. |
+| Configurações do split (nome, capa, modo de pagamento, quem vê comprovantes) | Só admin muda; membro abre só para leitura | Tela própria (25/10/2026). Quem vê comprovantes, nas Configurações: "Todo o split" (padrão) ou "Só os envolvidos e admins" (decisão 9). Vale na hora, inclusive para comprovantes já enviados. |
 | Gerar novo código de convite | Só admin | Em Pessoas, com folha de confirmação: "O link e o código atuais param de funcionar. Quem já entrou continua no split." O código antigo para na hora. |
 | Liberar nome | Só admin | Desliga a pessoa do nome: o nome volta a ficar livre em "Quem é você?"; despesas, partes e histórico continuam com ele. Também tira o admin daquele participante. |
 | Deixar de ser admin | O próprio admin | Fica na sua linha em Pessoas. Sendo o último admin, o papel passa para quem tem a menor ordem de entrada entre os que já escolheram o nome; sem ninguém, para a próxima pessoa que entrar. Uma folha avisa antes. |
 | Sair do split | Qualquer participante | Só com saldo zero neste split. O último admin também sai: o papel passa adiante como em "Deixar de ser admin", e a folha diz para quem. Fica no menu de três pontos. |
 | Finalizar e reabrir split | Só admin | No menu, "Finalizar" aparece desabilitado para membro. |
-| Editar o split (nome e capa) | Só admin, com o split aberto | No menu, "Editar split" aparece desabilitado para membro; o admin também edita tocando na capa ou no nome do cabeçalho. |
+| Editar o split (nome e capa) | Só admin, com o split aberto | Nas Configurações do split. |
 | Excluir o split inteiro | Só admin | No menu, "Excluir split" aparece desabilitado para membro, com "só admin". |
 
 **O papel de admin passa adiante** (revisto em 24/10/2026). O último admin pode sair ou deixar de ser admin: o papel vai para quem tem a menor ordem de entrada entre os que já escolheram o nome, e a folha avisa ("Ao sair, Beatriz vira admin."). Se ninguém mais entrou, o split fica sem admin até a próxima pessoa entrar e escolher um nome: ela vira admin. Se o único admin perder o acesso (convidado sem link de recuperação), nada muda automaticamente na v1: o split continua para os membros, só sem convidar, promover ou finalizar.
@@ -28,9 +28,9 @@ Cada split tem dois papéis: **admin** (pode haver vários; quem cria é admin) 
 
 **Texto para membro na aba Pessoas**, conforme a quantidade de admins: nenhum → "fale com um admin"; 1 → o nome; 2 ou 3 → "Beatriz, Catarina ou Fellipe"; mais de 3 → "Beatriz, Catarina ou outro admin".
 
-**Menu de três pontos do split:** Editar split, Convidar (admin vai para Pessoas; membro copia a mensagem com o link), Alternar tema, Sua conta, Finalizar ou Reabrir, Excluir split e Sair do split.
+**Menu de três pontos do split:** Configurações do split (todos abrem; membro só lê), Convidar (admin vai para Pessoas; membro copia a mensagem com o link), Alternar tema, Sua conta, Finalizar ou Reabrir, Excluir split e Sair do split.
 
-**Editar split** (25/10/2026): folha com a capa ao lado do nome, como na criação (mesmo seletor de capa e "Ajustar foto"). Só o que mudou vai para o servidor; vale na hora para todo mundo (home, cabeçalho, convite e a prévia do link curto) e volta, com aviso, se o servidor recusar. Split finalizado não edita até reabrir.
+**Configurações do split** (25/10/2026): tela própria, aberta pelo menu ⋯ ("Configurações do split"), pelo ⋯ da home e tocando no nome ou na capa do cabeçalho. Seções: **Nome e capa** (capa ao lado do nome, como na criação, com o mesmo seletor e "Ajustar foto") · **Como registrar pagamentos** (Simplificado ou Detalhado, spec 06) · **Quem vê comprovantes**. Cada mudança vale na hora, sem Salvar geral; quem não é admin vê tudo desabilitado, com "só admin". A aba Pessoas fica só com convite e participantes. No nome e na capa: Só o que mudou vai para o servidor; vale na hora para todo mundo (home, cabeçalho, convite e a prévia do link curto) e volta, com aviso, se o servidor recusar. Split finalizado não edita até reabrir.
 
 **Ações na home** (25/10/2026): cada cartão de "Meus splits" tem um "⋯" (e, no celular, o toque longo no cartão) que abre a folha com as ações do menu do split: Editar, Convidar (copia a mensagem com o link), Finalizar ou Reabrir, Excluir e Sair. As de admin aparecem desabilitadas para membro, com "só admin". Mesmas folhas e regras de dentro do split; Finalizar e Excluir podem ser forçados por qualquer admin, mesmo com pagamentos pendentes.
 
@@ -53,6 +53,13 @@ Cada split tem dois papéis: **admin** (pode haver vários; quem cria é admin) 
 - Pendências continuam visíveis. Antes de finalizar, a confirmação lista o que ficou pendente (com os pagamentos simplificados) e o botão vira "Finalizar mesmo assim".
 - Admin pode reabrir quando quiser.
 - Na home, splits finalizados ficam no filtro "Finalizados" e não entram no total "No total, você deve/recebe".
+
+**Finalização automática** (decidido em 25/10/2026). "Todos quitados" = todos com saldo zero num split aberto com pelo menos uma despesa; pagamentos esperando confirmação não impedem. A contagem começa na última mudança no dinheiro (despesa lançada, editada, excluída ou restaurada; parte marcada ou desmarcada; acerto feito ou desfeito); confirmar e enviar comprovante não mexem nela.
+
+- **24 h depois** de todos quitados, os admins veem no topo do split "Todo mundo quitou. Finalizar o split?", com Finalizar e "Agora não". Se houver pagamento esperando confirmação, a faixa diz "Tudo quitado, mas nem tudo confirmado." Ela também mostra a data em que o split finaliza sozinho.
+- **"Agora não"** esconde a faixa para aquele admin, sem mexer no prazo. Ela só volta se o dinheiro mudar e todos ficarem quitados de novo (24 h depois disso).
+- **7 dias depois** de todos quitados, o split finaliza sozinho (rotina de hora em hora), mesmo com confirmações pendentes, e apaga os comprovantes, como no Finalizar do admin. Cada pessoa do split recebe no sino "Churras de sábado foi finalizado: todos quitaram", e o aviso no topo diz "Finalizado automaticamente em …".
+- Reabrir recomeça a contagem dos 7 dias.
 
 **Criar split:** nome, capa (opcional), o seu nome e os outros participantes só pelo nome ("Só o nome basta"), sem nomes repetidos (ver Contas). Depois aparece a tela com link de convite, código e Compartilhar.
 

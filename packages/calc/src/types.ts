@@ -53,6 +53,12 @@ export interface Payment {
   from: MemberId;
   to: MemberId;
   amount: Cents;
+  /**
+   * Acerto do modo detalhado: ele marca as partes do par como pagas, e são elas que entram no
+   * saldo. O registro fica só como recibo (valor transferido, comprovante, confirmação) e não conta
+   * de novo aqui.
+   */
+  viaShares?: boolean;
 }
 
 export type Shares = Record<MemberId, Cents>;

@@ -78,6 +78,8 @@ export function viewOf(n: NotificationDoc, t: T, name: (id: string | null) => st
       return { title: t('notif.proof', { name: from }), sub: `${what} · ${n.splitName} · ${amount}`, to };
     case 'disputed':
       return { title: t('notif.disputed', { name: from, amount }), sub: `${what} · ${n.splitName}`, to };
+    case 'autoFinalized':
+      return { title: t('notif.autoFinalized', { split: n.splitName }), sub: t('notif.autoFinalizedSub'), to: `/s/${n.splitId}` };
     case 'splitDeleted':
       // Leva à explicação do split apagado.
       return { title: t('notif.splitDeleted', { name: from, split: n.splitName }), sub: t('notif.splitDeletedSub'), to: `/s/${n.splitId}` };

@@ -2,11 +2,12 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { Button, Icon, InfoTip } from '../components/index.ts';
 import { pairsView, type PairCard, type PairEntry } from '../data/balance.ts';
-import { canSeeProof, membersInOrder, type ExpenseDoc, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
+import { canSeeProof, membersInOrder, payModeOf, type ExpenseDoc, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
 import { useLang } from '../i18n/index.ts';
 import { dateOf, dayMonth, shortDayTime } from '../lib/dates.ts';
 import { formatCents } from '../lib/money.ts';
 import { EmptyArt, useBalanceView, useWho } from './common.tsx';
+import { coveredExpenses } from '../data/settlements.ts';
 import { EntryIconView } from './EntryIcon.tsx';
 import type { usePayFlow } from './PaySheet.tsx';
 import { CopyPixButton } from './Pix.tsx';
@@ -60,6 +61,8 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
   const v = pairsView(split, expenses, payments, viewer);
   const flash = useFlash(v.mine);
   const isOpen = split.status === 'open';
+  // Simplificado: paga-se só o saldo do par; as despesas do cartão são só leitura (spec 06).
+  const simple = payModeOf(split) === 'simple';
   const fmt = (c: number) => formatCents(c, lang);
   const signed = (c: number) => formatCents(c, lang, { signed: true });
   const nameOf = (id: string) => split.members[id]?.name ?? '?';
@@ -132,21 +135,30 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
       const p = x.payment;
       const party = p.from === me.id || p.to === me.id;
       const camera = p.proof?.path ? { view: true, onClick: () => flow.viewProof({ proof: p.proof!, from: p.from, to: p.to, amount: p.amount, what: t('my.settle') }) } : isOpen && !p.proof && party ? { view: false, onClick: () => flow.attachPayment(p) } : null;
+      // Acerto que marcou as partes: desfazer desmarca todas, então a folha avisa quais.
+      const undo = p.viaShares ? () => flow.undoSettlement(p, coveredExpenses(p, expenses)) : () => flow.undoPayment(p);
       const waiting = p.pendConf ? ` · ${t('my.waiting', { name: nameOf(p.to) })}` : '';
       const icon = (
         <span className="dir zero" aria-hidden="true">
           <Icon name="swap" size="sm" />
         </span>
       );
-      return resolved(`p-${p.id}`, icon, t('my.settle'), `${paidText(p.from, p.to)} · ${when(p.when)}${proofNote(p.proof)}${waiting}`, p.amount, camera, isOpen ? () => flow.undoPayment(p) : null);
+      return resolved(`p-${p.id}`, icon, t('my.settle'), `${paidText(p.from, p.to)} · ${when(p.when)}${proofNote(p.proof)}${waiting}`, p.amount, camera, isOpen ? undo : null);
     }
     const e = x.expense;
     const icon = <EntryIconView icon={e.icon} fallback={{ tags: e.tags }} size="sm" />;
     const day = dayMonth(dateOf(e.date), lang);
+    if (x.state === 'paid' && x.via) {
+      // Paga num acerto (modo detalhado): "Paga no acerto" ou "Compensada no acerto"; Desfazer desfaz o acerto.
+      const p = payments.find((q) => q.id === x.via);
+      const label = p?.from === x.debtor ? t('expense.detail.paidSettle') : t('expense.detail.offsetSettle');
+      const note = `${debtText(x.debtor, x.creditor)} · ${label}${x.paidAt ? ` · ${when(x.paidAt)}` : ''}`;
+      return resolved(`s-${e.id}`, icon, e.name, note, x.share, null, isOpen && p ? () => flow.undoSettlement(p, coveredExpenses(p, expenses)) : null);
+    }
     if (x.state === 'paid') {
-      // Parte paga: as duas pessoas ou admin desfazem e anexam (spec 04).
+      // Parte paga: as duas pessoas ou admin desfazem e anexam (spec 04). No simplificado, comprovante só no acerto.
       const proof = e.proof[x.debtor];
-      const camera = proof?.path && canSeeProof(split, me, x.debtor, x.creditor) ? { view: true, onClick: () => flow.viewProof({ proof, from: x.debtor, to: x.creditor, amount: x.share, what: e.name }) } : isOpen && !proof ? { view: false, onClick: () => flow.attachShare(e, x.debtor) } : null;
+      const camera = proof?.path && canSeeProof(split, me, x.debtor, x.creditor) ? { view: true, onClick: () => flow.viewProof({ proof, from: x.debtor, to: x.creditor, amount: x.share, what: e.name }) } : isOpen && !proof && !simple ? { view: false, onClick: () => flow.attachShare(e, x.debtor) } : null;
       const wait = x.pending ? ` · ${x.creditor === viewer ? t('my.marked', { name: nameOf(x.debtor) }) : t('my.waiting', { name: nameOf(x.creditor) })}` : '';
       const acts =
         isOpen && x.pending && x.creditor === viewer ? (
@@ -182,7 +194,7 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
             <span className={`amt strong ${tone}`}>{signed(owe ? -x.due : x.due)}</span>
           </span>
         </div>
-        {isOpen && x.state === 'open' && <div className="pcact">{owe ? small(t('pay.markPaid'), () => flow.markShare(e, viewer)) : small(t('pay.gotIt'), () => flow.markShare(e, c.other))}</div>}
+        {isOpen && !simple && x.state === 'open' && <div className="pcact">{owe ? small(t('pay.markPaid'), () => flow.markShare(e, viewer)) : small(t('pay.gotIt'), () => flow.markShare(e, c.other))}</div>}
       </div>
     );
   };

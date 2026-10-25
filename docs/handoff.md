@@ -48,7 +48,7 @@ Web app de divisão de despesas em grupo ("Quem Paga O Quê?"). Front estático 
 
 ### Decisões (docs/spec/pontos-em-aberto.md)
 
-Decididas (1–10): centavos pela ordem de entrada (`joinOrder`); `paid[pessoa]` guarda centavos pagos; nome escolhido trava e só admin libera; sempre ao menos um admin e "Sair do split" só com saldo zero; convidado que salva com conta existente entra nela e traz os splits (pergunta qual nome manter quando há dois no mesmo split, nome que fica herda admin); convite sem prazo e admin gera código novo; link de recuperação sem prazo, reutilizável até revogar e revogado ao salvar a conta; excluir despesa com parte paga é bloqueado, notificações da despesa excluída somem; edição simultânea avisa por versão ("Ver a versão nova" / "Salvar a minha por cima"); comprovantes: quem vê é escolha do split em Pessoas (padrão "Todo o split", ou "Só os envolvidos e admins"), guardados no máximo 15 dias e apagados ao finalizar, só imagem recomprimida no aparelho; e-mail por Resend, agrupado em 10 minutos, sem foto, **adiado até existir domínio** (a opção fica escondida). Detalhes e textos exatos estão na spec.
+Decididas (1–10): centavos pela ordem de entrada (`joinOrder`); `paid[pessoa]` guarda centavos pagos; nome escolhido trava e só admin libera; sempre ao menos um admin e "Sair do split" só com saldo zero; convidado que salva com conta existente entra nela e traz os splits (pergunta qual nome manter quando há dois no mesmo split, nome que fica herda admin); convite sem prazo e admin gera código novo; link de recuperação sem prazo, reutilizável até revogar e revogado ao salvar a conta; excluir despesa com parte paga é bloqueado no modo detalhado (no simplificado, padrão, é permitido com aviso; spec 06), notificações da despesa excluída somem; edição simultânea avisa por versão ("Ver a versão nova" / "Salvar a minha por cima"); comprovantes: quem vê é escolha do split nas Configurações do split (padrão "Todo o split", ou "Só os envolvidos e admins"), guardados no máximo 15 dias e apagados ao finalizar, só imagem recomprimida no aparelho; e-mail por Resend, agrupado em 10 minutos, sem foto, **adiado até existir domínio** (a opção fica escondida). Detalhes e textos exatos estão na spec.
 
 **Em aberto:** nenhuma. Para ligar o e-mail: comprar o domínio, verificar no Resend, guardar a chave em secret das Functions e implementar o envio agrupado (spec 07 e decisão 10).
 
@@ -67,6 +67,8 @@ functions/         Cloud Functions chamáveis (us-east1, esbuild)
                    attachProof, setReceipt, setSplitPhoto, setProofVisibility
   src/proofs.ts    prazo de 15 dias dos comprovantes (purgeProofs, rotina diária)
   src/deletion.ts  deleteSplit e purgeEmptySplits (split sem ninguém há 15 dias)
+  src/autoFinalize.ts  autoFinalizeSplits (todos quitados há 7 dias)
+  src/settle.ts    acerto do modo detalhado: marca e desmarca as partes do par (setPayMode em payments.ts)
   src/invitePage.ts  página do link curto de convite (Firebase Hosting, /c/ABC-123)
   src/notifications.ts  avisos criados e atualizados pelas Functions de pagamento
   src/common.ts    ajudantes (db(), fail(), isGuest()…)

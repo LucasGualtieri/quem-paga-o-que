@@ -63,6 +63,7 @@ export function usePayFlow(split: SplitDoc, me: Member, who: (id: string) => str
   const [target, setTarget] = useState<PayTarget | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [view, setView] = useState<ProofView | null>(null);
+  const [undo, setUndo] = useState<{ payment: PaymentDoc; covered: readonly ExpenseDoc[] } | null>(null);
   const fmt = (c: number) => formatCents(c, lang);
 
   const open = (next: PayTarget) => {
@@ -79,6 +80,8 @@ export function usePayFlow(split: SplitDoc, me: Member, who: (id: string) => str
     settle: (from: string, to: string, amount: number) => (askProof ? open({ kind: 'settle', from, to, amount }) : actions.settle(from, to, amount)),
     attachPayment: (payment: PaymentDoc) => open({ kind: 'payment', payment }),
     viewProof: (v: ProofView) => setView(v),
+    /** Desfazer uma parte paga num acerto (modo detalhado) desfaz o acerto inteiro: a folha diz o que ele cobre. */
+    undoSettlement: (payment: PaymentDoc, covered: readonly ExpenseDoc[]) => setUndo({ payment, covered }),
   };
 
   let sheet: ReactNode = null;
@@ -168,12 +171,43 @@ export function usePayFlow(split: SplitDoc, me: Member, who: (id: string) => str
     </Sheet>
   );
 
+  const undoSheet = undo && (
+    <Sheet open title={t('pay.undoSettleT')} onClose={() => setUndo(null)}>
+      <p className="muted" style={{ textWrap: 'pretty' }}>
+        {t('pay.undoSettleB', { amount: fmt(undo.payment.amount), from: who(undo.payment.from), to: who(undo.payment.to), count: undo.covered.length })}
+      </p>
+      {undo.covered.length > 0 && (
+        <ul className="covered">
+          {undo.covered.map((e) => (
+            <li key={e.id}>{e.name}</li>
+          ))}
+        </ul>
+      )}
+      <div className="sheet-acts">
+        <Button
+          variant="danger"
+          block
+          onClick={() => {
+            actions.undoPayment(undo.payment);
+            setUndo(null);
+          }}
+        >
+          {t('pay.undoSettle')}
+        </Button>
+        <Button variant="ghost" block onClick={() => setUndo(null)}>
+          {t('common.cancel')}
+        </Button>
+      </div>
+    </Sheet>
+  );
+
   return {
     flow,
     sheets: (
       <>
         {sheet}
         {proofSheet}
+        {undoSheet}
       </>
     ),
   };

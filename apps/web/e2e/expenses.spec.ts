@@ -51,7 +51,9 @@ test('estado vazio → lançar despesa igualmente → aparece na hora, com Desfa
   const row = lucas.locator('.txrow', { hasText: 'Pizza' });
   await expect(row).toContainText('R$ 80,00');
   await expect(row).toContainText('Você pagou');
-  await expect(row).toContainText('a receber +R$ 53,33');
+  // Modo simplificado (padrão): só a sua parte, em cinza, sem "a receber" (spec 06).
+  await expect(row).toContainText('sua parte R$ 26,67');
+  await expect(row).not.toContainText('a receber');
   await expect(lucas.getByRole('link', { name: 'Adicionar despesa' })).toBeVisible();
   await shot(lucas, 'tx-com-despesa');
 
@@ -152,7 +154,8 @@ test('detalhe, editar com histórico, excluir com Desfazer', async ({ browser })
   await expect(lucas.getByRole('heading', { name: 'Gasolina' })).toBeVisible();
   await expect(lucas.getByText('Ida e volta')).toBeVisible();
   await expect(lucas.getByText('Criada por Lucas · R$ 120,00')).toBeVisible();
-  await expect(lucas.getByText('2 pendentes')).toBeVisible();
+  // Modo simplificado (padrão): o detalhe mostra só os valores, sem contagem de pendentes (spec 06).
+  await expect(lucas.getByText('2 pendentes')).toHaveCount(0);
   await shot(lucas, 'detalhe');
 
   await lucas.getByRole('link', { name: 'Editar', exact: true }).first().click();

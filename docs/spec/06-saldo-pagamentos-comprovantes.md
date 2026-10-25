@@ -2,6 +2,12 @@
 
 Marcar como pago vale na hora (atualização otimista); quem recebe pode confirmar ou dizer "Não recebi", e aí o pagamento volta a ficar pendente. Não há estado "a confirmar" separado nem confirmação automática por prazo.
 
+**Como registrar pagamentos** (decidido em 25/10/2026): cada split escolhe, nas Configurações do split (só admin), entre dois modos. O saldo é sempre o mesmo nos dois: muda só onde e como se paga.
+
+- **Simplificado (padrão de todo split, inclusive os que já existiam):** pagamento só existe no Meu saldo, sempre o saldo do par de uma vez ("Marcar como pago", "Recebi", Confirmar / "Não recebi"). Comprovante só no acerto. A aba Despesas mostra "sua parte R$ 22,50" em cinza, sem "a receber" nem cores; o detalhe da despesa mostra a parte de cada um só com os valores, sem botões de pagamento; dentro do cartão do Meu saldo, as despesas são só leitura. Excluir e editar despesa é sempre permitido; se o par já tinha acertado, a folha avisa "Isso muda o saldo de quem já acertou". Partes que já tinham sido pagas por despesa (dados antigos ou trocando do detalhado) continuam valendo no saldo e aparecem dentro do cartão do par como pagamentos já feitos ("Pizza · paga em 24 out"), com Desfazer.
+- **Detalhado (opcional):** paga-se despesa por despesa, como antes, e o acerto do par pelo Meu saldo **marca como pagas todas as partes em aberto entre as duas pessoas, nos dois sentidos**: as de quem pagou viram "Paga no acerto" e as do outro lado "Compensada no acerto" (o valor transferido é só o saldo do par). Assim a aba Despesas, o detalhe e o Meu saldo sempre batem. Desfazer uma parte paga no acerto desfaz o acerto inteiro (a folha avisa quais despesas ele cobre). O acerto continua esperando quem recebe confirmar: as partes ficam pagas, mas "a conferir", e "Não recebi" desfaz o acerto inteiro. Despesa editada depois do acerto: só a diferença fica em aberto. Excluir despesa com parte paga continua bloqueado (decisão 7).
+- **Trocar de modo** vale a qualquer momento, nos dois sentidos, sem mudar o saldo. Do simplificado para o detalhado, cada par já quitado por acertos tem as partes marcadas como pagas no acerto; par ainda com saldo mantém os acertos como estão.
+
 **Abas do split, nesta ordem:** Despesas · Meu saldo · Pessoas. A antiga aba Saldo e a Minha visão viraram uma só, **Meu saldo**, com o ícone de setas trocadas (decidido em 24 e 25/10/2026). Fica em `/saldo`; links antigos para `/eu` levam para lá.
 
 **Aba Meu saldo** (revista em 24/10/2026):
@@ -13,7 +19,7 @@ Marcar como pago vale na hora (atualização otimista); quem recebe pode confirm
 - **Te deve:** "Recebi", que registra o acerto do par já confirmado.
 - **Quitado:** cartão neutro (sem sombra, contorno fino, selo "Quitado"), sem botões.
 - **Cartão aberto:** as despesas que formam o saldo do par, por data ("Pizza · você devia para Beatriz −R$ 30,00", "Gasolina · Beatriz te devia +R$ 20,00"), e os acertos já feitos como **linhas resolvidas** (cinza, tracejadas, com Desfazer e câmera para ver ou enviar comprovante). Parte que não pesa mais porque o par já zerou ou virou para o outro lado aparece como "compensado no saldo".
-- **Pagamento parcial:** cada despesa aberta em que você deve tem o próprio "Marcar como pago" (e em que te devem, "Recebi"); o detalhe da despesa continua funcionando igual. Valor livre fica fora desta versão.
+- **Pagamento parcial** (só no modo detalhado): cada despesa aberta em que você deve tem o próprio "Marcar como pago" (e em que te devem, "Recebi"); o detalhe da despesa continua funcionando igual. Valor livre fica fora desta versão.
 - **A linha fica no lugar:** pagar uma parte só troca o estado da linha dentro do cartão; nada pula para o fim (decidido em 24/10/2026).
 - **Cada um só vê o que é com ele:** pares entre outras pessoas não aparecem. **Admin** tem no topo "Ver como: Você ▾" para ver o Meu saldo de qualquer pessoa, com a faixa "Vendo como Beatriz · Voltar para você", e pode registrar acertos e confirmar por ela.
 
@@ -22,7 +28,7 @@ Marcar como pago vale na hora (atualização otimista); quem recebe pode confirm
 - **Desligado por padrão.** Com a preferência "Perguntar sobre comprovante ao marcar como pago" ligada, marcar pago ou recebido abre uma folha para anexar foto (opcional).
 - Com a preferência desligada, a marcação é direta. Dá para anexar depois pelo botão "Enviar comprovante" ou pelo ícone de câmera, enquanto não houver comprovante. Quem recebe é avisado.
 - **Só imagem** (foto ou print). O app reduz para no máximo 1600 px e regrava em JPEG de até 1 MB, sem metadados; o servidor recusa outro tipo ou mais de 2 MB.
-- **Quem vê:** o split escolhe, em Pessoas, "Todo o split" (padrão) ou "Só os envolvidos e admins". Quem não pode ver enxerga só "com comprovante".
+- **Quem vê:** o split escolhe, nas Configurações do split, "Todo o split" (padrão) ou "Só os envolvidos e admins". Quem não pode ver enxerga só "com comprovante".
 - **Prazo:** fica guardado no máximo 15 dias e é apagado quando o split é finalizado, quando o pagamento é desfeito ou com "Não recebi". Depois do prazo, a linha mostra "comprovante expirado" e não aceita outro. A folha de anexar avisa: "Comprovantes ficam guardados por 15 dias." (decisão 9)
 
 **Confirmação de quem recebe** (parte de despesa e acerto):
