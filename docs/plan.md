@@ -257,6 +257,13 @@ Decisão: 10 ✅ (Resend, agrupado em 10 min, resumo + botão, sem foto; **e-mai
   - Barra de abas com uma coluna por aba (estava em 4 colunas depois que o Saldo saiu).
   - Campos em R$ como no caixa eletrônico (spec 05).
   - Excluir o split inteiro (só admin, digitando o nome; `deleteSplit`) e split sem ninguém apagado depois de 15 dias (rotina diária `purgeEmptySplits`, contando de `emptySince`). Fica a lápide `deletedSplits/{id}` para o link e o convite antigos explicarem o que houve (spec 04). Splits que já estavam vazios antes desta versão não têm `emptySince` e não são apagados.
+- **Quarta leva (25/10/2026):**
+  - Vermelho do modo escuro: o tom do claro, clareado para o contraste (#F0642E), em tudo que usa `--neg` (deve, erros, excluir); todo valor negativo com "−".
+  - "Minha visão" virou **Meu saldo** (`/saldo`, ícone de setas trocadas); `/eu` leva para lá.
+  - Convite com o nome do split: a mensagem de Copiar/Compartilhar diz "Entre no split …: <link>", e o link é o curto do Firebase Hosting (`<projeto>.web.app/c/ABC-123`), cuja página (Function `invitePage`) traz nome e emoji nas tags Open Graph e abre o convite no app. Nos emuladores o link continua o do app.
+  - "Ajustar foto" (perfil e capa): arrastar, zoom e prévia ao vivo nos tamanhos em que a foto aparece; sobe só o recorte quadrado.
+  - Ícone do item visível com o cartão minimizado.
+  - Capa do split com ícone, emoji (o mesmo seletor das despesas) ou foto; sem escolha, o ícone de pessoas. Splits antigos mantêm o emoji.
 
 ## 5. Ações que só o Lucas pode fazer
 
@@ -267,6 +274,8 @@ Decisão: 10 ✅ (Resend, agrupado em 10 min, resumo + botão, sem foto; **e-mai
   - Criar os projetos Firebase staging e prod e fazer upgrade para Blaze, com alerta de orçamento.
   - `npm i -g firebase-tools && firebase login`.
   - Opcional: `claude plugin install firebase@firebase`.
+- **Antes de publicar em produção:**
+  - Publicar o Firebase Hosting do projeto de produção (`firebase deploy --only hosting,functions --project <prod>`), que serve os links curtos de convite. Se o app de produção não ficar em `lucasgualtieri.github.io/quem-paga-o-que/`, definir `APP_URL` nas Functions e `VITE_INVITE_HOST` no build.
 
 ## 6. Prompt de cada fase
 

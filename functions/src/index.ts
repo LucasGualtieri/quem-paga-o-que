@@ -5,3 +5,4 @@ export { createRecoveryLink, mergeGuest, prepareMerge, previewMerge, redeemRecov
 export { attachProof, confirmPayment, confirmShare, createPayment, disputePayment, deletePayment, disputeShare, markShare, setProofVisibility, setReceipt, setSplitPhoto, unmarkShare } from './payments.ts';
 export { purgeProofs } from './proofs.ts';
 export { deleteSplit, purgeEmptySplits } from './deletion.ts';
+export { invitePage } from './invitePage.ts';

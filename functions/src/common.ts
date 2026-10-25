@@ -5,7 +5,7 @@ import { FieldValue, getFirestore, type DocumentReference, type Transaction } fr
 import { getStorage } from 'firebase-admin/storage';
 import { ledger, type Expense, type JoinOrder, type Ledger, type Payment } from '@qpq/calc';
 import { HttpsError, type CallableRequest, type FunctionsErrorCode } from 'firebase-functions/v2/https';
-import type { ErrorDetails, ErrorReason, PixKey } from '@qpq/shared';
+import type { EntryIcon, ErrorDetails, ErrorReason, PixKey } from '@qpq/shared';
 
 export const REGION = 'us-east1';
 
@@ -62,6 +62,8 @@ export interface SplitData {
   proofVisibility?: 'all' | 'involved';
   /** Capa com foto (caminho no Storage). */
   photo?: string | null;
+  /** Capa com ícone ou emoji (24/10/2026); sem ela, o `emoji` dos splits antigos ou o ícone de pessoas. */
+  icon?: EntryIcon | null;
 }
 
 const HTTP_CODE: Partial<Record<ErrorReason, FunctionsErrorCode>> = {

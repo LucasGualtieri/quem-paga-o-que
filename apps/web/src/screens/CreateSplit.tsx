@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
-import { cleanName, COVER_EMOJIS, findDuplicate, isValidName, nameKey, SPLIT_NAME_MAX } from '@qpq/shared';
-import { Avatar, avatarColor, Badge, Button, Icon, TextField, useToast } from '../components/index.ts';
+import { cleanName, findDuplicate, isValidName, nameKey, SPLIT_DEFAULT_ICON, SPLIT_NAME_MAX, type EntryIcon } from '@qpq/shared';
+import { Avatar, avatarColor, Badge, Button, Cover, Icon, TextField, useToast } from '../components/index.ts';
 import { api, detailsOf } from '../data/api.ts';
 import { useProfileName } from '../data/hooks.ts';
 import { useSession } from '../data/session.ts';
 import { BackLink } from './common.tsx';
 import { CreatedView } from './Created.tsx';
+import { IconPicker } from './EntryIcon.tsx';
+import { PhotoCropSheet } from './PhotoCrop.tsx';
 import { useUploadCover } from './Photos.tsx';
 import { useReasonText } from './reasons.ts';
-
-const EMOJI_KEYS = ['fireworks', 'gift', 'mountain', 'pizza', 'beach', 'party', 'cheers', 'camping'] as const;
 
 export default function CreateSplit() {
   const { t } = useTranslation();
@@ -22,13 +22,16 @@ export default function CreateSplit() {
   const profileName = useProfileName(session.status === 'ready' ? session.uid : null);
 
   const [name, setName] = useState('');
-  const [emoji, setEmoji] = useState<string>(COVER_EMOJIS[0]);
+  // Capa: ícone ou emoji (sem escolha, o ícone de pessoas) ou foto recortada.
+  const [icon, setIcon] = useState<EntryIcon | null>(null);
+  const [picking, setPicking] = useState(false);
+  const [cropFile, setCropFile] = useState<File | null>(null);
   const [selfName, setSelfName] = useState('');
   const [selfTouched, setSelfTouched] = useState(false);
   const [people, setPeople] = useState<string[]>([]);
   const [newName, setNewName] = useState('');
   const [addError, setAddError] = useState<string | undefined>();
-  const [created, setCreated] = useState<{ name: string; emoji: string } | null>(null);
+  const [created, setCreated] = useState<{ name: string; icon: EntryIcon } | null>(null);
   // Capa com foto (opcional): sobe depois que o split existe; até lá aparece daqui.
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -81,9 +84,9 @@ export default function CreateSplit() {
       return;
     }
     // Otimista: a tela do convite abre na hora; link e código chegam em seguida.
-    setCreated({ name: cleanName(name), emoji });
+    setCreated({ name: cleanName(name), icon: icon ?? SPLIT_DEFAULT_ICON });
     try {
-      const res = await api.createSplit({ name, emoji, selfName, people });
+      const res = await api.createSplit({ name, icon, selfName, people });
       if (photo) uploadCover(res.splitId, photo);
       if (mounted.current) void navigate(`/s/${res.splitId}/pronto`, { replace: true });
     } catch (error) {
@@ -93,7 +96,7 @@ export default function CreateSplit() {
     }
   };
 
-  if (created) return <CreatedView splitId={null} name={created.name} emoji={created.emoji} code={null} previewUrl={photoUrl} />;
+  if (created) return <CreatedView splitId={null} name={created.name} icon={created.icon} code={null} previewUrl={photoUrl} />;
 
   return (
     <main className="page">
@@ -102,42 +105,36 @@ export default function CreateSplit() {
         <h1 className="h3 hdr-mid">{t('create.title')}</h1>
       </header>
       <div className="content form">
-        <TextField label={`${t('create.name')} *`} placeholder={t('create.namePh')} value={name} maxLength={SPLIT_NAME_MAX} autoComplete="off" onChange={(e) => setName(e.target.value)} />
-
-        <div>
-          <span className="label">
-            {t('create.cover')} <span className="opt">· {t('common.optional')}</span>
-          </span>
-          <div className="emojis" role="group" aria-label={t('create.cover')}>
-            {COVER_EMOJIS.map((e, i) => (
-              <button
-                key={e}
-                type="button"
-                className={`emo ${!photo && emoji === e ? 'on' : ''}`}
-                aria-pressed={!photo && emoji === e}
-                aria-label={t(`create.emoji.${EMOJI_KEYS[i]}`)}
-                onClick={() => {
-                  setEmoji(e);
-                  setPhoto(null);
-                }}
-              >
-                {e}
-              </button>
-            ))}
-          </div>
-          <div className="filerow" style={{ marginTop: 8 }}>
-            <label className={`filebtn ${photo ? 'on' : ''}`}>
-              <input type="file" accept="image/*" onChange={(ev) => ev.target.files?.[0] && setPhoto(ev.target.files[0])} />
-              {photoUrl ? <img className="thumb" src={photoUrl} alt="" /> : <Icon name="camera" />}
-              <span>{photo ? t('photo.groupChosen') : t('photo.group')}</span>
-            </label>
-            {photo && (
-              <button type="button" className="iconbtn" aria-label={t('photo.remove')} onClick={() => setPhoto(null)}>
-                <Icon name="x" />
-              </button>
-            )}
-          </div>
+        <div className="name-cover">
+          <button type="button" className="cover-pick" aria-label={t('create.coverPick')} title={t('create.coverPick')} onClick={() => setPicking(true)}>
+            <Cover icon={icon ?? SPLIT_DEFAULT_ICON} src={photoUrl} />
+            <span className="cover-edit" aria-hidden="true">
+              <Icon name="pencil" size="sm" />
+            </span>
+          </button>
+          <TextField label={`${t('create.name')} *`} placeholder={t('create.namePh')} value={name} maxLength={SPLIT_NAME_MAX} autoComplete="off" onChange={(e) => setName(e.target.value)} />
         </div>
+        <IconPicker
+          open={picking}
+          value={icon}
+          onClose={() => setPicking(false)}
+          onChange={(next) => {
+            setIcon(next);
+            setPhoto(null);
+          }}
+          photo={{ has: !!photo, onFile: setCropFile }}
+        />
+        <PhotoCropSheet
+          file={cropFile}
+          kind="cover"
+          name={name}
+          icon={icon ?? SPLIT_DEFAULT_ICON}
+          onCancel={() => setCropFile(null)}
+          onDone={(cropped) => {
+            setPhoto(cropped);
+            setCropFile(null);
+          }}
+        />
 
         <div>
           <span className="label">

@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router';
-import { coverColor, inviteLink } from '@qpq/shared';
+import { SPLIT_DEFAULT_ICON, splitCover, type EntryIcon } from '@qpq/shared';
 import { Button, Cover, Icon, Skeleton, useToast } from '../components/index.ts';
 import { withGoogle } from '../data/account.ts';
 import { useSplit } from '../data/hooks.ts';
 import { useSession } from '../data/session.ts';
 import { useAuthFlow } from './authFlow.ts';
-import { appBase, BackLink, copyText } from './common.tsx';
+import { BackLink, copyText, inviteUrl } from './common.tsx';
 import { dismissNudge, nudgeDismissed } from './Recovery.tsx';
 import { SplitCover } from './Photos.tsx';
 
@@ -16,17 +16,19 @@ export function InviteBox({ code, splitName }: { code: string | null; splitName:
   const { t } = useTranslation();
   const toast = useToast();
   const [copied, setCopied] = useState(false);
-  const link = code ? inviteLink(appBase(), code) : '';
+  const link = code ? inviteUrl(code) : '';
+  // A mensagem já diz de qual split é, mesmo onde o link não mostra prévia.
+  const message = t('invite.message', { name: splitName, link });
 
   const copy = async () => {
     if (!code) return;
     setCopied(true);
-    toast.show({ text: (await copyText(link)) ? t('common.linkCopied') : link });
+    toast.show({ text: (await copyText(message)) ? t('common.linkCopied') : link });
   };
   const share = async () => {
     if (!code) return;
     if (navigator.share) {
-      await navigator.share({ title: splitName, url: link }).catch(() => {});
+      await navigator.share({ title: splitName, text: message }).catch(() => {});
       return;
     }
     await copy();
@@ -104,7 +106,7 @@ function SaveNudge() {
 }
 
 /** "Split está pronto": aparece na hora ao criar (código chega em seguida). */
-export function CreatedView({ splitId, name, emoji, code, photo = null, previewUrl = null }: { splitId: string | null; name: string; emoji: string; code: string | null; photo?: string | null; previewUrl?: string | null }) {
+export function CreatedView({ splitId, name, icon, code, photo = null, previewUrl = null }: { splitId: string | null; name: string; icon: EntryIcon; code: string | null; photo?: string | null; previewUrl?: string | null }) {
   const { t } = useTranslation();
   const target = splitId ? `/s/${splitId}` : '/';
   return (
@@ -114,7 +116,7 @@ export function CreatedView({ splitId, name, emoji, code, photo = null, previewU
         <BackLink to={target} label={t('common.close')} icon="x" />
       </header>
       <div className="created">
-        {previewUrl ? <Cover emoji={emoji} color={coverColor(emoji)} size="xl" src={previewUrl} /> : <SplitCover split={{ id: splitId ?? '', emoji, photo }} size="xl" />}
+        {previewUrl ? <Cover icon={icon} size="xl" src={previewUrl} /> : <SplitCover split={{ id: splitId ?? '', emoji: '', icon, photo }} size="xl" />}
         <h1 className="h2">{t('created.title', { name })}</h1>
         <p className="muted">{t('created.body')}</p>
         <div className="card invite-card">
@@ -137,5 +139,5 @@ export default function Created() {
   const session = useSession();
   const split = useSplit(id, session.status === 'ready' ? session.uid : null);
   const data = split.status === 'ready' ? split.data : null;
-  return <CreatedView splitId={id} name={data?.name ?? ''} emoji={data?.emoji ?? '🎆'} code={data?.code ?? null} photo={data?.photo ?? null} />;
+  return <CreatedView splitId={id} name={data?.name ?? ''} icon={data ? splitCover(data) : SPLIT_DEFAULT_ICON} code={data?.code ?? null} photo={data?.photo ?? null} />;
 }

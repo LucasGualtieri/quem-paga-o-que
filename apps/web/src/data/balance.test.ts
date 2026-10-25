@@ -48,7 +48,7 @@ const gasolina = exp('gasolina', { amount: 4000, payer: 'm1', members: ['m1', 'm
 // Mercado R$ 30,00 pago pelo Lucas entre os três: Catarina deve R$ 10,00.
 const mercado = exp('mercado', { amount: 3000, payer: 'm1', members: ['m1', 'm2', 'm3'], date: '2026-12-29' });
 
-describe('pairsView (Minha visão)', () => {
+describe('pairsView (Meu saldo)', () => {
   it('um cartão por pessoa com o saldo do par e as despesas que o formam', () => {
     const v = pairsView(split, [pizza, gasolina], [], 'm1');
     expect(v.mine).toBe(-1000);

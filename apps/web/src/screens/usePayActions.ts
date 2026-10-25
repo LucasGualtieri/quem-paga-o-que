@@ -17,7 +17,7 @@ function newPaymentId(): string {
 
 /**
  * Pagamentos (spec 06): marcar pago / Recebi, Desfazer, Confirmar, Não recebi, acerto pela
- * Minha visão e comprovante. Tudo otimista: muda na hora e só volta, com aviso, se o servidor recusar.
+ * Meu saldo e comprovante. Tudo otimista: muda na hora e só volta, com aviso, se o servidor recusar.
  */
 export function usePayActions(split: SplitDoc, me: Member) {
   const { t } = useTranslation();

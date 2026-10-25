@@ -2,7 +2,7 @@ import { ledger, type Cents, type MemberId } from '@qpq/calc';
 import { membersInOrder, orderOf, sharesOf, type ExpenseDoc, type PaymentDoc, type SplitDoc } from './model.ts';
 
 /**
- * Minha visão (spec 06, revista em 24/10/2026): um cartão por pessoa do split com o saldo do par
+ * Meu saldo (spec 06, revista em 24/10/2026): um cartão por pessoa do split com o saldo do par
  * (eu ↔ ela), calculado de todas as despesas (sem as excluídas) e acertos pelo @qpq/calc, e as
  * entradas que formam esse saldo. Nada aqui é guardado.
  */

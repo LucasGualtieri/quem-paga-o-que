@@ -43,7 +43,7 @@
     "tabs": {
       "nav": "Seções do split",
       "tx": "Transações",
-      "me": "Minha visão",
+      "me": "Meu saldo",
       "ppl": "Pessoas",
       "adminOnly": "só admin"
     },
@@ -171,16 +171,7 @@
     "addHint": "Só o nome basta. Depois você convida por link e cada um escolhe quem é.",
     "submit": "Criar split",
     "removePerson": "Remover {{name}}",
-    "emoji": {
-      "fireworks": "Fogos",
-      "gift": "Presente",
-      "mountain": "Montanha",
-      "pizza": "Pizza",
-      "beach": "Praia",
-      "party": "Festa",
-      "cheers": "Brinde",
-      "camping": "Acampamento"
-    }
+    "coverPick": "Escolher a capa do split (opcional)"
   },
   "created": {
     "title": "“{{name}}” está pronto!",
@@ -389,7 +380,8 @@
     "regenerate": "Gerar novo código",
     "confirmT": "Gerar novo código?",
     "confirmB": "O link e o código atuais param de funcionar. Quem já entrou continua no split.",
-    "done": "Código novo gerado"
+    "done": "Código novo gerado",
+    "message": "Entre no split {{name}}: {{link}}"
   },
   "expense": {
     "tags": {
@@ -661,8 +653,6 @@
     "expired": "Comprovante expirado (guardamos por 15 dias).",
     "retention": "Fica guardada por 15 dias.",
     "receiptAlt": "Foto do comprovante",
-    "group": "Enviar foto do grupo",
-    "groupChosen": "Foto escolhida · trocar",
     "change": "Trocar foto",
     "loading": "Carregando foto",
     "error": "Não deu para abrir a foto.",
@@ -793,7 +783,9 @@
     "remove": "Remover (volta para o automático)",
     "none": "Nada encontrado.",
     "choose": "Escolher ícone da despesa",
-    "chooseItem": "Escolher ícone do item"
+    "chooseItem": "Escolher ícone do item",
+    "coverTitle": "Capa do split",
+    "photo": "Enviar foto"
   },
   "del": {
     "menu": "Excluir split",
@@ -811,5 +803,20 @@
     "unknown": "O link pode estar errado, o split pode ter sido apagado ou você não faz parte dele.",
     "create": "Criar um split",
     "home": "Ir para o início"
+  },
+  "crop": {
+    "title": "Ajustar foto",
+    "hint": "Arraste para posicionar e use o zoom.",
+    "zoom": "Zoom",
+    "previews": "Como vai ficar",
+    "pvAccount": "Sua conta",
+    "pvPeople": "Pessoas",
+    "pvLists": "Listas",
+    "pvChips": "Pago por",
+    "pvCreated": "Convite",
+    "pvHome": "Início",
+    "pvHeader": "Cabeçalho",
+    "use": "Usar foto",
+    "other": "Escolher outra"
   }
 }

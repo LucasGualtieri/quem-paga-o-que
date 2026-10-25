@@ -42,5 +42,21 @@
         "npm run bundle -w @qpq/functions"
       ]
     }
-  ]
+  ],
+  "hosting": {
+    "public": "hosting",
+    "ignore": [
+      "firebase.json",
+      "**/.*"
+    ],
+    "rewrites": [
+      {
+        "source": "/c/**",
+        "function": {
+          "functionId": "invitePage",
+          "region": "us-east1"
+        }
+      }
+    ]
+  }
 }

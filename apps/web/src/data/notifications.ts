@@ -44,7 +44,7 @@ type T = (key: string, opts?: Record<string, unknown>) => string;
 export interface NotificationView {
   title: string;
   sub: string;
-  /** Para onde o item leva: o detalhe da despesa (com destaque) ou a Minha visão do split. */
+  /** Para onde o item leva: o detalhe da despesa (com destaque) ou o Meu saldo do split. */
   to: string;
 }
 
@@ -58,7 +58,7 @@ export function viewOf(n: NotificationDoc, t: T, name: (id: string | null) => st
   const what = n.expName ?? t('notif.settle');
   const proof = n.hasProof ? t('notif.withProof') : t('notif.noProof');
   const state = n.status === 'confirmed' ? t('notif.confirmed') : n.status === 'disputed' ? t('notif.youDisputed') : '';
-  const to = n.expId ? `/s/${n.splitId}/despesa/${n.expId}?n=${n.id}` : `/s/${n.splitId}/eu`;
+  const to = n.expId ? `/s/${n.splitId}/despesa/${n.expId}?n=${n.id}` : `/s/${n.splitId}/saldo`;
   switch (n.kind) {
     case 'paid':
       return { title: t('notif.paid', { name: from, amount }), sub: `${what} · ${n.splitName} · ${proof}${state}`, to };

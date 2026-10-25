@@ -12,6 +12,9 @@ const env = import.meta.env;
  */
 export const usesEmulators = env.VITE_USE_EMULATORS === 'true' || (env.DEV && !env.VITE_FIREBASE_PROJECT_ID);
 
+/** Onde ficam os links curtos de convite (Firebase Hosting do projeto); nos emuladores, nenhum. */
+export const inviteHost: string | null = env.VITE_INVITE_HOST || (!usesEmulators && env.VITE_FIREBASE_PROJECT_ID ? `https://${env.VITE_FIREBASE_PROJECT_ID}.web.app` : null);
+
 const config: FirebaseOptions | null = usesEmulators
   ? { projectId: 'demo-qpq', apiKey: 'demo-key', authDomain: 'demo-qpq.firebaseapp.com', storageBucket: 'demo-qpq.appspot.com' }
   : env.VITE_FIREBASE_PROJECT_ID

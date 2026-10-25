@@ -56,6 +56,20 @@ describe('createSplit', () => {
     expect(await reasonOf(createSplit(lucas, { name: '  ' }))).toBe('invalid-input');
     expect(await reasonOf(createSplit(lucas, { selfName: '' }))).toBe('invalid-input');
     expect(await reasonOf(createSplit(lucas, { emoji: '💣' }))).toBe('invalid-input');
+    expect(await reasonOf(createSplit(lucas, { icon: { kind: 'icon', name: 'nada' } as never }))).toBe('invalid-input');
+    expect(await reasonOf(createSplit(lucas, { icon: { kind: 'emoji', value: 'abc' } }))).toBe('invalid-input');
+  });
+
+  it('capa com ícone ou emoji; sem escolha, o ícone de pessoas', async () => {
+    const lucas = await newUser();
+    const a = await createSplit(lucas, { icon: { kind: 'emoji', value: '🦄' } });
+    const b = await createSplit(lucas, { icon: { kind: 'icon', name: 'beach' } });
+    const c = await createSplit(lucas, { icon: null });
+    expect((await splitDoc(a.splitId) as unknown as { icon: unknown }).icon).toEqual({ kind: 'emoji', value: '🦄' });
+    expect((await lucas.call<{ icon: unknown }>('previewInvite', { code: b.code })).icon).toEqual({ kind: 'icon', name: 'beach' });
+    expect((await lucas.call<{ icon: unknown }>('previewInvite', { code: c.code })).icon).toEqual({ kind: 'icon', name: 'people' });
+    // Split antigo (só com o emoji) continua com ele.
+    expect((await lucas.call<{ icon: unknown }>('previewInvite', { code: (await createSplit(lucas)).code })).icon).toEqual({ kind: 'emoji', value: '🎆' });
     expect(await reasonOf(createSplit(lucas, { people: ['ok', ''] }))).toBe('invalid-input');
   });
 });

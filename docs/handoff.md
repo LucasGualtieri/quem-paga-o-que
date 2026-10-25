@@ -44,7 +44,7 @@ Web app de divisão de despesas em grupo ("Quem Paga O Quê?"). Front estático 
 | 6 | Saldo, Minha visão, marcar pago/Recebi, confirmar/"Não recebi", acertos, comprovantes (Storage), capa e foto de perfil | ✅ (CI verde, Functions e Storage no staging) |
 | 7 | Notificações no app (4 eventos, sino, lista, banner pelo aviso) | ✅ (e-mail adiado: decisão 10) |
 | 8 | Finalizar/reabrir, home completa, acessibilidade (axe); desktop = mesma UI do celular | ✅ (falta revisão manual no celular) |
-| — | Ajustes finos (24/10/2026): último admin sai, chave Pix, ícone/emoji, Minha visão por pessoa no lugar da aba Saldo, confirmação de acerto, "Ver como" do admin; foto nos avatares, valor como caixa eletrônico, excluir split e split vazio apagado em 15 dias | ✅ (ver plan.md) |
+| — | Ajustes finos (24/10/2026): último admin sai, chave Pix, ícone/emoji, Minha visão por pessoa no lugar da aba Saldo, confirmação de acerto, "Ver como" do admin; foto nos avatares, valor como caixa eletrônico, excluir split e split vazio apagado em 15 dias; Meu saldo, vermelho do escuro, convite com nome, Ajustar foto, capa com ícone/emoji | ✅ (ver plan.md) |
 
 ### Decisões (docs/spec/pontos-em-aberto.md)
 
@@ -67,6 +67,7 @@ functions/         Cloud Functions chamáveis (us-east1, esbuild)
                    attachProof, setReceipt, setSplitPhoto, setProofVisibility
   src/proofs.ts    prazo de 15 dias dos comprovantes (purgeProofs, rotina diária)
   src/deletion.ts  deleteSplit e purgeEmptySplits (split sem ninguém há 15 dias)
+  src/invitePage.ts  página do link curto de convite (Firebase Hosting, /c/ABC-123)
   src/notifications.ts  avisos criados e atualizados pelas Functions de pagamento
   src/common.ts    ajudantes (db(), fail(), isGuest()…)
 apps/web/          SPA (React 19 + Vite + HashRouter)

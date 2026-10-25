@@ -92,7 +92,7 @@ for (const theme of ['light', 'dark'] as const) {
     await expect(lucas.locator('html')).toHaveClass(`theme-${theme}`);
     const url = lucas.url().replace(/#.*$/, '');
     const split = lucas.url().match(/#\/s\/([^/]+)/)![1];
-    for (const path of ['#/', `#/s/${split}`, `#/s/${split}/eu`, `#/s/${split}/pessoas`, '#/notificacoes', '#/conta']) {
+    for (const path of ['#/', `#/s/${split}`, `#/s/${split}/saldo`, `#/s/${split}/pessoas`, '#/notificacoes', '#/conta']) {
       await lucas.goto(url + path);
       await expect(lucas.locator('main').first()).toBeVisible();
       await lucas.waitForTimeout(400);

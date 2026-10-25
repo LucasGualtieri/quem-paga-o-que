@@ -1,7 +1,7 @@
 import { deleteObject, ref } from 'firebase/storage';
 import { useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
-import { avatarPath, coverPath, coverColor } from '@qpq/shared';
+import { avatarPath, coverPath, splitCover } from '@qpq/shared';
 import { Avatar, avatarColor, Cover, useToast } from '../components/index.ts';
 import { api, detailsOf } from '../data/api.ts';
 import { previewPhoto, uploadPhoto, usePhoto } from '../data/files.ts';
@@ -31,12 +31,12 @@ function usePendingCovers() {
   );
 }
 
-/** Capa do split: foto (do Storage ou recém-escolhida) ou emoji. */
-export function SplitCover({ split, size }: { split: Pick<SplitDoc, 'id' | 'emoji' | 'photo'>; size?: 'sm' | 'xl' }) {
+/** Capa do split: foto (do Storage ou recém-escolhida), ícone ou emoji. */
+export function SplitCover({ split, size }: { split: Pick<SplitDoc, 'id' | 'emoji' | 'icon' | 'photo'>; size?: 'sm' | 'xl' }) {
   const photo = usePhoto(split.photo ?? null);
   const pending = usePendingCovers().get(split.id);
   const src = photo?.status === 'ready' ? photo.url : (pending ?? null);
-  return <Cover emoji={split.emoji} color={coverColor(split.emoji)} {...(size ? { size } : {})} src={src} />;
+  return <Cover icon={splitCover(split)} {...(size ? { size } : {})} src={src} />;
 }
 
 /** Depois de criar o split: sobe a foto da capa e liga ao split (só admin; quem cria é admin). */

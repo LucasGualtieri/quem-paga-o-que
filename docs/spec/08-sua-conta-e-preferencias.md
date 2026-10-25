@@ -4,7 +4,7 @@
 
 | Seção | Conteúdo | Padrão |
 | --- | --- | --- |
-| Perfil | Foto (Trocar foto), Nome, E-mail, Senha ("Enviamos um link para você trocar") | E-mail só leitura na v1 (decidido em 23/10/2026). Senha só para conta com e-mail. Convidado vê "Salvar conta" e o link de recuperação (ativo desde…, Revogar). |
+| Perfil | Foto (Trocar foto, com "Ajustar foto" antes de subir), Nome, E-mail, Senha ("Enviamos um link para você trocar") | E-mail só leitura na v1 (decidido em 23/10/2026). Senha só para conta com e-mail. Convidado vê "Salvar conta" e o link de recuperação (ativo desde…, Revogar). |
 | Nas listas, mostrar você como | "Você" ou o seu nome (`selfName`) | "Você" |
 | Notificações | Push (só no app), No app, Por e-mail | Todos ligados. "Por e-mail" fica escondido até haver domínio de remetente (decisão 10). |
 | Pagamentos | Perguntar sobre comprovante ao marcar como pago (`askProof`) | Desligado |

@@ -1,6 +1,6 @@
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { onCall, type CallableRequest } from 'firebase-functions/v2/https';
-import { avatarPath, normalizePixKey, type PixKey } from '@qpq/shared';
+import { avatarPath, normalizePixKey, splitCover, type PixKey } from '@qpq/shared';
 import type {
   CreateRecoveryResponse,
   SetPixKeyResponse,
@@ -95,7 +95,7 @@ function conflictOf(splitId: string, split: SplitData, guestUid: string, uid: st
   return {
     splitId,
     splitName: split.name,
-    emoji: split.emoji,
+    icon: splitCover(split),
     guest: { id: guest[0], name: guest[1].name },
     account: { id: account[0], name: account[1].name },
   };

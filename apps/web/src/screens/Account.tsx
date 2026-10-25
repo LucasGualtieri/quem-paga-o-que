@@ -12,6 +12,7 @@ import { useOptimisticAction, useOptimisticValue } from '../lib/optimistic.ts';
 import { setTheme, useTheme, type Theme } from '../theme/theme.ts';
 import { BackLink } from './common.tsx';
 import { ProfileAvatar, useChangeProfilePhoto } from './Photos.tsx';
+import { PhotoCropSheet } from './PhotoCrop.tsx';
 import { PixField } from './Pix.tsx';
 import { useShortDate } from './Recovery.tsx';
 
@@ -61,6 +62,8 @@ function AccountBody({
   recovery: { active: boolean; createdAt: Date | null };
 }) {
   const changePhoto = useChangeProfilePhoto(uid, photoPath);
+  // Foto escolhida: passa pelo "Ajustar foto" antes de subir.
+  const [cropFile, setCropFile] = useState<File | null>(null);
   const { t } = useTranslation();
   const navigate = useNavigate();
   const toast = useToast();
@@ -111,11 +114,29 @@ function AccountBody({
       <div className="profile-head">
         <ProfileAvatar name={name} photoPath={photoPath} className="xl" />
         <label className="linkbtn" style={{ cursor: 'pointer', position: 'relative' }}>
-          <input type="file" accept="image/*" className="sr-only" onChange={(e) => e.target.files?.[0] && changePhoto(e.target.files[0])} />
+          <input
+            type="file"
+            accept="image/*"
+            className="sr-only"
+            onChange={(e) => {
+              if (e.target.files?.[0]) setCropFile(e.target.files[0]);
+              e.target.value = '';
+            }}
+          />
           <Icon name="camera" size="sm" />
           {t('photo.change')}
         </label>
       </div>
+      <PhotoCropSheet
+        file={cropFile}
+        kind="profile"
+        name={name}
+        onCancel={() => setCropFile(null)}
+        onDone={(cropped) => {
+          setCropFile(null);
+          changePhoto(cropped);
+        }}
+      />
 
       <section>
         <div className="sec-h">

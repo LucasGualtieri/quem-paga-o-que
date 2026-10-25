@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router';
-import { inviteLink } from '@qpq/shared';
 import { Button, Icon, Sheet, SkeletonCard, useToast, type IconName } from '../components/index.ts';
 import { api, detailsOf } from '../data/api.ts';
 import { useMoney, useSplit } from '../data/hooks.ts';
@@ -14,7 +13,7 @@ import { useLang } from '../i18n/index.ts';
 import { dayMonth } from '../lib/dates.ts';
 import { DeleteSplitSheet, FinalizeSheet } from './FinalizeSheet.tsx';
 import { SplitGone } from './SplitGone.tsx';
-import { appBase, copyText, useWho } from './common.tsx';
+import { copyText, inviteUrl, useWho } from './common.tsx';
 import { MyViewTab } from './MyViewTab.tsx';
 import { usePayFlow } from './PaySheet.tsx';
 import { Bell } from './Notifications.tsx';
@@ -25,7 +24,7 @@ import { useReasonText } from './reasons.ts';
 
 const TABS: Array<{ key: string; path: string; icon: IconName; label: string }> = [
   { key: 'tx', path: '', icon: 'receipt', label: 'split.tabs.tx' },
-  { key: 'eu', path: '/eu', icon: 'user', label: 'split.tabs.me' },
+  { key: 'saldo', path: '/saldo', icon: 'swap', label: 'split.tabs.me' },
   { key: 'pessoas', path: '/pessoas', icon: 'people', label: 'split.tabs.ppl' },
 ];
 
@@ -78,7 +77,7 @@ function useStatus(split: SplitDoc | null): [SplitDoc | null, (status: 'open' | 
   return [split && override ? { ...split, ...override } : split, set];
 }
 
-/** Minha visão, com as folhas de pagamento e de comprovante. */
+/** Meu saldo, com as folhas de pagamento e de comprovante. */
 function MoneyTab({ split, me, expenses, payments }: { split: SplitDoc; me: Member; expenses: readonly ExpenseDoc[]; payments: readonly PaymentDoc[] }) {
   const who = useWho(split, me);
   const { flow, sheets } = usePayFlow(split, me, who);
@@ -130,8 +129,8 @@ export default function Split() {
 
   // Split apagado, link errado ou de quem não está nele: explica em vez de só voltar ao início.
   if (result.status === 'denied' && !pending) return <SplitGone splitId={id} home={seen.current === id} />;
-  // A aba Saldo virou parte da Minha visão (links antigos e avisos já lidos).
-  if (tab === 'saldo') return <Navigate to={`/s/${id}/eu`} replace />;
+  // A Minha visão (/eu) virou Meu saldo (/saldo): links antigos e avisos já lidos.
+  if (tab === 'eu') return <Navigate to={`/s/${id}/saldo`} replace />;
 
   const me = view && uid ? myMember(view, uid) : null;
   if (view && uid && !me && !pending) return <Navigate to="/" replace />;
@@ -150,8 +149,8 @@ export default function Split() {
       void navigate(`/s/${id}/pessoas`);
       return;
     }
-    const link = inviteLink(appBase(), view.code);
-    toast.show({ text: (await copyText(link)) ? t('common.linkCopied') : link });
+    const link = inviteUrl(view.code);
+    toast.show({ text: (await copyText(t('invite.message', { name: view.name, link }))) ? t('common.linkCopied') : link });
   };
 
   const leave = () => {
@@ -180,7 +179,7 @@ export default function Split() {
     void run({
       apply: () => {
         const undo = setStatus(status);
-        if (status === 'done') void navigate(`/s/${id}/eu`, { replace: true });
+        if (status === 'done') void navigate(`/s/${id}/saldo`, { replace: true });
         return undo;
       },
       commit: async () => {

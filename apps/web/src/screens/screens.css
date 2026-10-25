@@ -310,24 +310,40 @@ button.ea-plus:active {
 }
 
 /* Novo split */
-.emojis {
-  display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
-  gap: 6px;
+.name-cover {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
 }
-.emo {
-  height: 44px;
-  border: 0;
-  border-radius: 12px;
-  background: var(--surface);
-  box-shadow: inset 0 0 0 1.5px var(--line);
-  font-size: 22px;
-  cursor: pointer;
+.name-cover .field {
+  flex: 1;
+}
+.cover-pick {
+  position: relative;
+  flex: none;
   padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 18px;
 }
-.emo.on {
-  box-shadow: inset 0 0 0 2.5px var(--accent);
-  background: var(--accent-soft);
+.cover-pick .cover {
+  width: 52px;
+  height: 52px;
+}
+.cover-edit {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
 }
 .add-row {
   display: flex;
@@ -867,8 +883,67 @@ body:has(.bottombar) .toast-region {
   bottom: calc(100px + env(safe-area-inset-bottom));
 }
 
-/* Split que não existe mais: o emoji do split no lugar do ícone. */
-.gone-emoji {
-  font-size: 30px;
-  line-height: 1;
+
+/* Capa com ícone: o ícone acompanha o tamanho da capa. */
+.cover .ic {
+  color: var(--text);
+}
+.cover.xl .ic {
+  width: 40px;
+  height: 40px;
+}
+
+/* Ajustar foto: área quadrada para arrastar, máscara do formato e prévias. */
+.crop-box {
+  position: relative;
+  width: min(100%, 300px);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--surface2);
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+.crop-box img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  max-width: none;
+  pointer-events: none;
+}
+.crop-mask {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: 0 0 0 999px var(--scrim);
+}
+.crop-box.crop-profile .crop-mask {
+  border-radius: 50%;
+}
+.crop-box.crop-cover .crop-mask {
+  border-radius: 32%;
+}
+.crop-zoom {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.crop-zoom input {
+  flex: 1;
+  accent-color: var(--accent);
+}
+.crop-previews {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.crop-pv {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
 }

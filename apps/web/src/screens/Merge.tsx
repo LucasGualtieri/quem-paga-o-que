@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useLocation, useNavigate } from 'react-router';
-import { coverColor, type PreviewMergeResponse } from '@qpq/shared';
+import type { PreviewMergeResponse } from '@qpq/shared';
 import { Avatar, Button, Card, Cover, useToast } from '../components/index.ts';
 import { api, detailsOf } from '../data/api.ts';
 import { useReasonText } from './reasons.ts';
@@ -44,7 +44,7 @@ export default function Merge() {
         {preview.conflicts.map((c) => (
           <Card key={c.splitId} className="card-pad">
             <div className="split-head" style={{ padding: 0 }}>
-              <Cover emoji={c.emoji} color={coverColor(c.emoji)} size="sm" />
+              <Cover icon={c.icon} size="sm" />
               <span className="ttl">{c.splitName}</span>
             </div>
             <div className="list" role="radiogroup" aria-label={t('merge.pick', { split: c.splitName })}>

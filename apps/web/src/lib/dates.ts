@@ -11,7 +11,7 @@ export function shortDay(d: Date, lang: Lang): string {
   return lang === 'en' ? `${weekday}, ${month} ${day}` : `${weekday}, ${day} ${month}`;
 }
 
-/** "31 dez" em PT, "Dec 31" em EN (linhas de Minha visão). */
+/** "31 dez" em PT, "Dec 31" em EN (linhas de Meu saldo). */
 export function dayMonth(d: Date, lang: Lang): string {
   return shortDay(d, lang).replace(/^[^,]*, /, '');
 }

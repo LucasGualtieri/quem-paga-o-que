@@ -1,4 +1,4 @@
-/* Fase 6: Minha visão, pagamentos e comprovantes (layout de reference/design/Main.dc.html). */
+/* Fase 6: Meu saldo, pagamentos e comprovantes (layout de reference/design/Main.dc.html). */
 
 /* Seu saldo: o número troca com um fade curto subindo 4 px (spec 06). */
 .flashA .num {
@@ -127,7 +127,7 @@
   border-top: 1px solid var(--line);
 }
 
-/* Minha visão: ações do cartão, acertos para conferir, partes e "Ver como" */
+/* Meu saldo: ações do cartão, acertos para conferir, partes e "Ver como" */
 .pcard.zero {
   background: transparent;
   box-shadow: inset 0 0 0 1.5px var(--line);

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Navigate, useNavigate } from 'react-router';
-import { Button, Icon, SkeletonCard } from '../components/index.ts';
+import { Button, Cover, Icon, SkeletonCard } from '../components/index.ts';
 import { useDeletedSplit } from '../data/hooks.ts';
 import { BackLink } from './common.tsx';
 
@@ -29,7 +29,7 @@ export function SplitGone({ splitId, home }: { splitId: string; home?: boolean }
         ) : (
           <div className="empty gone" style={{ paddingTop: 60 }}>
             <span className="balico zero notif-empty" aria-hidden="true">
-              {data ? <span className="gone-emoji">{data.emoji}</span> : <Icon name="search" size="lg" />}
+              {data ? <Cover icon={data.icon} /> : <Icon name="search" size="lg" />}
             </span>
             <h1 className="h2">{data ? t('gone.title') : t('gone.notFound')}</h1>
             <p className="muted" style={{ maxWidth: 320, textWrap: 'pretty' }}>

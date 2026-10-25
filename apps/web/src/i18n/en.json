@@ -43,7 +43,7 @@
     "tabs": {
       "nav": "Split sections",
       "tx": "Expenses",
-      "me": "My view",
+      "me": "My balance",
       "ppl": "People",
       "adminOnly": "admin only"
     },
@@ -171,16 +171,7 @@
     "addHint": "A name is enough. Invite by link later and each person picks who they are.",
     "submit": "Create split",
     "removePerson": "Remove {{name}}",
-    "emoji": {
-      "fireworks": "Fireworks",
-      "gift": "Gift",
-      "mountain": "Mountain",
-      "pizza": "Pizza",
-      "beach": "Beach",
-      "party": "Party",
-      "cheers": "Cheers",
-      "camping": "Camping"
-    }
+    "coverPick": "Choose the split cover (optional)"
   },
   "created": {
     "title": "“{{name}}” is ready!",
@@ -389,7 +380,8 @@
     "regenerate": "New code",
     "confirmT": "Make a new code?",
     "confirmB": "The current link and code stop working. Whoever already joined stays in the split.",
-    "done": "New code made"
+    "done": "New code made",
+    "message": "Join the split {{name}}: {{link}}"
   },
   "expense": {
     "tags": {
@@ -661,8 +653,6 @@
     "expired": "Receipt expired (we keep them for 15 days).",
     "retention": "Kept for 15 days.",
     "receiptAlt": "Receipt photo",
-    "group": "Upload a group photo",
-    "groupChosen": "Photo selected · change",
     "change": "Change photo",
     "loading": "Loading photo",
     "error": "Couldn’t open the photo.",
@@ -793,7 +783,9 @@
     "remove": "Remove (back to automatic)",
     "none": "Nothing found.",
     "choose": "Choose the expense icon",
-    "chooseItem": "Choose the item icon"
+    "chooseItem": "Choose the item icon",
+    "coverTitle": "Split cover",
+    "photo": "Upload photo"
   },
   "del": {
     "menu": "Delete split",
@@ -811,5 +803,20 @@
     "unknown": "The link may be wrong, the split may have been deleted, or you’re not part of it.",
     "create": "Create a split",
     "home": "Go to home"
+  },
+  "crop": {
+    "title": "Adjust photo",
+    "hint": "Drag to position and use zoom.",
+    "zoom": "Zoom",
+    "previews": "How it will look",
+    "pvAccount": "Your account",
+    "pvPeople": "People",
+    "pvLists": "Lists",
+    "pvChips": "Paid by",
+    "pvCreated": "Invite",
+    "pvHome": "Home",
+    "pvHeader": "Header",
+    "use": "Use photo",
+    "other": "Choose another"
   }
 }

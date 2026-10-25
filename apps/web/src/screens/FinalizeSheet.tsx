@@ -21,7 +21,7 @@ export function PendingList({ split, money, who }: { split: SplitDoc; money: Mon
         <span className="mid">
           <span className="ttl">{sug.length ? t('fin.pending') : t('fin.allSettled')}</span>
         </span>
-        {sug.length > 0 && <span className="amt strong neg">{formatCents(total, lang)}</span>}
+        {sug.length > 0 && <span className="amt strong neg">{formatCents(-total, lang)}</span>}
       </div>
       {sug.map((g) => (
         <div key={`${g.from}-${g.to}`} className="row fin-row">

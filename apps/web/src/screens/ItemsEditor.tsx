@@ -6,7 +6,7 @@ import type { Member } from '../data/model.ts';
 import { useLang } from '../i18n/index.ts';
 import { formatCents, parseCents } from '../lib/money.ts';
 import { ErrorLine, ModePicker, splitStatus, WeightRows, WhoToggles } from './ExpenseParts.tsx';
-import { IconButton } from './EntryIcon.tsx';
+import { EntryIconView, IconButton } from './EntryIcon.tsx';
 import { MemberAvatar } from './Photos.tsx';
 import { amountInput } from './common.tsx';
 
@@ -82,6 +82,7 @@ export function ItemsEditor({ form, setForm, people, analysis, whoName, showErro
                 <span className="icol" aria-hidden="true">
                   <Icon name="chevron" />
                 </span>
+                <EntryIconView icon={it.icon} fallback="item" size="sm" />
                 <span className="mid">
                   <span className="ttl">{title}</span>
                   <span className="cap">{t('expense.form.minSub', { mode: t(`expense.form.modesShort.${it.mode}`), n: itemShares(it.members), total: people.length })}</span>

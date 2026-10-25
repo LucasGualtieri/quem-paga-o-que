@@ -27,8 +27,10 @@ export interface SplitDoc {
   adminUids: string[];
   /** Quem vê comprovantes (decisão 9); ausente = "all". */
   proofVisibility?: ProofVisibility;
-  /** Capa com foto (caminho no Storage); sem ela, o emoji. */
+  /** Capa com foto (caminho no Storage); sem ela, o ícone ou emoji. */
   photo?: string | null;
+  /** Capa com ícone ou emoji; sem ela, o `emoji` dos splits antigos ou o ícone de pessoas. */
+  icon?: EntryIcon | null;
   /** Quando foi finalizado (spec 04). */
   doneAt?: Date | null;
 }

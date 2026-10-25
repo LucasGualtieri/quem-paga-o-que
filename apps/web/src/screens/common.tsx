@@ -8,6 +8,8 @@ import { useSession } from '../data/session.ts';
 import { useLang, type Lang } from '../i18n/index.ts';
 import { dateOf, shortDay } from '../lib/dates.ts';
 import { formatCents, typeAmount } from '../lib/money.ts';
+import { inviteLink, shortInviteLink } from '@qpq/shared';
+import { inviteHost } from '../firebase.ts';
 
 /** Ilustração dos estados vazios; o "+" amarelo só aparece quando há ação. */
 export function EmptyArt({ plus }: { plus?: { label: string; onClick: () => void } }) {
@@ -66,6 +68,14 @@ export async function copyText(text: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/**
+ * Link de convite para compartilhar: o curto do Hosting (prévia com o nome do split) quando o app
+ * fala com um projeto de verdade; nos emuladores, o link direto do app.
+ */
+export function inviteUrl(code: string): string {
+  return inviteHost ? shortInviteLink(inviteHost, code) : inviteLink(appBase(), code);
 }
 
 export function appBase(): string {

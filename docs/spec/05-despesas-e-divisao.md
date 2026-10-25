@@ -23,7 +23,7 @@ Com erro de divisão, a mensagem é "A divisão não fecha com o valor. Ajuste o
 
 **Dividir por itens:**
 
-- Cada item tem nome, valor, quem consumiu (avatares com nome embaixo; seu nome em negrito), botão "Todos" e o próprio modo de divisão (igualmente, frações, %, valor exato).
+- Cada item tem ícone ou emoji (visível também com o cartão minimizado), nome, valor, quem consumiu (avatares com nome embaixo; seu nome em negrito), botão "Todos" e o próprio modo de divisão (igualmente, frações, %, valor exato).
 - Itens podem ser minimizados para uma linha de resumo. Com erro, os itens com problema reabrem sozinhos.
 - Mais de 5 pessoas: os avatares do item rolam na horizontal e aparece "Ver todos (N)".
 - **Resto da compra:** se o valor total for maior que a soma dos itens, a diferença é dividida entre as pessoas escolhidas no Resto, com modo próprio. Se o valor ficar vazio, o total passa a ser a soma dos itens.

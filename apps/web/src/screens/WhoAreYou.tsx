@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router';
-import { cleanName, coverColor, isValidName, nameKey, type ErrorDetails, type PreviewInviteResponse } from '@qpq/shared';
+import { cleanName, isValidName, nameKey, type ErrorDetails, type PreviewInviteResponse } from '@qpq/shared';
 import { Avatar, avatarColor, Button, Card, Cover, Icon, SkeletonCard, useToast } from '../components/index.ts';
 import { api, detailsOf } from '../data/api.ts';
 import { trackJoin } from '../data/local.ts';
@@ -89,7 +89,7 @@ export default function WhoAreYou() {
         {data && (
           <>
             <Card className="split-head">
-              <Cover emoji={data.emoji} color={coverColor(data.emoji)} />
+              <Cover icon={data.icon} />
               <span className="mid">
                 <span className="ttl" style={{ fontSize: 17 }}>
                   {data.name}

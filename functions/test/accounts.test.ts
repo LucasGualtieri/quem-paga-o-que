@@ -120,7 +120,7 @@ describe('fusão convidado → conta existente (decisão 5)', () => {
     const preview = await account.call<PreviewMergeResponse>('previewMerge', { token });
     expect(preview.splitCount).toBe(1);
     expect(preview.conflicts).toEqual([
-      { splitId, splitName: 'Ano Novo', emoji: '🎆', guest: { id: guestMember, name: 'Lucas G.' }, account: { id: await memberIdByName(splitId, 'Lucas'), name: 'Lucas' } },
+      { splitId, splitName: 'Ano Novo', icon: { kind: 'emoji', value: '🎆' }, guest: { id: guestMember, name: 'Lucas G.' }, account: { id: await memberIdByName(splitId, 'Lucas'), name: 'Lucas' } },
     ]);
 
     // Sem escolha para o conflito, não junta.

@@ -5,7 +5,7 @@ import { formatCents } from '../lib/money.ts';
 import { EntryIconView } from '../screens/EntryIcon.tsx';
 
 /**
- * Prévia da Minha visão para a Paleta (dados fixos, sem back-end): seu saldo, um cartão "você
+ * Prévia do Meu saldo para a Paleta (dados fixos, sem back-end): seu saldo, um cartão "você
  * deve" aberto (com uma parte compensada e um acerto resolvido), um "te deve" e um quitado.
  */
 export function MyViewPreview() {
@@ -39,7 +39,7 @@ export function MyViewPreview() {
             <span className="cap">{t('my.cOwe')}</span>
           </span>
           <span className="right">
-            <span className="amt strong neg">{fmt(1000)}</span>
+            <span className="amt strong neg">{fmt(-1000)}</span>
           </span>
           <Icon name="down" size="sm" className="up" />
         </div>

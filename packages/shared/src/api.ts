@@ -50,7 +50,10 @@ export interface ErrorDetails {
 
 export interface CreateSplitRequest {
   name: string;
-  emoji: string;
+  /** Capa com ícone ou emoji; sem escolha, o ícone de pessoas. A foto sobe depois (setSplitPhoto). */
+  icon?: EntryIcon | null;
+  /** Só versões antigas do app mandam: um dos 8 emojis de capa. */
+  emoji?: string;
   /** Seu nome neste split (convidado digita; vem preenchido do perfil). */
   selfName: string;
   /** Os outros participantes, só pelo nome. */
@@ -74,7 +77,8 @@ export interface PreviewMember {
 export interface PreviewInviteResponse {
   splitId: string;
   name: string;
-  emoji: string;
+  /** Capa (ícone ou emoji; a foto não aparece antes de entrar). */
+  icon: EntryIcon;
   createdByName: string;
   /** Você já está neste split: o app vai direto para ele. */
   alreadyMember: boolean;
@@ -130,7 +134,7 @@ export interface MergeTokenRequest {
 export interface MergeConflict {
   splitId: string;
   splitName: string;
-  emoji: string;
+  icon: EntryIcon;
   /** Nome que o convidado escolheu neste split. */
   guest: { id: string; name: string };
   /** Nome que a conta já tinha neste split. */
@@ -362,7 +366,7 @@ export const EMPTY_SPLIT_DAYS = 15;
  */
 export interface DeletedSplitData {
   name: string;
-  emoji: string;
+  icon: EntryIcon;
   cause: 'admin' | 'empty';
   /** Nome de quem excluiu (só `admin`). */
   byName: string | null;

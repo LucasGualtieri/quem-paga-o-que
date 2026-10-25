@@ -10,7 +10,7 @@ import type { CreateSplitRequest, CreateSplitResponse, ErrorReason } from '@qpq/
 
 export const PROJECT = 'demo-qpq';
 export const BUCKET = 'demo-qpq.appspot.com';
-const HOST = '127.0.0.1';
+export const HOST = '127.0.0.1';
 
 let seq = 0;
 

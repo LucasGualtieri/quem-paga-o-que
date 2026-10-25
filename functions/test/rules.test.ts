@@ -177,7 +177,7 @@ describe('notificações (Fase 7)', () => {
 describe('split apagado (lápide)', () => {
   beforeEach(async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(doc(ctx.firestore(), 'deletedSplits/s9'), { name: 'Ano Novo', emoji: '🎆', cause: 'admin', byName: 'Lucas' });
+      await setDoc(doc(ctx.firestore(), 'deletedSplits/s9'), { name: 'Ano Novo', icon: { kind: 'emoji', value: '🎆' }, cause: 'admin', byName: 'Lucas' });
     });
   });
 

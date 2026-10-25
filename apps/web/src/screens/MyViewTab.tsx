@@ -42,7 +42,7 @@ interface Props {
 }
 
 /**
- * Minha visão (spec 06): seu saldo e um cartão por pessoa com o saldo do par. Devo: Copiar Pix
+ * Meu saldo (spec 06): seu saldo e um cartão por pessoa com o saldo do par. Devo: Copiar Pix
  * e Marcar como pago (o saldo do par, num acerto); me devem: Recebi; quitado, neutro. Aberto, o
  * cartão lista as despesas e os acertos que formam o saldo. Admin vê como qualquer pessoa.
  */
@@ -263,7 +263,7 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
                       {t('balance.settled')}
                     </span>
                   ) : (
-                    <span className={`amt strong ${tone}`}>{fmt(c.amount)}</span>
+                    <span className={`amt strong ${tone}`}>{fmt(c.status === 'owe' ? -c.amount : c.amount)}</span>
                   )}
                 </span>
                 <Icon name="down" size="sm" className={opened ? 'up' : ''} />

@@ -10,7 +10,9 @@ import {
   isCoverEmoji,
   isValidName,
   nameKey,
+  parseEntryIcon,
   parseInvite,
+  splitCover,
   SPLIT_NAME_MAX,
   type CreateSplitResponse,
   type JoinSplitResponse,
@@ -82,10 +84,11 @@ export const createSplit = onCall(opts, async (req): Promise<CreateSplitResponse
   const uid = uidOf(req);
   const data = input(req);
   const name = cleanName(text(data.name));
-  const emoji = text(data.emoji);
+  // Capa: ícone ou emoji (as versões antigas do app ainda mandam um dos 8 emojis).
+  const icon = data.icon !== undefined ? parseEntryIcon(data.icon) : isCoverEmoji(text(data.emoji)) ? { kind: 'emoji' as const, value: text(data.emoji) } : false;
   const selfName = cleanName(text(data.selfName));
   const people = Array.isArray(data.people) ? data.people.map((p) => cleanName(text(p))) : fail('invalid-input');
-  if (!isValidName(name, SPLIT_NAME_MAX) || !isCoverEmoji(emoji) || !isValidName(selfName)) fail('invalid-input');
+  if (!isValidName(name, SPLIT_NAME_MAX) || icon === false || !isValidName(selfName)) fail('invalid-input');
   if (people.length > MAX_PEOPLE || !people.every((p) => isValidName(p))) fail('invalid-input');
   const dup = findDuplicate([selfName, ...people]);
   if (dup !== null) fail('name-taken', { name: dup });
@@ -107,7 +110,8 @@ export const createSplit = onCall(opts, async (req): Promise<CreateSplitResponse
     tx.create(db().doc(`inviteCodes/${code}`), { splitId: ref.id });
     tx.create(ref, {
       name,
-      emoji,
+      icon,
+      emoji: '',
       status: 'open',
       doneAt: null,
       code,
@@ -132,7 +136,7 @@ export const previewInvite = onCall(opts, async (req): Promise<PreviewInviteResp
     return {
       splitId: ref.id,
       name: split.name,
-      emoji: split.emoji,
+      icon: splitCover(split),
       createdByName: split.members[split.createdBy]?.name ?? '',
       alreadyMember: memberOf(split, uid) !== null,
       members: Object.entries(split.members)

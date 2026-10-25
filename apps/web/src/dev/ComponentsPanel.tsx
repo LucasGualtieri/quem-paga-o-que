@@ -146,8 +146,7 @@ export function ComponentsPanel() {
         <div>
           <p className="lab">{s('splitCard')}</p>
           <SplitCard
-            emoji="🎆"
-            color={1}
+            icon={{ kind: 'emoji', value: '🎆' }}
             name={x('splitName')}
             meta={`${t('split.people', { count: 4 })} · ${t('split.open')}`}
             balance={

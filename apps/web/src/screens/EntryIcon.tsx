@@ -38,9 +38,9 @@ export function resetEmojiCache(): void {
 
 /**
  * Seletor como o do Notion: aba "Ícones" (coleção do app) ou "Emoji" (todos), com busca;
- * "Remover" volta para o automático.
+ * "Remover" volta para o automático. Com `photo` (capa do split), também oferece "Enviar foto".
  */
-export function IconPicker({ open, value, onChange, onClose }: { open: boolean; value: EntryIcon | null | undefined; onChange: (icon: EntryIcon | null) => void; onClose: () => void }) {
+export function IconPicker({ open, value, onChange, onClose, photo }: { open: boolean; value: EntryIcon | null | undefined; onChange: (icon: EntryIcon | null) => void; onClose: () => void; photo?: { has: boolean; onFile: (file: File) => void } }) {
   const { t } = useTranslation();
   const lang = useLang();
   const [tab, setTab] = useState<'icon' | 'emoji'>(value?.kind === 'emoji' ? 'emoji' : 'icon');
@@ -70,7 +70,23 @@ export function IconPicker({ open, value, onChange, onClose }: { open: boolean; 
   };
 
   return (
-    <Sheet open={open} title={t('iconPicker.title')} onClose={onClose}>
+    <Sheet open={open} title={photo ? t('iconPicker.coverTitle') : t('iconPicker.title')} onClose={onClose}>
+      {photo && (
+        <label className="filebtn">
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              onClose();
+              photo.onFile(file);
+            }}
+          />
+          <Icon name="camera" />
+          <span>{t('iconPicker.photo')}</span>
+        </label>
+      )}
       <Segmented<'icon' | 'emoji'>
         label={t('iconPicker.title')}
         value={tab}
@@ -100,7 +116,7 @@ export function IconPicker({ open, value, onChange, onClose }: { open: boolean; 
         {((tab === 'icon' && icons.length === 0) || (tab === 'emoji' && emojis && emojiShown.length === 0)) && <p className="cap">{t('iconPicker.none')}</p>}
       </div>
       <div className="sheet-acts">
-        <button type="button" className="btn btn-g btn-block" disabled={!value} onClick={() => pick(null)}>
+        <button type="button" className="btn btn-g btn-block" disabled={!value && !photo?.has} onClick={() => pick(null)}>
           {t('iconPicker.remove')}
         </button>
       </div>

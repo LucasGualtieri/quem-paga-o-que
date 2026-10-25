@@ -13,8 +13,9 @@ const VALID = new RegExp(`^[${CODE_ALPHABET}]{6}$`);
 /** Lê o código do que a pessoa colou: o código (com ou sem hífen/espaço) ou o link de convite. */
 export function parseInvite(input: string): string | null {
   let text = input.trim().toUpperCase();
-  const at = text.indexOf('/CONVITE/');
-  if (at >= 0) text = text.slice(at + '/CONVITE/'.length).split(/[?#/&]/)[0]!;
+  // Link do app (…/#/convite/ABC-123) ou o curto, com prévia (…/c/ABC-123).
+  const marker = ['/CONVITE/', '/C/'].find((m) => text.includes(m));
+  if (marker) text = text.slice(text.indexOf(marker) + marker.length).split(/[?#/&]/)[0]!;
   const raw = text.replace(/[\s-]/g, '');
   return VALID.test(raw) ? `${raw.slice(0, 3)}-${raw.slice(3)}` : null;
 }
@@ -23,6 +24,14 @@ export function parseInvite(input: string): string | null {
 export function inviteLink(appBase: string, code: string): string {
   const base = appBase.replace(/[^/]*$/, '');
   return `${base}#/convite/${code}`;
+}
+
+/**
+ * Link curto do convite, servido pelo Firebase Hosting: a prévia (WhatsApp, iMessage…) mostra o
+ * nome e o emoji do split e a página abre o convite no app.
+ */
+export function shortInviteLink(host: string, code: string): string {
+  return `${host.replace(/\/+$/, '')}/c/${code}`;
 }
 
 /** Link pessoal de recuperação (decisão 6): vale até ser revogado. */

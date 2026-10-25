@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CODE_ALPHABET, generateCode, inviteLink, parseInvite } from '../src/index.ts';
+import { CODE_ALPHABET, generateCode, inviteLink, parseInvite, shortInviteLink } from '../src/index.ts';
 
 describe('código de convite', () => {
   it('tem o formato ABC-123, sem caracteres que se confundem', () => {
@@ -22,6 +22,12 @@ describe('código de convite', () => {
   it('lê o código de dentro do link de convite', () => {
     expect(parseInvite('https://lucasgualtieri.github.io/quem-paga-o-que/#/convite/K7M-24Q')).toBe('K7M-24Q');
     expect(parseInvite('lucasgualtieri.github.io/quem-paga-o-que/#/convite/k7m-24q?x=1')).toBe('K7M-24Q');
+    expect(parseInvite('https://qpq-staging.web.app/c/k7m-24q')).toBe('K7M-24Q');
+  });
+
+  it('monta o link curto (com prévia) a partir do endereço do Hosting', () => {
+    expect(shortInviteLink('https://qpq-staging.web.app', 'K7M-24Q')).toBe('https://qpq-staging.web.app/c/K7M-24Q');
+    expect(shortInviteLink('https://qpq-staging.web.app//', 'K7M-24Q')).toBe('https://qpq-staging.web.app/c/K7M-24Q');
   });
 
   it('texto que não é código devolve null', () => {

@@ -48,6 +48,7 @@ export const ICON_CHOICES = [
   'star',
   'receipt',
   'box',
+  'people',
 ] as const;
 export type IconChoice = (typeof ICON_CHOICES)[number];
 

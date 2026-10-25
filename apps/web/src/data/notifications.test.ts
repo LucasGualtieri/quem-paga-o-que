@@ -44,7 +44,7 @@ describe('textos das notificações (spec 07)', () => {
 
   it('acerto: quem recebeu, quem pagou e admin de fora; leva ao Saldo', () => {
     const settled = { ...base, kind: 'settled' as const, expId: null, expName: null, memberId: null, paymentId: 'p1', payFrom: 'm2', payTo: 'm1' };
-    expect(viewOf(settled, t, name, money)).toEqual({ title: 'Beatriz pagou R$ 40,00 pra você', sub: 'Acerto de contas · Ano Novo', to: '/s/s1/eu' });
+    expect(viewOf(settled, t, name, money)).toEqual({ title: 'Beatriz pagou R$ 40,00 pra você', sub: 'Acerto de contas · Ano Novo', to: '/s/s1/saldo' });
     expect(viewOf({ ...settled, from: 'm1', fromName: 'Lucas', toMember: 'm2' }, t, name, money).title).toBe('Lucas marcou que recebeu R$ 40,00 de você');
     expect(viewOf({ ...settled, from: 'm3', fromName: 'Catarina' }, t, name, money).title).toBe('Catarina registrou que Beatriz te pagou R$ 40,00');
     expect(viewOf({ ...settled, from: 'm3', fromName: 'Catarina', toMember: 'm2' }, t, name, money).title).toBe('Catarina registrou que você pagou R$ 40,00 para Lucas');
@@ -52,7 +52,7 @@ describe('textos das notificações (spec 07)', () => {
 
   it('comprovante depois e "Não recebi"', () => {
     expect(viewOf({ ...base, kind: 'proof' }, t, name, money)).toMatchObject({ title: 'Beatriz enviou um comprovante', sub: 'Pizza · Ano Novo · R$ 40,00' });
-    expect(viewOf({ ...base, kind: 'proof', expId: null, expName: null, paymentId: 'p1' }, t, name, money)).toMatchObject({ sub: 'Acerto de contas · Ano Novo · R$ 40,00', to: '/s/s1/eu' });
+    expect(viewOf({ ...base, kind: 'proof', expId: null, expName: null, paymentId: 'p1' }, t, name, money)).toMatchObject({ sub: 'Acerto de contas · Ano Novo · R$ 40,00', to: '/s/s1/saldo' });
     expect(viewOf({ ...base, kind: 'disputed', from: 'm1', fromName: 'Lucas' }, t, name, money)).toMatchObject({ title: 'Lucas avisou que não recebeu R$ 40,00', sub: 'Pizza · Ano Novo' });
   });
 

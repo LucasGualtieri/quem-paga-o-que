@@ -1,7 +1,7 @@
 import { FieldValue, Timestamp, type DocumentReference } from 'firebase-admin/firestore';
 import { onCall } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
-import { EMPTY_SPLIT_DAYS, type DeletedSplitData } from '@qpq/shared';
+import { EMPTY_SPLIT_DAYS, splitCover, type DeletedSplitData } from '@qpq/shared';
 import { bucket, db, input, loadSplit, opts, REGION, requireAdmin, uidOf, type SplitData } from './common.ts';
 import { col, noteData } from './notifications.ts';
 
@@ -29,7 +29,7 @@ async function deletePrefix(prefix: string): Promise<void> {
 /** Apaga tudo do split; `by` (memberId de quem excluiu) avisa os outros no sino. */
 export async function destroySplit(ref: DocumentReference, split: SplitData, cause: DeletedSplitData['cause'], by: string | null): Promise<void> {
   const id = ref.id;
-  const tomb: DeletedSplitData & { at: FieldValue } = { name: split.name, emoji: split.emoji, cause, byName: by ? (split.members[by]?.name ?? null) : null, at: FieldValue.serverTimestamp() };
+  const tomb: DeletedSplitData & { at: FieldValue } = { name: split.name, icon: splitCover(split), cause, byName: by ? (split.members[by]?.name ?? null) : null, at: FieldValue.serverTimestamp() };
   await db().doc(`deletedSplits/${id}`).set(tomb);
   // O convite continua existindo só para dizer que o split foi apagado.
   await db().doc(`inviteCodes/${split.code}`).set({ splitId: id, gone: true });

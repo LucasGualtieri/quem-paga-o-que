@@ -7,9 +7,9 @@ Cada split tem dois papéis: **admin** (pode haver vários; quem cria é admin) 
 | Lançar despesa | Qualquer participante | Pode lançar despesa paga por outra pessoa (campo "Pago por"). |
 | Editar ou excluir despesa | Quem lançou (`author`) ou admin | Os outros veem "Só X (quem lançou) ou um admin pode editar". Toda edição entra no histórico. |
 | Marcar uma parte de despesa como paga | A própria pessoa, quem pagou a despesa ou admin | Quem pagou nunca tem parte a marcar. |
-| Registrar acerto nos cartões da Minha visão | Quem está no par (deve ou recebe) ou admin | Admin registra por qualquer pessoa com "Ver como". |
+| Registrar acerto nos cartões do Meu saldo | Quem está no par (deve ou recebe) ou admin | Admin registra por qualquer pessoa com "Ver como". |
 | Confirmar acerto ou "Não recebi" | Quem recebe ou admin | Acerto registrado por quem recebe já nasce confirmado. |
-| Ver a Minha visão de outra pessoa ("Ver como") | Só admin | Os outros só veem os pares com eles. |
+| Ver o Meu saldo de outra pessoa ("Ver como") | Só admin | Os outros só veem os pares com eles. |
 | Desfazer acerto registrado | As duas pessoas do acerto ou admin |  |
 | Anexar comprovante depois | As duas pessoas do pagamento (na parte de despesa, também admin) | Só enquanto não houver comprovante. |
 | Convidar, promover, tirar admin, remover | Só admin. "Tornar admin" só aparece para quem já entrou (escolheu o nome) | Membro vê a aba Pessoas com cadeado e o texto "fale com…" (abaixo). Admin age sobre os outros; sobre si mesmo, ver "Deixar de ser admin". |
@@ -49,4 +49,8 @@ Cada split tem dois papéis: **admin** (pode haver vários; quem cria é admin) 
 - Admin pode reabrir quando quiser.
 - Na home, splits finalizados ficam no filtro "Finalizados" e não entram no total "No total, você deve/recebe".
 
-**Criar split:** nome, capa (emoji ou foto, opcional), o seu nome e os outros participantes só pelo nome ("Só o nome basta"), sem nomes repetidos (ver Contas). Depois aparece a tela com link de convite, código e Compartilhar.
+**Criar split:** nome, capa (opcional), o seu nome e os outros participantes só pelo nome ("Só o nome basta"), sem nomes repetidos (ver Contas). Depois aparece a tela com link de convite, código e Compartilhar.
+
+- **Capa** (revista em 25/10/2026): um quadrado ao lado do nome abre o mesmo seletor das despesas (abas Ícones e Emoji, com busca), mais "Enviar foto" e "Remover". Sem escolha, a capa é o ícone de pessoas. Cada ícone ou emoji tem sempre a mesma cor de fundo. Splits antigos mantêm o emoji que já tinham.
+- **Foto** (de capa e de perfil) passa antes por "Ajustar foto": arrastar para posicionar, zoom (pinça, roda do mouse ou controle) e a prévia ao vivo nos tamanhos em que vai aparecer. Sobe só o recorte quadrado.
+- **Convite:** Copiar e Compartilhar mandam "Entre no split Churras de sábado: <link>". O link é curto (`…web.app/c/ABC-123`) e a prévia no WhatsApp ou iMessage mostra o nome e o emoji do split ("Convite para dividir as contas no Quem Paga O Quê?"), sem nomes de pessoas nem valores. Os links antigos (`…/#/convite/ABC-123`) continuam valendo.
