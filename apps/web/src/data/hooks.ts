@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { DeletedSplitData, PixKey } from '@qpq/shared';
 import { firebase } from '../firebase.ts';
 import { pruneOps, mergeOps, useOps } from './expenseStore.ts';
+import { pruneSplitEdits } from './splitEdits.ts';
 import { activeExpenses, type ExpenseDoc, type PaymentDoc, type SplitDoc } from './model.ts';
 import { applyPaymentOps, applyShareOps, prunePaymentOps, pruneShareOps, usePayOps } from './payStore.ts';
 
@@ -22,7 +23,11 @@ export function useMySplits(uid: string | null): Loadable<SplitDoc[]> {
     const q = query(collection(firebase().db, 'splits'), where('uids', 'array-contains', uid));
     return onSnapshot(
       q,
-      (snap) => setState({ status: 'ready', data: snap.docs.map((d) => toSplitDoc(d.id, d.data())) }),
+      (snap) => {
+        const data = snap.docs.map((d) => toSplitDoc(d.id, d.data()));
+        pruneSplitEdits(data);
+        setState({ status: 'ready', data });
+      },
       () => setState({ status: 'denied' }),
     );
   }, [uid]);
@@ -36,7 +41,12 @@ export function useSplit(splitId: string, uid: string | null): Loadable<SplitDoc
     setState({ status: 'loading' });
     return onSnapshot(
       doc(firebase().db, 'splits', splitId),
-      (snap) => setState(snap.exists() ? { status: 'ready', data: toSplitDoc(snap.id, snap.data()) } : { status: 'denied' }),
+      (snap) => {
+        if (!snap.exists()) return setState({ status: 'denied' });
+        const data = toSplitDoc(snap.id, snap.data());
+        pruneSplitEdits([data]);
+        setState({ status: 'ready', data });
+      },
       () => setState({ status: 'denied' }),
     );
   }, [splitId, uid]);

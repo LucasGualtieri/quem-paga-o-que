@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useRef, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router';
-import { Badge, Icon, Segmented, SkeletonCard, ThemeToggle } from '../components/index.ts';
-import { useMySplits, useProfile } from '../data/hooks.ts';
+import { Badge, Icon, Segmented, Sheet, SkeletonCard, ThemeToggle } from '../components/index.ts';
+import { useMoney, useMySplits, useProfile } from '../data/hooks.ts';
+import { myMember, type SplitDoc } from '../data/model.ts';
+import { useSplitEdits, withSplitEdits } from '../data/splitEdits.ts';
 import { totalsOf, useMyNets } from '../data/nets.ts';
 import { Bell } from './Notifications.tsx';
 import { ProfileAvatar, SplitCover } from './Photos.tsx';
@@ -12,6 +14,7 @@ import { useLang } from '../i18n/index.ts';
 import { dayMonth } from '../lib/dates.ts';
 import { formatCents } from '../lib/money.ts';
 import { EmptyArt, useBalanceView } from './common.tsx';
+import { SplitMenuItem, useSplitActions } from './SplitActions.tsx';
 
 export default function Home() {
   const { t } = useTranslation();
@@ -27,7 +30,14 @@ export default function Home() {
   const [filter, setFilter] = useState<'open' | 'done'>('open');
   const view = useBalanceView();
 
-  const splits = result.status === 'ready' ? result.data.filter((s) => !hidden.has(s.id)) : [];
+  const edits = useSplitEdits();
+  const splits = result.status === 'ready' ? result.data.filter((s) => !hidden.has(s.id)).map((s) => withSplitEdits(s, edits)) : [];
+  // Ações do split (⋯ ou toque longo no cartão): Editar, Convidar, Finalizar, Sair, Excluir.
+  // `n`: abrir de novo o mesmo split reabre a folha.
+  const [acting, setActing] = useState<{ id: string; n: number } | null>(null);
+  const actingSplit = splits.find((s) => s.id === acting?.id) ?? null;
+  const act = (id: string) => setActing((a) => ({ id, n: (a?.n ?? 0) + 1 }));
+  const press = useLongPress(act);
   const nets = useMyNets(splits, uid);
   const open = splits.filter((s) => s.status === 'open');
   const done = splits.filter((s) => s.status === 'done');
@@ -108,7 +118,8 @@ export default function Home() {
               const b = view(nets[s.id] ?? 0);
               const count = Object.keys(s.members).length;
               return (
-                <Link key={s.id} to={`/s/${s.id}`} className="home-card">
+                <div key={s.id} className="home-row">
+                <Link to={`/s/${s.id}`} className="home-card" {...press(s.id)}>
                   <SplitCover split={s} />
                   <span className="hdr-mid">
                     <span className="sc-name clamp2">{s.name}</span>
@@ -124,6 +135,10 @@ export default function Home() {
                     <span className="balcap">{b.caption}</span>
                   </span>
                 </Link>
+                <button type="button" className="iconbtn home-more" aria-label={t('home.actions', { name: s.name })} onClick={() => act(s.id)}>
+                  <Icon name="dots" />
+                </button>
+                </div>
               );
             })}
             {shown.length === 0 && (
@@ -134,6 +149,8 @@ export default function Home() {
           </>
         )}
       </div>
+
+      {actingSplit && uid && acting && <HomeSplitActions key={acting.n} split={actingSplit} uid={uid} />}
 
       <div className="bottombar">
         <Link to="/novo" className="btn btn-p btn-block">
@@ -146,5 +163,85 @@ export default function Home() {
         </Link>
       </div>
     </main>
+  );
+}
+
+/**
+ * Toque longo no cartão (celular) abre as ações, como o ⋯; o toque normal continua abrindo o
+ * split. No Android o toque longo num link vira "menu de contexto": abre as ações no lugar.
+ */
+function useLongPress(onLong: (id: string) => void) {
+  const timer = useRef<number | null>(null);
+  const fired = useRef(false);
+  const start = useRef<{ x: number; y: number } | null>(null);
+  const cancel = () => {
+    if (timer.current !== null) window.clearTimeout(timer.current);
+    timer.current = null;
+  };
+  return (id: string) => ({
+    onPointerDown: (e: React.PointerEvent) => {
+      if (e.pointerType === 'mouse') return;
+      fired.current = false;
+      start.current = { x: e.clientX, y: e.clientY };
+      cancel();
+      timer.current = window.setTimeout(() => {
+        fired.current = true;
+        onLong(id);
+      }, 500);
+    },
+    onPointerMove: (e: React.PointerEvent) => {
+      if (start.current && Math.hypot(e.clientX - start.current.x, e.clientY - start.current.y) > 10) cancel();
+    },
+    onPointerUp: cancel,
+    onPointerCancel: cancel,
+    onContextMenu: (e: MouseEvent) => {
+      e.preventDefault();
+      cancel();
+      fired.current = true;
+      onLong(id);
+    },
+    onClick: (e: MouseEvent) => {
+      if (fired.current) {
+        e.preventDefault();
+        fired.current = false;
+      }
+    },
+  });
+}
+
+/** A folha de ações de um split da home, com as mesmas folhas de dentro do split. */
+function HomeSplitActions({ split, uid }: { split: SplitDoc; uid: string }) {
+  const me = myMember(split, uid);
+  return me ? <HomeSplitActionsFor split={split} me={me} /> : null;
+}
+
+function HomeSplitActionsFor({ split, me }: { split: SplitDoc; me: NonNullable<ReturnType<typeof myMember>> }) {
+  const { t } = useTranslation();
+  const money = useMoney(split.id, true);
+  const a = useSplitActions(split, me, money, false);
+  const [open, setOpen] = useState(true);
+  return (
+    <>
+      <Sheet open={open} title={split.name} onClose={() => setOpen(false)}>
+        <div className="home-actions-head">
+          <SplitCover split={split} size="sm" />
+          <span className="cap">{t('split.people', { count: Object.keys(split.members).length })} · {t(split.status === 'done' ? 'split.done' : 'split.open')}</span>
+        </div>
+        <div className="home-actions" role="menu" aria-label={t('home.actions', { name: split.name })}>
+          {a.items.map((x) => (
+            <SplitMenuItem
+              key={x.key}
+              item={x}
+              isAdmin={a.isAdmin}
+              onClick={() => {
+                setOpen(false);
+                a.perform(x.key);
+              }}
+            />
+          ))}
+        </div>
+      </Sheet>
+      {a.sheets}
+    </>
   );
 }

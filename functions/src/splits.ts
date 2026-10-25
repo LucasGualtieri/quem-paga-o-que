@@ -1,7 +1,7 @@
 import { randomInt } from 'node:crypto';
 import { FieldValue, type Transaction } from 'firebase-admin/firestore';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
-import { purgeSplitProofs } from './proofs.ts';
+import { deleteFiles, purgeSplitProofs } from './proofs.ts';
 import type { Expense, Payment } from '@qpq/calc';
 import {
   cleanName,
@@ -34,6 +34,7 @@ import {
   UNLINKED,
   readMoney,
   requireAdmin,
+  requireOpen,
   requireMember,
   target,
   text,
@@ -278,6 +279,32 @@ export const reopenSplit = onCall(opts, async (req) => {
     if (split.status === 'open') return;
     tx.update(ref, { status: 'open', doneAt: null });
   });
+  return {};
+});
+
+/**
+ * Editar o split (só admin, aberto): nome e capa. `icon: null` volta ao ícone de pessoas;
+ * `clearPhoto` tira a foto (escolher ícone ou emoji tira a foto). A foto nova sobe por setSplitPhoto.
+ */
+export const updateSplit = onCall(opts, async (req) => {
+  const uid = uidOf(req);
+  const data = input(req);
+  const name = data.name === undefined ? undefined : cleanName(text(data.name));
+  if (name !== undefined && !isValidName(name, SPLIT_NAME_MAX)) fail('invalid-input');
+  const icon = data.icon === undefined ? undefined : parseEntryIcon(data.icon);
+  if (icon === false) fail('invalid-input');
+  const old = await db().runTransaction(async (tx) => {
+    const { ref, split } = await loadSplit(tx, data.splitId);
+    requireAdmin(split, uid);
+    requireOpen(split);
+    const patch: Record<string, unknown> = {};
+    if (name !== undefined) patch.name = name;
+    if (icon !== undefined) Object.assign(patch, { icon, emoji: '' });
+    if (data.clearPhoto === true) patch.photo = null;
+    if (Object.keys(patch).length) tx.update(ref, patch);
+    return data.clearPhoto === true ? (split.photo ?? null) : null;
+  });
+  await deleteFiles([old]);
   return {};
 });
 

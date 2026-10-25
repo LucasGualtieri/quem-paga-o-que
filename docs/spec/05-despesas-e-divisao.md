@@ -31,10 +31,10 @@ Com erro de divisão, a mensagem é "A divisão não fecha com o valor. Ajuste o
 
 **Detalhe da despesa:** valor, quem pagou, parte de cada um (com estado pago, comprovante e ações conforme as permissões), itens se houver, comprovante, nota e **Histórico de edição** (criação, mudança de valor de X para Y, edições, pagamentos e comprovantes).
 
-**Depois de salvar:** volta para Transações com a nova despesa destacada, toast "Despesa adicionada" com Desfazer e o saldo animando para o novo valor. Excluir pede confirmação e também oferece Desfazer.
+**Depois de salvar:** volta para a aba Despesas com a nova despesa destacada, toast "Despesa adicionada" com Desfazer e o saldo animando para o novo valor. Excluir pede confirmação e também oferece Desfazer.
 
 **Excluir com pagamentos:** bloqueado enquanto houver parte paga ou pagamento esperando confirmação ("Esta despesa tem pagamentos marcados. Desmarque-os antes de excluir."). Ao excluir, as notificações da despesa somem da lista; Desfazer traz a despesa e as notificações de volta.
 
 **Duas pessoas editando:** ao salvar, se outra pessoa salvou a despesa antes, aparece "Beatriz alterou esta despesa enquanto você editava." com "Ver a versão nova" ou "Salvar a minha por cima". As duas edições entram no Histórico. Marcar parte paga, confirmar e anexar comprovante não são edições da despesa e não geram esse aviso.
 
-**Transações:** agrupadas por dia, com busca (nome ou tag) e dois filtros em menu suspenso: Pessoas (quem pagou ou participa) e Tags, com contagem por opção. Quem pagou vê "1 pagamento p/ conferir" na despesa enquanto houver pendência de confirmação.
+**Aba Despesas** (antes "Transações"; renomeada em 25/10/2026): agrupadas por dia, com busca (nome ou tag) e dois filtros em menu suspenso: Pessoas (quem pagou ou participa) e Tags, com contagem por opção. Quem pagou vê "1 pagamento p/ conferir" na despesa enquanto houver pendência de confirmação.

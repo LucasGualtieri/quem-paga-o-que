@@ -264,6 +264,10 @@ Decisão: 10 ✅ (Resend, agrupado em 10 min, resumo + botão, sem foto; **e-mai
   - "Ajustar foto" (perfil e capa): arrastar, zoom e prévia ao vivo nos tamanhos em que a foto aparece; sobe só o recorte quadrado.
   - Ícone do item visível com o cartão minimizado.
   - Capa do split com ícone, emoji (o mesmo seletor das despesas) ou foto; sem escolha, o ícone de pessoas. Splits antigos mantêm o emoji.
+- **Quinta leva (25/10/2026):**
+  - Placeholder "Nome do amigo (opcional)"; aba "Transações" virou **Despesas**.
+  - Editar o split (nome e capa; só admin; Function `updateSplit`), pelo menu ou tocando na capa/nome do cabeçalho.
+  - Ações do split na home ("⋯" e toque longo): Editar, Convidar, Finalizar/Reabrir, Excluir e Sair, com as mesmas folhas de dentro do split (`screens/SplitActions.tsx`). Edições, finalizar e reabrir otimistas valem na home e dentro do split (`data/splitEdits.ts`).
 
 ## 5. Ações que só o Lucas pode fazer
 

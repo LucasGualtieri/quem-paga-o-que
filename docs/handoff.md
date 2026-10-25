@@ -44,7 +44,7 @@ Web app de divisão de despesas em grupo ("Quem Paga O Quê?"). Front estático 
 | 6 | Saldo, Minha visão, marcar pago/Recebi, confirmar/"Não recebi", acertos, comprovantes (Storage), capa e foto de perfil | ✅ (CI verde, Functions e Storage no staging) |
 | 7 | Notificações no app (4 eventos, sino, lista, banner pelo aviso) | ✅ (e-mail adiado: decisão 10) |
 | 8 | Finalizar/reabrir, home completa, acessibilidade (axe); desktop = mesma UI do celular | ✅ (falta revisão manual no celular) |
-| — | Ajustes finos (24/10/2026): último admin sai, chave Pix, ícone/emoji, Minha visão por pessoa no lugar da aba Saldo, confirmação de acerto, "Ver como" do admin; foto nos avatares, valor como caixa eletrônico, excluir split e split vazio apagado em 15 dias; Meu saldo, vermelho do escuro, convite com nome, Ajustar foto, capa com ícone/emoji | ✅ (ver plan.md) |
+| — | Ajustes finos (24/10/2026): último admin sai, chave Pix, ícone/emoji, Minha visão por pessoa no lugar da aba Saldo, confirmação de acerto, "Ver como" do admin; foto nos avatares, valor como caixa eletrônico, excluir split e split vazio apagado em 15 dias; Meu saldo, vermelho do escuro, convite com nome, Ajustar foto, capa com ícone/emoji; editar split, ações na home, aba Despesas | ✅ (ver plan.md) |
 
 ### Decisões (docs/spec/pontos-em-aberto.md)
 
@@ -59,7 +59,7 @@ packages/calc/     motor de partes e saldos (TypeScript puro; shares, validateEx
 packages/shared/   nomes (nameKey), convite, tags, Pix (pix.ts), ícones (icons.ts), contrato das Functions (api.ts)
 functions/         Cloud Functions chamáveis (us-east1, esbuild)
   src/splits.ts    createSplit, previewInvite, joinSplit, setAdmin, releaseName, leaveSplit, removeMember, regenerateCode,
-                   finalizeSplit, reopenSplit
+                   finalizeSplit, reopenSplit, updateSplit
   src/accounts.ts  createRecoveryLink, revokeRecovery, redeemRecovery, prepareMerge, previewMerge, mergeGuest, setPixKey, setProfilePhoto
   src/expenses.ts  createExpense, updateExpense, deleteExpense, restoreExpense
   src/payments.ts  markShare, unmarkShare, confirmShare, disputeShare, createPayment, deletePayment,

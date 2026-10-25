@@ -2,7 +2,7 @@
 
 Marcar como pago vale na hora (atualização otimista); quem recebe pode confirmar ou dizer "Não recebi", e aí o pagamento volta a ficar pendente. Não há estado "a confirmar" separado nem confirmação automática por prazo.
 
-**Abas do split, nesta ordem:** Transações · Meu saldo · Pessoas. A antiga aba Saldo e a Minha visão viraram uma só, **Meu saldo**, com o ícone de setas trocadas (decidido em 24 e 25/10/2026). Fica em `/saldo`; links antigos para `/eu` levam para lá.
+**Abas do split, nesta ordem:** Despesas · Meu saldo · Pessoas. A antiga aba Saldo e a Minha visão viraram uma só, **Meu saldo**, com o ícone de setas trocadas (decidido em 24 e 25/10/2026). Fica em `/saldo`; links antigos para `/eu` levam para lá.
 
 **Aba Meu saldo** (revista em 24/10/2026):
 

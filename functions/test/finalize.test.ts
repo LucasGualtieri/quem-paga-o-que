@@ -90,3 +90,27 @@ describe('finalizeSplit / reopenSplit', () => {
     expect(await reasonOf(w.bia.call('attachProof', { splitId: w.splitId, kind: 'share', expenseId: exp, memberId: w.beatriz, path: again }))).toBe('proof-exists');
   });
 });
+
+describe('updateSplit (editar nome e capa)', () => {
+  it('só admin, com o split aberto; nome, ícone e tirar a foto', async () => {
+    const w = await world();
+    expect(await reasonOf(w.bia.call('updateSplit', { splitId: w.splitId, name: 'Outro' }))).toBe('not-admin');
+    expect(await reasonOf(w.lucas.call('updateSplit', { splitId: w.splitId, name: '  ' }))).toBe('invalid-input');
+    expect(await reasonOf(w.lucas.call('updateSplit', { splitId: w.splitId, icon: { kind: 'icon', name: 'nada' } }))).toBe('invalid-input');
+
+    const capa = await upload(w.lucas, coverPath(w.splitId, 'grupo.jpg'));
+    await w.lucas.call('setSplitPhoto', { splitId: w.splitId, path: capa });
+    await w.lucas.call('updateSplit', { splitId: w.splitId, name: ' Réveillon  2027 ', icon: { kind: 'emoji', value: '🥂' }, clearPhoto: true });
+    const d = (await splitDoc(w.splitId)) as unknown as { name: string; icon: unknown; photo: unknown };
+    expect(d).toMatchObject({ name: 'Réveillon 2027', icon: { kind: 'emoji', value: '🥂' }, photo: null });
+    expect(await exists(capa)).toBe(false);
+    // Só o nome: a capa fica.
+    await w.lucas.call('updateSplit', { splitId: w.splitId, name: 'Ano Novo' });
+    expect(((await splitDoc(w.splitId)) as unknown as { icon: unknown }).icon).toEqual({ kind: 'emoji', value: '🥂' });
+    await w.lucas.call('updateSplit', { splitId: w.splitId, icon: null });
+    expect(((await splitDoc(w.splitId)) as unknown as { icon: unknown }).icon).toBeNull();
+
+    await w.lucas.call('finalizeSplit', { splitId: w.splitId });
+    expect(await reasonOf(w.lucas.call('updateSplit', { splitId: w.splitId, name: 'Depois' }))).toBe('split-done');
+  });
+});

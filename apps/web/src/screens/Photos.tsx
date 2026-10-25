@@ -11,15 +11,19 @@ import { firebase } from '../firebase.ts';
 import { ImageError, photoName } from '../lib/image.ts';
 import { useReasonText } from './reasons.ts';
 
-// Capa recém-escolhida ao criar o split: aparece na hora, antes de subir (UX otimista).
-let pendingCovers: ReadonlyMap<string, string> = new Map();
+// Capa recém-escolhida (ao criar ou editar o split): aparece na hora, antes de subir (UX otimista).
+let pendingCovers: ReadonlyMap<string, { url: string; path: string }> = new Map();
 const listeners = new Set<() => void>();
-function setPending(splitId: string, url: string | null) {
+function setPending(splitId: string, cover: { url: string; path: string } | null) {
   const next = new Map(pendingCovers);
-  if (url) next.set(splitId, url);
+  if (cover) next.set(splitId, cover);
   else next.delete(splitId);
   pendingCovers = next;
   for (const l of listeners) l();
+}
+/** Trocou a foto por ícone ou emoji: a foto recém-escolhida deixa de valer. */
+export function clearPendingCover(splitId: string): void {
+  if (pendingCovers.has(splitId)) setPending(splitId, null);
 }
 function usePendingCovers() {
   return useSyncExternalStore(
@@ -35,18 +39,19 @@ function usePendingCovers() {
 export function SplitCover({ split, size }: { split: Pick<SplitDoc, 'id' | 'emoji' | 'icon' | 'photo'>; size?: 'sm' | 'xl' }) {
   const photo = usePhoto(split.photo ?? null);
   const pending = usePendingCovers().get(split.id);
-  const src = photo?.status === 'ready' ? photo.url : (pending ?? null);
+  // A recém-escolhida vale até o servidor ter a nova (que já está no cache pelo previewPhoto).
+  const src = pending && (split.photo !== pending.path || photo?.status !== 'ready') ? pending.url : photo?.status === 'ready' ? photo.url : null;
   return <Cover icon={splitCover(split)} {...(size ? { size } : {})} src={src} />;
 }
 
-/** Depois de criar o split: sobe a foto da capa e liga ao split (só admin; quem cria é admin). */
+/** Sobe a foto da capa e liga ao split (só admin; quem cria é admin), ao criar ou editar. */
 export function useUploadCover() {
   const { t } = useTranslation();
   const toast = useToast();
   const reasonText = useReasonText();
   return (splitId: string, file: File) => {
     const path = coverPath(splitId, photoName());
-    setPending(splitId, URL.createObjectURL(file));
+    setPending(splitId, { url: URL.createObjectURL(file), path });
     previewPhoto(path, file);
     uploadPhoto(path, file)
       .then(() => api.setSplitPhoto({ splitId, path }))

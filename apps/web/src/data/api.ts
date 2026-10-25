@@ -34,6 +34,7 @@ import type {
   SetAdminRequest,
   SplitRequest,
   UpdateExpenseRequest,
+  UpdateSplitRequest,
 } from '@qpq/shared';
 import { firebase } from '../firebase.ts';
 
@@ -54,6 +55,7 @@ export const api = {
   // Finalizar e reabrir (Fase 8): só admin.
   finalizeSplit: callable<SplitRequest, unknown>('finalizeSplit'),
   deleteSplit: callable<SplitRequest, unknown>('deleteSplit'),
+  updateSplit: callable<UpdateSplitRequest, unknown>('updateSplit'),
   reopenSplit: callable<SplitRequest, unknown>('reopenSplit'),
   // Despesas (Fase 5): só as Functions escrevem.
   createExpense: callable<CreateExpenseRequest, ExpenseWriteResponse>('createExpense'),

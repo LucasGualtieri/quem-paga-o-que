@@ -293,7 +293,16 @@ export interface SetReceiptRequest {
   expenseId: string;
   path: string | null;
 }
-/** Capa com foto do split; `path: null` volta para o emoji. */
+/** Editar o split (só admin): só os campos enviados mudam. */
+export interface UpdateSplitRequest {
+  splitId: string;
+  name?: string;
+  /** Ícone ou emoji; `null` volta para o ícone de pessoas. */
+  icon?: EntryIcon | null;
+  /** Tira a foto da capa (fica o ícone ou emoji). */
+  clearPhoto?: boolean;
+}
+/** Capa com foto do split; `path: null` volta para o ícone ou emoji. */
 export interface SetSplitPhotoRequest {
   splitId: string;
   path: string | null;

@@ -947,3 +947,45 @@ body:has(.bottombar) .toast-region {
   align-items: center;
   gap: 6px;
 }
+
+/* Cabeçalho do split: o admin toca no nome ou na capa para editar. */
+.hdr-edit,
+.hdr-edit-name {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 14px;
+}
+.hdr-edit {
+  display: flex;
+  flex: none;
+}
+
+/* Home: ⋯ em cada cartão (e toque longo) abre as ações do split. */
+.home-row {
+  position: relative;
+}
+.home-row .home-card {
+  padding-right: 52px;
+  -webkit-touch-callout: none;
+}
+.home-more {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.home-actions-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: -6px;
+}
+.home-actions {
+  display: flex;
+  flex-direction: column;
+}

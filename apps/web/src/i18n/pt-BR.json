@@ -42,7 +42,7 @@
     "done": "Finalizado",
     "tabs": {
       "nav": "Seções do split",
-      "tx": "Transações",
+      "tx": "Despesas",
       "me": "Meu saldo",
       "ppl": "Pessoas",
       "adminOnly": "só admin"
@@ -155,7 +155,8 @@
     "emptyBody": "Crie um para a viagem, o churrasco ou o amigo oculto e pare de fazer conta no guardanapo.",
     "newSplit": "Novo split",
     "join": "Entrar com código ou link",
-    "doneOn": "Finalizado em {{date}}"
+    "doneOn": "Finalizado em {{date}}",
+    "actions": "Ações de {{name}}"
   },
   "create": {
     "title": "Novo split",
@@ -166,7 +167,7 @@
     "you": "você",
     "yourName": "Seu nome",
     "yourNamePh": "Como o grupo te chama",
-    "personPh": "Nome do amigo",
+    "personPh": "Nome do amigo (opcional)",
     "add": "Adicionar",
     "addHint": "Só o nome basta. Depois você convida por link e cada um escolhe quem é.",
     "submit": "Criar split",
@@ -818,5 +819,11 @@
     "pvHeader": "Cabeçalho",
     "use": "Usar foto",
     "other": "Escolher outra"
+  },
+  "editSplit": {
+    "menu": "Editar split",
+    "title": "Editar split",
+    "save": "Salvar",
+    "saved": "Split atualizado"
   }
 }

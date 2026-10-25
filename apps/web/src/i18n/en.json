@@ -155,7 +155,8 @@
     "emptyBody": "Start one for the trip, the barbecue or Secret Santa and stop doing math on napkins.",
     "newSplit": "New split",
     "join": "Join with code or link",
-    "doneOn": "Closed {{date}}"
+    "doneOn": "Closed {{date}}",
+    "actions": "Actions for {{name}}"
   },
   "create": {
     "title": "New split",
@@ -166,7 +167,7 @@
     "you": "you",
     "yourName": "Your name",
     "yourNamePh": "What the group calls you",
-    "personPh": "Friend’s name",
+    "personPh": "Friend’s name (optional)",
     "add": "Add",
     "addHint": "A name is enough. Invite by link later and each person picks who they are.",
     "submit": "Create split",
@@ -818,5 +819,11 @@
     "pvHeader": "Header",
     "use": "Use photo",
     "other": "Choose another"
+  },
+  "editSplit": {
+    "menu": "Edit split",
+    "title": "Edit split",
+    "save": "Save",
+    "saved": "Split updated"
   }
 }

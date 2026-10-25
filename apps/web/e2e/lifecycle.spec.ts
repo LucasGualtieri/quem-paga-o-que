@@ -129,3 +129,58 @@ test('item minimizado mostra o ícone; Meu saldo mostra o negativo com "−"', a
   await lucas.goto(lucas.url().replace(/\/saldo$/, '/eu'));
   await expect(lucas).toHaveURL(/\/saldo$/);
 });
+
+test('admin edita nome e capa tocando no cabeçalho; membro não edita', async ({ browser }) => {
+  const { lucas, bia } = await setup(browser);
+  await lucas.getByRole('button', { name: 'Editar split' }).click();
+  const sheet = lucas.getByRole('dialog', { name: 'Editar split' });
+  await sheet.getByLabel('Nome do split *').fill('Churras do Lulu');
+  await sheet.getByRole('button', { name: 'Escolher a capa do split (opcional)' }).click();
+  const picker = lucas.getByRole('dialog', { name: 'Capa do split' });
+  await picker.getByRole('option', { name: /praia|beach/i }).click();
+  await shot(lucas, 'editar-split');
+  await sheet.getByRole('button', { name: 'Salvar' }).click();
+  // Na hora, para os dois.
+  await expect(lucas.getByRole('heading', { name: 'Churras do Lulu' })).toBeVisible();
+  await expect(toast(lucas)).toContainText('Split atualizado', { timeout: 15_000 });
+  await expect(bia.getByRole('heading', { name: 'Churras do Lulu' })).toBeVisible({ timeout: 15_000 });
+
+  // Membro: o cabeçalho não abre edição e o item do menu fica desabilitado.
+  await expect(bia.getByRole('button', { name: 'Editar split' })).toHaveCount(0);
+  await bia.getByRole('button', { name: 'Mais opções' }).click();
+  await expect(bia.getByRole('menuitem', { name: /Editar split/ })).toBeDisabled();
+});
+
+test('na home, o ⋯ do cartão faz as ações do split: editar, finalizar, sair e excluir', async ({ browser }) => {
+  const { lucas, bia } = await setup(browser);
+  await lucas.goto('./#/');
+  const actions = (page: Page) => page.getByRole('button', { name: 'Ações de Churras de sábado' });
+  await actions(lucas).click();
+  const menu = lucas.getByRole('dialog', { name: 'Churras de sábado' });
+  await expect(menu.getByRole('menuitem')).toHaveText(['Editar split', 'Convidar', 'Finalizar split', 'Excluir split', 'Sair do split']);
+  await shot(lucas, 'home-acoes');
+  await menu.getByRole('menuitem', { name: 'Finalizar split' }).click();
+  await lucas.getByRole('dialog', { name: 'Finalizar “Churras de sábado”?' }).getByRole('button', { name: /Finalizar/ }).click();
+  await expect(lucas.getByRole('button', { name: /Finalizados 1/ })).toBeVisible();
+  await expect(toast(lucas)).toContainText('Split finalizado', { timeout: 15_000 });
+
+  // Membro sai pela home; o cartão some na hora.
+  await bia.goto('./#/');
+  await bia.getByRole('button', { name: /Finalizados 1/ }).click();
+  await actions(bia).click();
+  const biaMenu = bia.getByRole('dialog', { name: 'Churras de sábado' });
+  await expect(biaMenu.getByRole('menuitem', { name: /Excluir split/ })).toBeDisabled();
+  await biaMenu.getByRole('menuitem', { name: 'Sair do split' }).click();
+  await bia.getByRole('dialog', { name: 'Sair de “Churras de sábado”?' }).getByRole('button', { name: 'Sair do split' }).click();
+  await expect(bia.locator('.home-card', { hasText: 'Churras de sábado' })).toHaveCount(0);
+
+  // Admin exclui pela home, digitando o nome.
+  await lucas.getByRole('button', { name: /Finalizados 1/ }).click();
+  await actions(lucas).click();
+  await menu.getByRole('menuitem', { name: 'Excluir split' }).click();
+  const del = lucas.getByRole('dialog', { name: 'Excluir “Churras de sábado”?' });
+  await del.getByLabel('Digite “Churras de sábado” para confirmar').fill('Churras de sábado');
+  await del.getByRole('button', { name: 'Excluir split' }).click();
+  await expect(lucas.locator('.home-card', { hasText: 'Churras de sábado' })).toHaveCount(0);
+  await expect(toast(lucas)).toContainText('excluído', { timeout: 15_000 });
+});
