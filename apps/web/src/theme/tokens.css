@@ -81,8 +81,8 @@
   --accent-soft: #2B2452; /* Fundo de chip selecionado, selo Admin, item não lido */
   --pos: #52D38E; /* A receber */
   --pos-soft: #14301F; /* Fundo de selo/ícone "a receber" */
-  --neg: #F0642E; /* Deve, erros (o tom do claro, clareado para o fundo escuro) */
-  --neg-soft: #3A1910; /* Fundo de selo/ícone "deve", botão Excluir */
+  --neg: #EF5350; /* Deve, erros (vermelho puro, sem puxar para o laranja; contraste 4,9:1) */
+  --neg-soft: #3B1617; /* Fundo de selo/ícone "deve", botão Excluir */
   --zero: #A0A1AC; /* Quitado, resolvido */
   --zero-soft: #2A2A31; /* Fundo de selo "Quitado"/"Pago" */
   --me-soft: #221D3A; /* Fundo do seu cartão no Saldo e da sua linha */

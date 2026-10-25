@@ -1,4 +1,4 @@
-import { shares as calcShares, ledger, type Cents, type Expense, type ExpenseMode, type JoinOrder, type MemberId, type Payment, type SplitMode, type Weights } from '@qpq/calc';
+import { effectiveAmount, shares as calcShares, ledger, type Cents, type Expense, type ExpenseMode, type JoinOrder, type MemberId, type Payment, type SplitMode, type Weights } from '@qpq/calc';
 import type { EntryIcon, ErrorReason, PixKey, ProofInfo, ProofVisibility } from '@qpq/shared';
 
 /** Participante como está no Firestore (splits/{id}.members). */
@@ -66,6 +66,32 @@ export function orderOf(split: SplitDoc): JoinOrder {
 /** Parte de cada um numa despesa. */
 export function sharesOf(e: ExpenseDoc, split: SplitDoc): Record<MemberId, Cents> {
   return calcShares(e, orderOf(split));
+}
+
+/** Uma parte da despesa por itens (um item ou o resto da compra) e quanto fica para cada um. */
+export interface ItemPart {
+  amount: Cents;
+  mode: SplitMode;
+  w?: Weights;
+  /** Na ordem de entrada no split, só quem participa. */
+  parts: Array<{ id: MemberId; cents: Cents }>;
+}
+
+function splitPart(amount: Cents, members: readonly MemberId[], mode: SplitMode, w: Weights | undefined, split: SplitDoc): ItemPart {
+  const out = calcShares({ amount, members: [...members], mode, ...(w ? { w } : {}) }, orderOf(split));
+  return { amount, mode, ...(w ? { w } : {}), parts: Object.entries(out).map(([id, cents]) => ({ id, cents })) };
+}
+
+/**
+ * Detalhe da despesa por itens: como cada item foi dividido e quanto sobrou para o "resto da
+ * compra" (total menos itens), com a divisão dele. Sempre pelo motor compartilhado.
+ */
+export function itemsBreakdown(e: ExpenseDoc, split: SplitDoc): { items: ItemPart[]; rest: (ItemPart & { members: MemberId[] }) | null } {
+  const items = (e.items ?? []).map((it) => splitPart(it.amount, it.members, it.mode ?? 'equal', it.w, split));
+  const restAmount = effectiveAmount(e) - (e.items ?? []).reduce((sum, it) => sum + it.amount, 0);
+  const restMembers = e.rest ?? [];
+  const rest = restAmount > 0 && restMembers.length ? { ...splitPart(restAmount, restMembers, e.restMode ?? 'equal', e.restW, split), members: restMembers } : null;
+  return { items, rest };
 }
 
 export function myMember(split: SplitDoc, uid: string): Member | null {

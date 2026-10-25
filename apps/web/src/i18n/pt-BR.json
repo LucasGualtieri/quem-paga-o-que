@@ -549,7 +549,9 @@
       "hProof": "{{name}} enviou um comprovante",
       "receiptExpired": "Comprovante expirado (guardamos por 15 dias).",
       "pending_one": "{{count}} pendente",
-      "pending_other": "{{count}} pendentes"
+      "pending_other": "{{count}} pendentes",
+      "eachFor": "{{amount}} cada · {{names}}",
+      "restWhat": "O que não entrou nos itens"
     },
     "added": "Despesa adicionada",
     "deleted": "Despesa excluída",

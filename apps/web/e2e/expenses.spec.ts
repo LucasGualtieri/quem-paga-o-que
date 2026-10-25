@@ -130,7 +130,12 @@ test('dividir por itens com resto da compra', async ({ browser }) => {
 
   await lucas.locator('.txrow', { hasText: 'Mercado' }).click();
   await expect(lucas.getByRole('heading', { name: 'Itens' })).toBeVisible();
-  await expect(lucas.getByText('Cerveja')).toBeVisible();
+  // Cada item diz como foi dividido; o resto da compra aparece com quanto ficou e entre quem.
+  await expect(lucas.locator('.row', { hasText: 'Cerveja' })).toContainText('Igualmente entre 2 · R$ 15,00 cada · Você e Beatriz');
+  const rest = lucas.locator('.row.item-rest');
+  await expect(rest).toContainText('Resto da compra');
+  await expect(rest).toContainText('R$ 70,00');
+  await expect(rest).toContainText('Igualmente entre 3');
   await shot(lucas, 'detalhe-itens');
 });
 

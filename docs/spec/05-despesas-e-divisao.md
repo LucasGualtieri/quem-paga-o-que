@@ -31,7 +31,7 @@ Com erro de divisão, a mensagem é "A divisão não fecha com o valor. Ajuste o
 - **Resto da compra:** se o valor total for maior que a soma dos itens, a diferença é dividida entre as pessoas escolhidas no Resto, com modo próprio. Se o valor ficar vazio, o total passa a ser a soma dos itens.
 - Não salva se: não houver itens; algum item estiver sem valor, sem pessoas ou com divisão que não fecha; os itens somarem mais que o total; houver resto sem ninguém para pagar.
 
-**Detalhe da despesa:** valor, quem pagou, parte de cada um (com estado pago, comprovante e ações conforme as permissões), itens se houver, comprovante, nota e **Histórico de edição** (criação, mudança de valor de X para Y, edições, pagamentos e comprovantes).
+**Detalhe da despesa:** valor, quem pagou, parte de cada um (com estado pago, comprovante e ações conforme as permissões), itens se houver (cada um com como foi dividido e quanto ficou para cada pessoa, e uma linha "Resto da compra" com o valor que sobrou, "o que não entrou nos itens", e a divisão dele; 25/10/2026), comprovante, nota e **Histórico de edição** (criação, mudança de valor de X para Y, edições, pagamentos e comprovantes).
 
 **Depois de salvar:** volta para a aba Despesas com a nova despesa destacada, toast "Despesa adicionada" com Desfazer e o saldo animando para o novo valor. Excluir pede confirmação e também oferece Desfazer.
 

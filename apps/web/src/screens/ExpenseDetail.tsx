@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router';
 import { Badge, Button, Icon, Sheet, SkeletonCard } from '../components/index.ts';
 import { useExpenses, useHistory, useSplit, type HistoryEntry } from '../data/hooks.ts';
-import { canSeeProof, myMember, sharesOf, type ExpenseDoc, type Member, type SplitDoc } from '../data/model.ts';
+import { canSeeProof, itemsBreakdown, myMember, sharesOf, type ExpenseDoc, type ItemPart, type Member, type SplitDoc } from '../data/model.ts';
 import { markRead, useNotifications } from '../data/notifications.ts';
 import { useSession } from '../data/session.ts';
 import { useLang } from '../i18n/index.ts';
@@ -69,6 +69,28 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc: ExpenseDoc
 
   const caption = (id: string): string => (doc.mode === 'pct' ? `${doc.w?.[id] ?? 0}%` : doc.mode === 'frac' ? `${doc.w?.[id] ?? 0}/${weights.reduce((s, n) => s + n, 0)}` : '');
   const dateText = shortDay(dateOf(doc.date), lang);
+
+  // Por itens: como cada item e o resto da compra foram divididos (o mesmo que a tela de lançar mostra).
+  const breakdown = doc.mode === 'items' ? itemsBreakdown(doc, split) : null;
+  const partText = (p: ItemPart): string => {
+    const mode =
+      p.mode === 'equal'
+        ? t('expense.detail.modeEqual', { count: p.parts.length })
+        : p.mode === 'frac'
+          ? t('expense.detail.modeFrac', { w: p.parts.reduce((sum, x) => sum + (p.w?.[x.id] ?? 0), 0) })
+          : p.mode === 'pct'
+            ? t('expense.detail.modePct')
+            : t('expense.detail.modeExact');
+    const same = p.parts.every((x) => x.cents === p.parts[0]?.cents);
+    // Espaço que não quebra: "Beatriz R$ 10,00" nunca se parte no meio.
+    const money = (c: number) => fmt(c).replace(' ', '\u00a0');
+    const who_ = p.parts.map((x) => who(x.id));
+    const each =
+      p.mode === 'equal' && same && p.parts.length > 0
+        ? t('expense.detail.eachFor', { amount: money(p.parts[0]!.cents), names: new Intl.ListFormat(lang === 'en' ? 'en' : 'pt-BR', { type: 'conjunction' }).format(who_) })
+        : p.parts.map((x) => `${who(x.id)}\u00a0${money(x.cents)}`).join(' · ');
+    return `${mode} · ${each}`;
+  };
 
   const historyText = (h: HistoryEntry): string => {
     const name = split.members[h.by]?.name ?? '';
@@ -283,12 +305,24 @@ function Body({ split, me, doc }: { split: SplitDoc; me: Member; doc: ExpenseDoc
                   <span className="mid">
                     <span className="ttl">{it.name || t('expense.detail.itemNoName')}</span>
                     <span className="cap" style={{ whiteSpace: 'normal' }}>
-                      {it.members.map((id) => who(id)).join(', ')}
+                      {breakdown?.items[i] ? partText(breakdown.items[i]) : it.members.map((id) => who(id)).join(', ')}
                     </span>
                   </span>
                   <span className="amt strong">{fmt(it.amount)}</span>
                 </div>
               ))}
+              {breakdown?.rest && (
+                <div className="row item-rest" style={{ minHeight: 58 }}>
+                  <EntryIconView icon={{ kind: 'icon', name: 'cart' }} fallback="item" size="sm" />
+                  <span className="mid">
+                    <span className="ttl">{t('expense.form.restTitle')}</span>
+                    <span className="cap" style={{ whiteSpace: 'normal' }}>
+                      {t('expense.detail.restWhat')} · {partText(breakdown.rest)}
+                    </span>
+                  </span>
+                  <span className="amt strong">{fmt(breakdown.rest.amount)}</span>
+                </div>
+              )}
             </div>
           </section>
         )}

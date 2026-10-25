@@ -6,7 +6,7 @@ Os tokens da Folha de estilo são a referência; nenhuma cor deve ser escrita di
 | --- | --- | --- | --- |
 | `--accent` | #5534E0 | #A08CFF | Ação principal, seleção, botão flutuante "+" de nova despesa |
 | `--pos` / `--pos-soft` | #0B7A43 / #DFF3E7 | #52D38E / #14301F | A receber |
-| `--neg` / `--neg-soft` | #B53A08 / #FCE9DE | #F0642E / #3A1910 | Deve, erros e excluir (no escuro, o mesmo tom do claro, clareado para o contraste; 25/10/2026). Valor negativo sempre com "−" |
+| `--neg` / `--neg-soft` | #B53A08 / #FCE9DE | #EF5350 / #3B1617 | Deve, erros e excluir. No escuro, vermelho puro (sem puxar para o laranja; contraste 4,9:1 nos cartões), escolhido em 25/10/2026 depois de testar o tom do claro (escuro demais, 2,9:1). Valor negativo sempre com "−" |
 | `--zero` / `--zero-soft` | #5F616B / #EAEAE6 | #A0A1AC / #2A2A31 | Quitado, resolvido |
 | `--me-soft` | #F6F3FF | #221D3A | Fundo da sua linha (Pessoas, detalhe da despesa) |
 | `--bg` / `--surface` | #F3F3F0 / #FFFFFF | #111114 / #1C1C21 | Fundo e cartões |

@@ -549,7 +549,9 @@
       "hProof": "{{name}} sent a receipt",
       "receiptExpired": "Receipt expired (we keep them for 15 days).",
       "pending_one": "{{count}} pending",
-      "pending_other": "{{count}} pending"
+      "pending_other": "{{count}} pending",
+      "eachFor": "{{amount}} each · {{names}}",
+      "restWhat": "What wasn’t in the items"
     },
     "added": "Expense added",
     "deleted": "Expense deleted",

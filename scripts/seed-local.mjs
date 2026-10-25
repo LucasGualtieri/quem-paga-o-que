@@ -39,6 +39,25 @@ async function seed(name, icon) {
   await add('Gasolina', 12000, m.Lucas, [m.Lucas, m.Beatriz, m.Catarina], ['transport'], '2026-10-24');
   await add('Mercado', 6000, m.Fillipe, [m.Lucas, m.Fillipe], ['food'], '2026-10-24');
   await add('Uber', 3000, m.Lucas, [m.Lucas, m.Catarina], ['transport'], '2026-10-25');
+  // Por itens com resto da compra (o detalhe mostra a divisão de cada item e do resto).
+  await bia('createExpense', {
+    splitId,
+    id: id(),
+    expense: {
+      name: 'Mercearia',
+      amount: 20000,
+      payer: m.Beatriz,
+      members: all,
+      mode: 'items',
+      date: '2026-10-25',
+      tags: ['food'],
+      items: [
+        { name: 'Xeque Mate', amount: 5000, members: [m.Lucas, m.Beatriz] },
+        { name: 'Pão de sal', amount: 2500, members: [m.Lucas, m.Beatriz, m.Fillipe], mode: 'frac', w: { [m.Lucas]: 2, [m.Beatriz]: 2, [m.Fillipe]: 1 } },
+      ],
+      rest: all,
+    },
+  });
   // Ninguém ligado é admin: quem entrar como Lucas vira admin (decisão 4).
   const ref = db.doc(`splits/${splitId}`);
   const snap = await ref.get();

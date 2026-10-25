@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { adminContact, adminHandover, balances, leaveBlock, membersInOrder, myMember, promoteBlock, removeBlock, type SplitDoc } from './model.ts';
+import { adminContact, adminHandover, balances, itemsBreakdown, leaveBlock, membersInOrder, myMember, promoteBlock, removeBlock, type ExpenseDoc, type SplitDoc } from './model.ts';
 
 const split: SplitDoc = {
   id: 's1',
@@ -81,5 +81,31 @@ describe('applyPatches (UX otimista em Pessoas)', () => {
     expect(view.members.m3).toBeUndefined();
     expect(split.members.m2?.admin).toBe(false);
     expect(split.members.m3).toBeDefined();
+  });
+});
+
+describe('itemsBreakdown (detalhe por itens)', () => {
+  const doc = (over: Partial<ExpenseDoc>): ExpenseDoc => ({ id: 'e1', name: 'Mercado', amount: 20000, payer: 'm2', members: [], mode: 'items', date: '2026-10-25', tags: [], note: '', longDesc: '', author: 'm1', version: 1, updatedBy: 'm1', deletedAt: null, paid: {}, pendConf: {}, proof: {}, receipt: null, paySeq: 0, ...over });
+
+  it('cada item com a parte de cada um, e o resto da compra com a divisão dele', () => {
+    const e = doc({
+      items: [
+        { name: 'Xeque Mate', amount: 5000, members: ['m2', 'm1'] },
+        { name: 'Pão', amount: 2500, members: ['m1', 'm2', 'm3'], mode: 'frac', w: { m1: 2, m2: 2, m3: 1 } },
+      ],
+      rest: ['m3', 'm1', 'm2'],
+    });
+    const b = itemsBreakdown(e, split);
+    // Na ordem de entrada (Lucas, Beatriz, Catarina), não na ordem em que foram marcados.
+    expect(b.items[0]).toEqual({ amount: 5000, mode: 'equal', parts: [{ id: 'm1', cents: 2500 }, { id: 'm2', cents: 2500 }] });
+    expect(b.items[1]).toMatchObject({ mode: 'frac', w: { m1: 2, m2: 2, m3: 1 }, parts: [{ id: 'm1', cents: 1000 }, { id: 'm2', cents: 1000 }, { id: 'm3', cents: 500 }] });
+    // Resto: R$ 200,00 − R$ 75,00 = R$ 125,00 entre os três (centavo extra pela ordem de entrada).
+    expect(b.rest).toMatchObject({ amount: 12500, mode: 'equal', members: ['m3', 'm1', 'm2'], parts: [{ id: 'm1', cents: 4167 }, { id: 'm2', cents: 4167 }, { id: 'm3', cents: 4166 }] });
+  });
+
+  it('sem sobra (ou sem ninguém no resto), não há resto', () => {
+    expect(itemsBreakdown(doc({ amount: 5000, items: [{ amount: 5000, members: ['m1'] }], rest: ['m1'] }), split).rest).toBeNull();
+    expect(itemsBreakdown(doc({ items: [{ amount: 5000, members: ['m1'] }] }), split).rest).toBeNull();
+    expect(itemsBreakdown(doc({}), split)).toEqual({ items: [], rest: null });
   });
 });
