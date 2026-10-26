@@ -615,6 +615,10 @@ a.mi {
   gap: 8px;
   margin-top: 6px;
 }
+/* Incentivo ao Pix no Meu saldo: mesmo desenho, dentro do conteúdo (sem a margem da página). */
+.banner.pix-nudge {
+  margin: 0;
+}
 
 /* Folha "Desfazer o acerto?": as despesas que o acerto marcou */
 .covered {

@@ -12,6 +12,7 @@ import { useOptimisticAction } from '../lib/optimistic.ts';
 import { setTheme, useTheme } from '../theme/theme.ts';
 import { useLang } from '../i18n/index.ts';
 import { dayMonth } from '../lib/dates.ts';
+import { safeGet, safeSet } from '../lib/storage.ts';
 import { SplitGone } from './SplitGone.tsx';
 import { useWho } from './common.tsx';
 import { MyViewTab } from './MyViewTab.tsx';
@@ -303,20 +304,4 @@ type SplitActions = ReturnType<typeof useSplitActions>;
 
 function WithSplitActions({ split, me, money, children }: { split: SplitDoc; me: Member; money: Money; children: (a: SplitActions) => ReactNode }) {
   return <>{children(useSplitActions(split, me, money, true))}</>;
-}
-
-function safeGet(key: string): string | null {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function safeSet(key: string, value: string): void {
-  try {
-    localStorage.setItem(key, value);
-  } catch {
-    // Sem armazenamento (aba anônima): a faixa só some até recarregar.
-  }
 }

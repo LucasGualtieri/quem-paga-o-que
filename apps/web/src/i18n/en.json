@@ -703,7 +703,11 @@
     "splitDeleted": "{{name}} deleted the split {{split}}",
     "splitDeletedSub": "Its expenses and settle-ups were erased",
     "autoFinalized": "{{split}} was finalized: everyone is square",
-    "autoFinalizedSub": "An admin can reopen it if needed"
+    "autoFinalizedSub": "An admin can reopen it if needed",
+    "pixRequested": "{{name}} wants to pay you by Pix",
+    "pixRequestedSub": "add your key to receive {{amount}}",
+    "pixAdded": "{{name}} added a Pix key",
+    "pixAddedSub": "you can copy the Pix now"
   },
   "fin": {
     "menu": "Close split",
@@ -755,7 +759,19 @@
       "email": "Email",
       "phone": "Phone",
       "evp": "Random key"
-    }
+    },
+    "section": "Your Pix key",
+    "recommended": "recommended",
+    "optional": "Optional. People who owe you copy the Pix with the right amount.",
+    "nudgeT": "Get paid faster: add your Pix key",
+    "nudgeB": "People who owe you copy the Pix with the right amount.",
+    "nudgeCta": "Add key",
+    "nudgeLater": "Not now",
+    "sheetT": "Add Pix key",
+    "sheetB": "It stays on your profile and works in all your splits. You can change or remove it in Your account.",
+    "ask": "Ask for Pix key",
+    "asked": "Key requested",
+    "askedTo": "We asked {{name}} for their Pix key"
   },
   "icons": {
     "food": "Food, meal",

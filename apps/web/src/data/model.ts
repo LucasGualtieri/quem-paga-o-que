@@ -29,6 +29,8 @@ export interface SplitDoc {
   proofVisibility?: ProofVisibility;
   /** Como registrar pagamentos (spec 06); ausente = simplificado. */
   payMode?: PayMode;
+  /** Pedidos de chave Pix: `pixAsks[quem não tem chave][quem pediu]` ("asked" ou "told"). */
+  pixAsks?: Record<MemberId, Record<MemberId, 'asked' | 'told'>>;
   /** Capa com foto (caminho no Storage); sem ela, o ícone ou emoji. */
   photo?: string | null;
   /** Capa com ícone ou emoji; sem ela, o `emoji` dos splits antigos ou o ícone de pessoas. */

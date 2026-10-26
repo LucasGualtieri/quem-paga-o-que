@@ -66,6 +66,16 @@ describe('textos das notificações (spec 07)', () => {
     expect(viewOf(auto, t, () => '', money)).toEqual({ title: 'Ano Novo foi finalizado: todos quitaram', sub: 'Um admin pode reabrir se precisar', to: '/s/s1' });
   });
 
+  it('pedido de chave Pix abre a folha da chave no Meu saldo; a chave cadastrada leva ao Meu saldo', () => {
+    const asked = { ...base, kind: 'pixRequested' as const, amount: 3000, expId: null, expName: null, memberId: null };
+    const v = viewOf(asked, t, (id) => (id === base.from ? 'Beatriz' : ''), money);
+    expect(v.title).toBe('Beatriz quer te pagar por Pix');
+    expect(v.sub).toContain('cadastre sua chave para receber');
+    expect(v.to).toBe('/s/s1/saldo?pix=1');
+    const added = { ...asked, kind: 'pixAdded' as const, amount: 0 };
+    expect(viewOf(added, t, (id) => (id === base.from ? 'Beatriz' : ''), money)).toMatchObject({ title: 'Beatriz cadastrou a chave Pix', to: '/s/s1/saldo' });
+  });
+
   it('sino conta até "9+"', () => {
     expect(bellCount(3)).toBe('3');
     expect(bellCount(10)).toBe('9+');

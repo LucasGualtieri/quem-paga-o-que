@@ -10,6 +10,7 @@ import type {
   RedeemRecoveryResponse,
 } from '@qpq/shared';
 import { auth, db, fail, hashToken, input, isGuest, memberOf, mirrors, opts, secretToken, text, uidOf, UNLINKED, type SplitData } from './common.ts';
+import { answerPixAsks } from './pix.ts';
 import { requireFile, requirePath } from './proofs.ts';
 
 const MERGE_TTL_MS = 10 * 60 * 1000;
@@ -174,6 +175,8 @@ export const setPixKey = onCall(opts, async (req): Promise<SetPixKeyResponse> =>
   const pix = data.key === null || data.key === '' ? null : (normalizePixKey(text(data.key)) ?? fail('invalid-input'));
   await db().doc(`users/${uid}`).set({ pix }, { merge: true });
   await mirrorInSplits(uid, 'pix', pix);
+  // Quem pediu a chave fica sabendo (spec 07).
+  if (pix) await answerPixAsks(uid);
   return { pix };
 });
 

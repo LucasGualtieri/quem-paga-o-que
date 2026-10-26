@@ -16,6 +16,8 @@ const BADGE: Record<NotificationDoc['kind'], { icon: IconName; tone: string }> =
   disputed: { icon: 'alert', tone: 'neg' },
   splitDeleted: { icon: 'trash', tone: 'neg' },
   autoFinalized: { icon: 'flag', tone: 'acc' },
+  pixRequested: { icon: 'pix', tone: 'acc' },
+  pixAdded: { icon: 'pix', tone: 'pos' },
 };
 
 function useUid(): string | null {

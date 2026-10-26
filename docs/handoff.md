@@ -68,6 +68,7 @@ functions/         Cloud Functions chamáveis (us-east1, esbuild)
   src/proofs.ts    prazo de 15 dias dos comprovantes (purgeProofs, rotina diária)
   src/deletion.ts  deleteSplit e purgeEmptySplits (split sem ninguém há 15 dias)
   src/autoFinalize.ts  autoFinalizeSplits (todos quitados há 7 dias)
+  src/pix.ts       requestPix e o aviso quando a chave chega (Pedir chave Pix)
   src/settle.ts    acerto do modo detalhado: marca e desmarca as partes do par (setPayMode em payments.ts)
   src/invitePage.ts  página do link curto de convite (Firebase Hosting, /c/ABC-123)
   src/notifications.ts  avisos criados e atualizados pelas Functions de pagamento

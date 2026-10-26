@@ -1,16 +1,20 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { Button, Icon, InfoTip } from '../components/index.ts';
+import { useSearchParams } from 'react-router';
+import { Button, Icon, InfoTip, useToast } from '../components/index.ts';
+import { api, detailsOf } from '../data/api.ts';
 import { pairsView, type PairCard, type PairEntry } from '../data/balance.ts';
 import { canSeeProof, membersInOrder, payModeOf, type ExpenseDoc, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
 import { useLang } from '../i18n/index.ts';
 import { dateOf, dayMonth, shortDayTime } from '../lib/dates.ts';
 import { formatCents } from '../lib/money.ts';
+import { safeGet, safeSet } from '../lib/storage.ts';
 import { EmptyArt, useBalanceView, useWho } from './common.tsx';
 import { coveredExpenses } from '../data/settlements.ts';
 import { EntryIconView } from './EntryIcon.tsx';
 import type { usePayFlow } from './PaySheet.tsx';
-import { CopyPixButton } from './Pix.tsx';
+import { CopyPixButton, PixSheet } from './Pix.tsx';
+import { useReasonText } from './reasons.ts';
 import { MemberAvatar } from './Photos.tsx';
 
 type Flow = ReturnType<typeof usePayFlow>['flow'];
@@ -61,11 +65,39 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
   const v = pairsView(split, expenses, payments, viewer);
   const flash = useFlash(v.mine);
   const isOpen = split.status === 'open';
+  const toast = useToast();
+  const reasonText = useReasonText();
+  // Incentivo ao Pix (spec 06): cartão para quem tem a receber sem chave; "Agora não" vale neste split.
+  const nudgeKey = `qpq.pixNudge.${split.id}`;
+  const [nudgeHidden, setNudgeHidden] = useState(() => safeGet(nudgeKey) === '1');
+  const [pixSaved, setPixSaved] = useState(false);
+  // O pedido de quem deve (sino) abre esta aba com ?pix=1: a folha já vem aberta.
+  const [params, setParams] = useSearchParams();
+  const [pixOpen, setPixOpen] = useState(params.get('pix') === '1');
+  const closePix = () => {
+    setPixOpen(false);
+    if (params.has('pix')) setParams({}, { replace: true });
+  };
+  // "Pedir chave Pix": vale na hora; volta, com aviso, se o servidor recusar.
+  const [asked, setAsked] = useState<ReadonlySet<string>>(new Set());
   // Simplificado: paga-se só o saldo do par; as despesas do cartão são só leitura (spec 06).
   const simple = payModeOf(split) === 'simple';
   const fmt = (c: number) => formatCents(c, lang);
+  const showNudge = self && isOpen && v.mine > 0 && !me.pix && !pixSaved && !nudgeHidden;
   const signed = (c: number) => formatCents(c, lang, { signed: true });
   const nameOf = (id: string) => split.members[id]?.name ?? '?';
+  const askPix = (o: string) => {
+    setAsked((s) => new Set(s).add(o));
+    toast.show({ text: t('pix.askedTo', { name: nameOf(o) }) });
+    api.requestPix({ splitId: split.id, to: o }).catch((error: unknown) => {
+      setAsked((s) => {
+        const next = new Set(s);
+        next.delete(o);
+        return next;
+      });
+      toast.show({ kind: 'error', text: reasonText(detailsOf(error)) });
+    });
+  };
   // "você devia…" só quando é a própria pessoa e ela prefere "Você" ao nome.
   const asYou = self && who(me.id) !== nameOf(me.id);
 
@@ -254,6 +286,32 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
         </div>
       </div>
 
+      {showNudge && (
+        <div className="banner fin-suggest pix-nudge" role="status">
+          <Icon name="pix" />
+          <span className="mid">
+            <span className="ttl">{t('pix.nudgeT')}</span>
+            <span className="cap">{t('pix.nudgeB')}</span>
+            <span className="fin-suggest-acts">
+              <Button size="sm" onClick={() => setPixOpen(true)}>
+                {t('pix.nudgeCta')}
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  safeSet(nudgeKey, '1');
+                  setNudgeHidden(true);
+                }}
+              >
+                {t('pix.nudgeLater')}
+              </Button>
+            </span>
+          </span>
+        </div>
+      )}
+      <PixSheet open={pixOpen && self && !me.pix && !pixSaved} onClose={closePix} onSaved={() => setPixSaved(true)} onFailed={() => setPixSaved(false)} />
+
       <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div className="sec-h" style={{ paddingBottom: 0, alignItems: 'center' }}>
           <h2 className="h4">{t('my.byPerson')}</h2>
@@ -298,6 +356,19 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
                   {c.status === 'owe' ? (
                     <>
                       {self && <CopyPixButton split={split} to={o} amount={c.amount} />}
+                      {/* Sem chave (e a pessoa já entrou): pedir, uma vez por split (spec 06). */}
+                      {self &&
+                        !split.members[o]?.pix &&
+                        !!split.members[o]?.uid &&
+                        (split.pixAsks?.[o]?.[me.id] || asked.has(o) ? (
+                          <Button size="sm" variant="secondary" icon={<Icon name="pix" size="sm" />} disabled>
+                            {t('pix.asked')}
+                          </Button>
+                        ) : (
+                          <Button size="sm" variant="secondary" icon={<Icon name="pix" size="sm" />} onClick={() => askPix(o)}>
+                            {t('pix.ask')}
+                          </Button>
+                        ))}
                       <Button size="sm" icon={<Icon name="check" size="sm" />} onClick={() => flow.settle(viewer, o, c.amount)}>
                         {t('pay.markPaid')}
                       </Button>

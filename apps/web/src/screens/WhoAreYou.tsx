@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router';
-import { cleanName, isValidName, nameKey, type ErrorDetails, type PreviewInviteResponse } from '@qpq/shared';
-import { Avatar, avatarColor, Button, Card, Cover, Icon, SkeletonCard, useToast } from '../components/index.ts';
+import { cleanName, isValidName, nameKey, normalizePixKey, type ErrorDetails, type PreviewInviteResponse } from '@qpq/shared';
+import { Avatar, avatarColor, Badge, Button, Card, Cover, Icon, SkeletonCard, useToast } from '../components/index.ts';
 import { api, detailsOf } from '../data/api.ts';
+import { useProfile } from '../data/hooks.ts';
 import { trackJoin } from '../data/local.ts';
 import { continueAsGuest, useSession } from '../data/session.ts';
 import { BackLink } from './common.tsx';
+import { PixKeyInput } from './Pix.tsx';
 import { useReasonText } from './reasons.ts';
 import { SplitGone } from './SplitGone.tsx';
 
@@ -24,6 +26,11 @@ export default function WhoAreYou() {
   const [pick, setPick] = useState<string | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [newName, setNewName] = useState('');
+  // Chave Pix opcional (recomendada) para quem ainda não tem (spec 03).
+  const profile = useProfile(session.status === 'ready' ? session.uid : null);
+  const needsPix = profile.status === 'ready' && !profile.data.pix;
+  const [pixText, setPixText] = useState('');
+  const [pixError, setPixError] = useState(false);
   const returned = (location.state as { error?: ErrorDetails } | null)?.error ?? null;
 
   // Quem abre o convite não precisa de conta (spec 03): vira convidado na hora.
@@ -53,9 +60,20 @@ export default function WhoAreYou() {
 
   const confirm = () => {
     if (!data || !ready) return;
+    // Chave inválida não entra até corrigir ou apagar; vazia, entra normalmente.
+    const pix = needsPix && pixText.trim() ? normalizePixKey(pixText) : null;
+    if (needsPix && pixText.trim() && !pix) {
+      setPixError(true);
+      return;
+    }
     const req = isNew ? { code, newName: typed } : { code, memberId: pick! };
+    // A chave vai antes para o perfil: ao entrar, o split já recebe a chave (como em Sua conta).
+    const savePix = pix ? api.setPixKey({ key: pix.key }).then(
+      () => undefined,
+      () => toast.show({ kind: 'error', text: t('errors.saveFailed') }),
+    ) : Promise.resolve();
     // Otimista: o split abre na hora (carregando) e passa a ler quando a entrada é confirmada.
-    const p = api.joinSplit(req).then(
+    const p = savePix.then(() => api.joinSplit(req)).then(
       () => toast.show({ text: isNew ? t('who.joinedAs', { name: typed, split: data.name }) : t('who.joined', { split: data.name }) }),
       (error) => {
         void navigate(`/convite/${code}`, { replace: true, state: { error: detailsOf(error) } });
@@ -158,6 +176,26 @@ export default function WhoAreYou() {
                 <button type="button" className="linkbtn" onClick={() => setIsNew(false)}>
                   {t('who.backToList')}
                 </button>
+              </Card>
+            )}
+            {needsPix && (
+              <Card className="card-pad who-pix">
+                <div className="who-pix-h">
+                  <label className="label" htmlFor="who-pix" style={{ margin: 0 }}>
+                    {t('pix.section')}
+                  </label>
+                  <Badge tone="acc">{t('pix.recommended')}</Badge>
+                </div>
+                <PixKeyInput
+                  id="who-pix"
+                  value={pixText}
+                  error={pixError}
+                  onChange={(v) => {
+                    setPixText(v);
+                    setPixError(false);
+                  }}
+                />
+                <p className="cap">{t('pix.optional')}</p>
               </Card>
             )}
           </>

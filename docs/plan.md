@@ -284,6 +284,10 @@ Decisão: 10 ✅ (Resend, agrupado em 10 min, resumo + botão, sem foto; **e-mai
   - **Simplificado** (padrão; todo split sem `payMode` é simplificado): `markShare` e o comprovante de parte recusam com `mode-simple`; a aba Despesas mostra "sua parte" em cinza; o detalhe e o cartão do Meu saldo não têm botões por despesa; excluir despesa com parte paga é permitido, com o aviso "Isso muda o saldo de quem já acertou" (também ao editar).
   - **Detalhado:** `createPayment` marca as partes em aberto do par nos dois sentidos (`paid`, `via`, `pendConf` de quem pagou o acerto) e grava o acerto como recibo (`viaShares`, `covers`, `absorbs`), que o `@qpq/calc` não conta de novo; acertos antigos do par são incorporados (`absorbedBy`). Desfazer, "Não recebi" e Desfazer de uma parte paga no acerto desfazem o acerto inteiro (`functions/src/settle.ts`); Confirmar tira o "a conferir" das partes. No app, `data/settlements.ts` mostra tudo isso antes de o servidor responder.
   - **Trocar de modo** (`setPayMode`, só admin, split aberto): para o detalhado, cada par já quitado por acertos tem as partes marcadas no acerto mais recente do par.
+- **Oitava leva (25/10/2026): incentivo ao Pix** (spec 03, 06 e 07):
+  - "Quem é você?": seção "Sua chave Pix · recomendado" (opcional) logo abaixo de "Não estou na lista"; a chave vai para o perfil antes de entrar (`setPixKey`, depois `joinSplit`). Chave inválida não entra; quem já tem chave não vê a seção.
+  - Meu saldo: quem tem a receber sem chave vê "Receba mais rápido: cadastre sua chave Pix", que abre a folha da chave (`PixSheet`); "Agora não" vale neste split, no aparelho.
+  - "Pedir chave Pix" no cartão em que você deve (pessoa sem chave e já no split): Function `requestPix`, uma vez por split (`pixAsks` no split), aviso `pixRequested` para a pessoa (abre o Meu saldo com a folha). Ao cadastrar, `setPixKey` avisa quem pediu (`pixAdded`) e esconde os pedidos do sino (`functions/src/pix.ts`).
 
 ## 5. Ações que só o Lucas pode fazer
 

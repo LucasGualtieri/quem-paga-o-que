@@ -32,6 +32,8 @@ async function seed(name, icon, mode = 'simple') {
   const m = Object.fromEntries(preview.members.map((x) => [x.name, x.id]));
   const fi = await user();
   await fi('joinSplit', { code, memberId: m.Fillipe });
+  // Beatriz tem chave Pix (o Lucas copia o Pix dela); Fillipe não (o Lucas pode pedir a chave).
+  await bia('setPixKey', { key: 'beatriz@exemplo.com' });
   const all = [m.Lucas, m.Beatriz, m.Catarina, m.Fillipe];
   const add = (name, amount, payer, members, tags, date) => bia('createExpense', { splitId, id: id(), expense: { name, amount, payer, members, mode: 'equal', date, tags } });
   // Pizza: você deve à Beatriz, mas a Gasolina vira o par (a Pizza aparece "compensado no saldo").

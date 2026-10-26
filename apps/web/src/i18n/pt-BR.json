@@ -703,7 +703,11 @@
     "splitDeleted": "{{name}} excluiu o split {{split}}",
     "splitDeletedSub": "As despesas e os acertos foram apagados",
     "autoFinalized": "{{split}} foi finalizado: todos quitaram",
-    "autoFinalizedSub": "Um admin pode reabrir se precisar"
+    "autoFinalizedSub": "Um admin pode reabrir se precisar",
+    "pixRequested": "{{name}} quer te pagar por Pix",
+    "pixRequestedSub": "cadastre sua chave para receber {{amount}}",
+    "pixAdded": "{{name}} cadastrou a chave Pix",
+    "pixAddedSub": "já dá para copiar o Pix"
   },
   "fin": {
     "menu": "Finalizar split",
@@ -755,7 +759,19 @@
       "email": "E-mail",
       "phone": "Celular",
       "evp": "Chave aleatória"
-    }
+    },
+    "section": "Sua chave Pix",
+    "recommended": "recomendado",
+    "optional": "Opcional. Quem te deve copia o Pix com o valor certo.",
+    "nudgeT": "Receba mais rápido: cadastre sua chave Pix",
+    "nudgeB": "Quem te deve copia o Pix com o valor certo.",
+    "nudgeCta": "Cadastrar chave",
+    "nudgeLater": "Agora não",
+    "sheetT": "Cadastrar chave Pix",
+    "sheetB": "Fica no seu perfil e vale em todos os seus splits. Dá para trocar ou tirar em Sua conta.",
+    "ask": "Pedir chave Pix",
+    "asked": "Chave pedida",
+    "askedTo": "Pedimos a chave Pix para {{name}}"
   },
   "icons": {
     "food": "Comida, refeição",

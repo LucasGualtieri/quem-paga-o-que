@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { normalizePixKey, pixCopyPaste, type PixKey } from '@qpq/shared';
-import { Button, Icon, useToast } from '../components/index.ts';
+import { Button, Icon, Sheet, useToast } from '../components/index.ts';
 import { api } from '../data/api.ts';
 import type { SplitDoc } from '../data/model.ts';
 import { useLang } from '../i18n/index.ts';
@@ -97,6 +97,87 @@ export function PixField({ current }: { current: PixKey | null }) {
         </div>
       )}
     </div>
+  );
+}
+
+/** Campo da chave Pix com a mensagem de chave inválida (em "Quem é você?" e na folha do Meu saldo). */
+export function PixKeyInput({ id, value, error, onChange, onEnter }: { id: string; value: string; error: boolean; onChange: (v: string) => void; onEnter?: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <input
+        id={id}
+        className={`input ${error ? 'err' : ''}`}
+        value={value}
+        autoComplete="off"
+        inputMode="text"
+        placeholder={t('pix.placeholder')}
+        aria-invalid={error}
+        aria-describedby={error ? `${id}-err` : undefined}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && onEnter?.()}
+      />
+      {error && (
+        <p id={`${id}-err`} className="errmsg" role="alert">
+          <Icon name="alert" size="sm" />
+          {t('pix.invalid')}
+        </p>
+      )}
+    </>
+  );
+}
+
+/**
+ * Folha "Cadastrar chave Pix" (Meu saldo: incentivo e pedido de quem deve; spec 06). Salva no
+ * perfil; `onSaved` vem na hora (otimista) e `onFailed` se o servidor recusar.
+ */
+export function PixSheet({ open, onClose, onSaved, onFailed }: { open: boolean; onClose: () => void; onSaved: () => void; onFailed: () => void }) {
+  const { t } = useTranslation();
+  const toast = useToast();
+  const [text, setText] = useState('');
+  const [error, setError] = useState(false);
+  const save = () => {
+    const pix = normalizePixKey(text);
+    if (!pix) {
+      setError(true);
+      return;
+    }
+    onSaved();
+    onClose();
+    setText('');
+    toast.show({ text: t('pix.saved') });
+    api.setPixKey({ key: pix.key }).catch(() => {
+      onFailed();
+      toast.show({ kind: 'error', text: t('errors.saveFailed') });
+    });
+  };
+  return (
+    <Sheet open={open} title={t('pix.sheetT')} onClose={onClose}>
+      <p className="muted">{t('pix.sheetB')}</p>
+      <div className="field">
+        <label className="label" htmlFor="pix-sheet-key">
+          {t('pix.label')}
+        </label>
+        <PixKeyInput
+          id="pix-sheet-key"
+          value={text}
+          error={error}
+          onChange={(v) => {
+            setText(v);
+            setError(false);
+          }}
+          onEnter={save}
+        />
+      </div>
+      <div className="sheet-acts">
+        <Button block disabled={!text.trim()} onClick={save}>
+          {t('pix.save')}
+        </Button>
+        <Button variant="ghost" block onClick={onClose}>
+          {t('common.cancel')}
+        </Button>
+      </div>
+    </Sheet>
   );
 }
 

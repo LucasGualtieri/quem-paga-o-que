@@ -9,6 +9,7 @@ import type {
   SetPixKeyRequest,
   SetPixKeyResponse,
   SetProfilePhotoRequest,
+  RequestPixRequest,
   SetPayModeRequest,
   SetProofVisibilityRequest,
   SetReceiptRequest,
@@ -85,6 +86,7 @@ export const api = {
   previewMerge: callable<MergeTokenRequest, PreviewMergeResponse>('previewMerge'),
   mergeGuest: callable<MergeGuestRequest, unknown>('mergeGuest'),
   setPixKey: callable<SetPixKeyRequest, SetPixKeyResponse>('setPixKey'),
+  requestPix: callable<RequestPixRequest, unknown>('requestPix'),
   setProfilePhoto: callable<SetProfilePhotoRequest, unknown>('setProfilePhoto'),
 };
 

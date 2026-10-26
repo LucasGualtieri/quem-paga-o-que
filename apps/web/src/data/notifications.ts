@@ -80,6 +80,11 @@ export function viewOf(n: NotificationDoc, t: T, name: (id: string | null) => st
       return { title: t('notif.disputed', { name: from, amount }), sub: `${what} · ${n.splitName}`, to };
     case 'autoFinalized':
       return { title: t('notif.autoFinalized', { split: n.splitName }), sub: t('notif.autoFinalizedSub'), to: `/s/${n.splitId}` };
+    case 'pixRequested':
+      // Abre o Meu saldo do split com a folha da chave Pix já aberta.
+      return { title: t('notif.pixRequested', { name: from }), sub: `${n.splitName} · ${t('notif.pixRequestedSub', { amount })}`, to: `/s/${n.splitId}/saldo?pix=1` };
+    case 'pixAdded':
+      return { title: t('notif.pixAdded', { name: from }), sub: `${n.splitName} · ${t('notif.pixAddedSub')}`, to: `/s/${n.splitId}/saldo` };
     case 'splitDeleted':
       // Leva à explicação do split apagado.
       return { title: t('notif.splitDeleted', { name: from, split: n.splitName }), sub: t('notif.splitDeletedSub'), to: `/s/${n.splitId}` };

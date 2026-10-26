@@ -10,6 +10,8 @@ A notificação principal é uma só: "Beatriz pagou R$ 40,00 pra você", enviad
 | Alguém registra um acerto pelo cartão do Meu saldo | A outra pessoa do acerto (quem recebe confirma ou diz "Não recebi"; "Não recebi" avisa quem pagou) |
 | Alguém envia comprovante depois | A outra pessoa do pagamento |
 | Quem recebe toca "Não recebi" | Quem marcou que pagou ("o pagamento não chegou") |
+| Quem deve toca "Pedir chave Pix" | A pessoa sem chave ("Beatriz quer te pagar por Pix"; abre o Meu saldo do split com a folha da chave aberta). Some do sino quando ela cadastra a chave |
+| Quem pediu a chave vê a pessoa cadastrar | Quem pediu ("Lucas cadastrou a chave Pix"; abre o Meu saldo do split) |
 | O split finaliza sozinho (todos quitados há 7 dias) | Todos que estão no split ("Churras de sábado foi finalizado: todos quitaram"; abre o split) |
 | Um admin exclui o split | Todos que estavam no split, menos quem excluiu ("Lucas excluiu o split Churras de sábado"; abre a explicação) |
 

@@ -326,7 +326,11 @@ export type NotificationKind =
   /** Um admin excluiu o split (vai para todos que estavam nele; sem link). */
   | 'splitDeleted'
   /** O split finalizou sozinho: todos quitados há AUTO_FINALIZE_DAYS dias (vai para todos). */
-  | 'autoFinalized';
+  | 'autoFinalized'
+  /** Quem deve pediu a chave Pix (vai para quem não tem chave; some quando ela cadastra). */
+  | 'pixRequested'
+  /** Quem não tinha chave cadastrou (vai para quem pediu). */
+  | 'pixAdded';
 
 export type NotificationStatus = 'new' | 'confirmed' | 'disputed';
 
@@ -364,6 +368,12 @@ export interface SetPixKeyRequest {
 }
 export interface SetPixKeyResponse {
   pix: PixKey | null;
+}
+/** "Pedir chave Pix" (quem deve, para quem não tem chave): uma vez por split. */
+export interface RequestPixRequest {
+  splitId: string;
+  /** Participante sem chave a quem se pede. */
+  to: string;
 }
 /** Foto de perfil já enviada ao Storage (users/{uid}/…); `path: null` tira. */
 export interface SetProfilePhotoRequest {

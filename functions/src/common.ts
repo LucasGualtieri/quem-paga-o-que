@@ -66,7 +66,14 @@ export interface SplitData {
   payMode?: PayMode;
   /** Capa com ícone ou emoji (24/10/2026); sem ela, o `emoji` dos splits antigos ou o ícone de pessoas. */
   icon?: EntryIcon | null;
+  /**
+   * Pedidos de chave Pix (spec 06): `pixAsks[quem não tem chave][quem pediu]`. "asked" espera a
+   * chave; "told" = a chave chegou e quem pediu já foi avisado. Um pedido por par e split.
+   */
+  pixAsks?: Record<string, Record<string, PixAsk>>;
 }
+
+export type PixAsk = 'asked' | 'told';
 
 const HTTP_CODE: Partial<Record<ErrorReason, FunctionsErrorCode>> = {
   'invalid-input': 'invalid-argument',

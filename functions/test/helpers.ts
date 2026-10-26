@@ -145,6 +145,7 @@ export async function splitDoc(splitId: string) {
     nextJoinOrder: number;
     proofVisibility?: string;
     payMode?: string;
+    pixAsks?: Record<string, Record<string, string>>;
     photo?: unknown;
   };
 }

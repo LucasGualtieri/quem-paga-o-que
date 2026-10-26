@@ -7,3 +7,4 @@ export { purgeProofs } from './proofs.ts';
 export { deleteSplit, purgeEmptySplits } from './deletion.ts';
 export { invitePage } from './invitePage.ts';
 export { autoFinalizeSplits } from './autoFinalize.ts';
+export { requestPix } from './pix.ts';
