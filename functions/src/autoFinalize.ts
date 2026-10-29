@@ -3,6 +3,7 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { AUTO_FINALIZE_DAYS, finalizeClockStart } from '@qpq/shared';
 import { db, ledgerOf, readMoney, REGION, type SplitData } from './common.ts';
 import { notify } from './notifications.ts';
+import { notifyDueAt } from './installments.ts';
 import { purgeSplitProofs } from './proofs.ts';
 
 /**
@@ -25,7 +26,10 @@ export async function autoFinalizeAt(now: number): Promise<string[]> {
       if (finalizeClockStart(split.moneyAt.toMillis(), split.endsOn) > cutoff.toMillis()) return false;
       const money = await readMoney(tx, d.ref);
       if (money.expenses.length === 0) return false;
-      if (Object.values(ledgerOf(split, money).net).some((v) => v !== 0)) return false;
+      const l = ledgerOf(split, money);
+      if (Object.values(l.net).some((v) => v !== 0)) return false;
+      // Parcela a vencer: ainda não está quitado (spec 05).
+      if (Object.values(l.F).some((row) => Object.values(row).some((v) => v > 0))) return false;
       tx.update(d.ref, { status: 'done', doneAt: FieldValue.serverTimestamp(), autoFinalized: true });
       for (const member of Object.keys(split.members)) notify(tx, d.id, split, member, { kind: 'autoFinalized', from: '', amount: 0 });
       return true;
@@ -40,5 +44,7 @@ export async function autoFinalizeAt(now: number): Promise<string[]> {
 }
 
 export const autoFinalizeSplits = onSchedule({ schedule: 'every 1 hours', timeZone: 'America/Sao_Paulo', region: REGION }, async () => {
+  // Primeiro os vencimentos de parcela (mexem no dinheiro), depois a finalização.
+  await notifyDueAt(Date.now());
   await autoFinalizeAt(Date.now());
 });

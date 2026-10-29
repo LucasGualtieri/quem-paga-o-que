@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router';
 import { Badge, Button, Icon, Sheet, SkeletonCard } from '../components/index.ts';
 import { useHistory, useMoney, useSplit, type HistoryEntry } from '../data/hooks.ts';
-import { canSeeProof, currencyOf, itemsBreakdown, myMember, payModeOf, sharesOf, type ExpenseDoc, type ItemPart, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
+import { canSeeProof, currencyOf, dueSharesOf, itemsBreakdown, myMember, payModeOf, sharesOf, type ExpenseDoc, type ItemPart, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
 import { coveredExpenses, settlementOf, touchesSettled } from '../data/settlements.ts';
 import { markRead, useNotifications } from '../data/notifications.ts';
 import { useSession } from '../data/session.ts';
@@ -14,6 +14,7 @@ import { BackLink, useWho } from './common.tsx';
 import { EntryIconView } from './EntryIcon.tsx';
 import { PhotoBox, usePayFlow } from './PaySheet.tsx';
 import { hasPayments, useExpenseActions } from './useExpenseActions.ts';
+import { PlanSection } from './PlanSection.tsx';
 import { CurrencyProvider } from '../lib/currency.ts';
 import { MemberAvatar } from './Photos.tsx';
 
@@ -52,7 +53,10 @@ function Body({ split, me, doc, expenses, payments }: { split: SplitDoc; me: Mem
   const rows = Object.entries(sh)
     .filter(([id, v]) => v > 0 || id === doc.payer)
     .sort(([a], [b]) => (split.members[a]?.joinOrder ?? 0) - (split.members[b]?.joinOrder ?? 0));
-  const pendingCount = rows.filter(([id, v]) => id !== doc.payer && (doc.paid[id] ?? 0) < v).length;
+  // Parcelada: só o que já venceu (ou foi antecipado) se cobra; o resto fica "a vencer".
+  const dueSh = dueSharesOf(doc, split);
+  const target = (id: string, v: number) => (doc.installments ? (dueSh[id] ?? 0) : v);
+  const pendingCount = rows.filter(([id, v]) => id !== doc.payer && target(id, v) > 0 && (doc.paid[id] ?? 0) < target(id, v)).length;
   const canEdit = split.status === 'open' && (doc.author === me.id || me.admin);
   const authorName = split.members[doc.author]?.name ?? '';
   // Simplificado: paga-se só no Meu saldo; aqui ficam só os valores (spec 06).
@@ -111,6 +115,7 @@ function Body({ split, me, doc, expenses, payments }: { split: SplitDoc; me: Mem
     if (h.kind === 'created') return t('expense.detail.hCreated', { name, amount: fmt(h.to ?? doc.amount) });
     if (h.kind === 'edited') return h.from !== undefined && h.to !== undefined ? t('expense.detail.hEditedAmount', { name, from: fmt(h.from), to: fmt(h.to) }) : t('expense.detail.hEdited', { name });
     if (h.kind === 'deleted') return t('expense.detail.hDeleted', { name });
+    if (h.kind === 'advanced') return h.by === h.memberId ? t('expense.plan.hAdvanced', { name, count: h.to ?? 0 }) : t('expense.plan.hAdvancedFor', { name, who: whoName, count: h.to ?? 0 });
     return t('expense.detail.hRestored', { name });
   };
 
@@ -222,13 +227,16 @@ function Body({ split, me, doc, expenses, payments }: { split: SplitDoc; me: Mem
             {rows.map(([id, v]) => {
               const m = split.members[id];
               const isPayer = id === doc.payer;
-              const paid = !isPayer && (doc.paid[id] ?? 0) >= v;
+              const owedNow = target(id, v);
+              // Parcelada sem nada vencido para esta pessoa: nada a pagar ainda.
+              const notYet = !isPayer && owedNow <= 0;
+              const paid = !isPayer && !notYet && (doc.paid[id] ?? 0) >= owedNow;
               const proof = doc.proof[id];
               // Parte paga num acerto do Meu saldo (modo detalhado): "Paga" ou "Compensada no acerto".
               const settlement = paid ? settlementOf(doc, id, payments) : null;
               // Pendência vem do estado (pendConf), não do caminho de entrada (spec 07).
               const toCheck = paid && !!doc.pendConf[id] && doc.payer === me.id;
-              const canAct = !simple && !isPayer && isOpen && (me.admin || id === me.id || doc.payer === me.id);
+              const canAct = !simple && !isPayer && !notYet && isOpen && (me.admin || id === me.id || doc.payer === me.id);
               const canAttach = !simple && !settlement && paid && !proof && isOpen && (id === me.id || doc.payer === me.id || me.admin);
               const canView = paid && !!proof?.path && canSeeProof(split, me, id, doc.payer);
               const expired = paid && !!proof && !proof.path;
@@ -253,7 +261,11 @@ function Body({ split, me, doc, expenses, payments }: { split: SplitDoc; me: Mem
                         <Badge tone="acc" icon="check">
                           {t('expense.detail.paidAcc')}
                         </Badge>
-                      ) : simple ? null : toCheck ? (
+                      ) : simple ? null : notYet ? (
+                        <Badge tone="zero" icon="clock">
+                          {t('expense.plan.notYet')}
+                        </Badge>
+                      ) : toCheck ? (
                         <Badge tone="acc" icon="clock">
                           {settlement ? t('expense.detail.paidSettleConfirm') : t('expense.detail.paidConfirm')}
                         </Badge>
@@ -308,6 +320,8 @@ function Body({ split, me, doc, expenses, payments }: { split: SplitDoc; me: Mem
             })}
           </div>
         </section>
+
+        {doc.installments && <PlanSection split={split} me={me} doc={doc} fmt={fmt} onAdvance={actions.advance} />}
 
         {doc.mode === 'items' && (doc.items?.length ?? 0) > 0 && (
           <section>

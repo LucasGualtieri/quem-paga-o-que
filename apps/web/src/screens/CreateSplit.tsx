@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
-import { cleanName, currencyFromLocales, findDuplicate, isValidName, nameKey, pickCover, SPLIT_DEFAULT_ICON, SPLIT_NAME_MAX, splitCover, type Currency, type EntryIcon } from '@qpq/shared';
+import { cleanName, defaultCurrency, findDuplicate, isValidName, nameKey, pickCover, SPLIT_DEFAULT_ICON, SPLIT_NAME_MAX, splitCover, type Currency, type EntryIcon } from '@qpq/shared';
 import { CurrencyPicker } from './CurrencyPicker.tsx';
 import { Avatar, avatarColor, Badge, Button, Cover, Icon, TextField, useToast } from '../components/index.ts';
 import { api, detailsOf } from '../data/api.ts';
@@ -41,10 +41,12 @@ export default function CreateSplit() {
   const [selfName, setSelfName] = useState('');
   const [selfTouched, setSelfTouched] = useState(false);
   const [people, setPeople] = useState<string[]>([]);
-  // Moeda: vem marcada pelo país do navegador (en-US → USD, pt-BR → BRL…).
-  const [currency, setCurrency] = useState<Currency>(() => currencyFromLocales(navigator.languages ?? [navigator.language]));
+  // Moeda: vem marcada pelo fuso horário do aparelho (onde a pessoa está) e, sem ele, pelo idioma do navegador.
+  const [currency, setCurrency] = useState<Currency>(() => defaultCurrency(Intl.DateTimeFormat().resolvedOptions().timeZone, navigator.languages ?? [navigator.language]));
   const [newName, setNewName] = useState('');
   const [addError, setAddError] = useState<string | undefined>();
+  const [editError, setEditError] = useState<{ i: number; text: string } | null>(null);
+  const [before, setBefore] = useState('');
   const [created, setCreated] = useState<{ name: string; icon: EntryIcon } | null>(null);
   // Capa com foto (opcional): sobe depois que o split existe; até lá aparece daqui.
   const [photo, setPhoto] = useState<File | null>(null);
@@ -89,18 +91,29 @@ export default function CreateSplit() {
     setAddError(undefined);
   };
 
-  const canCreate = isValidName(name, SPLIT_NAME_MAX) && isValidName(selfName) && session.status === 'ready';
+  const canCreate = isValidName(name, SPLIT_NAME_MAX) && isValidName(selfName) && !editError && session.status === 'ready';
 
   const submit = async () => {
-    const dup = findDuplicate([selfName, ...people]);
+    // Nome digitado e ainda sem o "+": entra junto (antes ele ficava de fora sem aviso).
+    const pending = cleanName(newName);
+    if (pending && !isValidName(pending)) {
+      setAddError(t('create.nameInvalid'));
+      return;
+    }
+    const all = pending ? [...people, pending] : people;
+    const dup = findDuplicate([selfName, ...all]);
     if (dup !== null) {
       setAddError(dupText(dup));
       return;
     }
+    if (pending) {
+      setPeople(all);
+      setNewName('');
+    }
     // Otimista: a tela do convite abre na hora; link e código chegam em seguida.
     setCreated({ name: cleanName(name), icon: cover });
     try {
-      const res = await api.createSplit({ name, icon: cover, selfName, people, currency });
+      const res = await api.createSplit({ name, icon: cover, selfName, people: all, currency });
       if (photo) uploadCover(res.splitId, photo);
       if (mounted.current) void navigate(`/s/${res.splitId}/pronto`, { replace: true });
     } catch (error) {
@@ -175,17 +188,43 @@ export default function CreateSplit() {
               <Badge tone="acc">{t('people.admin')}</Badge>
             </div>
             {people.map((p, i) => (
-              <div key={p} className="row row-tight">
-                <Avatar name={p} color={avatarColor(i + 1)} />
+              // Pela posição: o nome muda enquanto a pessoa edita.
+              <div key={i} className="row row-tight">
+                <Avatar name={p || '?'} color={avatarColor(i + 1)} />
                 <span className="mid">
-                  <span className="ttl">{p}</span>
+                  <input
+                    className={`input self-input ${editError?.i === i ? 'err' : ''}`}
+                    value={p}
+                    aria-label={t('create.editPerson', { n: i + 1 })}
+                    aria-invalid={editError?.i === i}
+                    autoComplete="off"
+                    onFocus={() => setBefore(p)}
+                    onChange={(e) => {
+                      setPeople(people.map((x, j) => (j === i ? e.target.value : x)));
+                      setEditError(null);
+                    }}
+                    onBlur={() => {
+                      // Vazio volta ao nome anterior; repetido fica marcado até corrigir.
+                      const n = cleanName(p);
+                      if (!n) return setPeople(people.map((x, j) => (j === i ? before : x)));
+                      const other = [selfName, ...people.filter((_, j) => j !== i)].find((x) => nameKey(x) === nameKey(n));
+                      if (other !== undefined) setEditError({ i, text: dupText(other) });
+                      else setPeople(people.map((x, j) => (j === i ? n : x)));
+                    }}
+                  />
                 </span>
-                <button type="button" className="iconbtn" aria-label={t('create.removePerson', { name: p })} onClick={() => setPeople(people.filter((x) => x !== p))}>
+                <button type="button" className="iconbtn" aria-label={t('create.removePerson', { name: p })} onClick={() => setPeople(people.filter((_, j) => j !== i))}>
                   <Icon name="x" />
                 </button>
               </div>
             ))}
           </div>
+          {editError && (
+            <p className="errmsg" role="alert">
+              <Icon name="alert" size="sm" />
+              {editError.text}
+            </p>
+          )}
           <div className="add-row">
             <TextField
               label={t('create.personPh')}

@@ -134,3 +134,25 @@ test('membro sai do split: some da home na hora', async ({ browser }) => {
   await expect(lucas.locator('.home-card', { hasText: 'Churras de sábado' })).toContainText('Quitado');
   await shot(lucas, 'home-com-split');
 });
+
+test('criar split: nome digitado sem o "+" entra junto e os nomes adicionados se editam', async ({ browser }) => {
+  const lucas = await guest(browser);
+  await lucas.getByRole('link', { name: 'Novo split' }).click();
+  await lucas.getByLabel('Nome do split *').fill('Ano Novo');
+  await lucas.getByLabel('Seu nome').fill('Lucas');
+  await lucas.getByRole('textbox', { name: 'Nome do amigo' }).fill('Beatriz');
+  await lucas.getByRole('button', { name: 'Adicionar' }).click();
+  // Repetido trava o botão e mostra o erro; corrigido, libera.
+  await lucas.getByRole('textbox', { name: 'Nome do participante 1' }).fill('lucas');
+  await lucas.getByRole('textbox', { name: 'Nome do amigo' }).click();
+  await expect(lucas.getByRole('alert')).toContainText('Lucas');
+  await expect(lucas.getByRole('button', { name: 'Criar split' })).toBeDisabled();
+  await lucas.getByRole('textbox', { name: 'Nome do participante 1' }).fill('Bia');
+  await lucas.getByRole('textbox', { name: 'Nome do amigo' }).fill('Fillipe');
+  await lucas.getByRole('button', { name: 'Criar split' }).click();
+  await expect(lucas.getByRole('heading', { name: '“Ano Novo” está pronto!' })).toBeVisible();
+  await lucas.getByRole('link', { name: 'Ir para o split' }).click();
+  await lucas.getByRole('link', { name: 'Pessoas' }).click();
+  await expect(lucas.locator('main')).toContainText('Bia');
+  await expect(lucas.locator('main')).toContainText('Fillipe');
+});

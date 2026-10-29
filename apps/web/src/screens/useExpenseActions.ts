@@ -5,7 +5,8 @@ import { useToast } from '../components/index.ts';
 import { api, detailsOf } from '../data/api.ts';
 import { docFromInput, fromDoc, toInput } from '../data/expenseForm.ts';
 import { confirmOp, enqueue, enqueueAll, setConflict, startOp } from '../data/expenseStore.ts';
-import type { ExpenseDoc, Member, SplitDoc } from '../data/model.ts';
+import { dueCount } from '@qpq/calc';
+import { today, type ExpenseDoc, type Member, type SplitDoc } from '../data/model.ts';
 import { useLang } from '../i18n/index.ts';
 import { todayStr } from './common.tsx';
 import { useReasonText } from './reasons.ts';
@@ -147,5 +148,25 @@ export function useExpenseActions(split: SplitDoc, me: Member) {
     [splitId, me.id, lang, mark, toast, t, fail],
   );
 
-  return { create, update, remove, removeMany, duplicate, restore: (e: ExpenseDoc) => mark(e, false) };
+  /** "Antecipar parcelas" (spec 05): as parcelas de `memberId` passam a contar agora. */
+  const advance = useCallback(
+    (e: ExpenseDoc, memberId: string, all: boolean) => {
+      const plan = e.installments;
+      if (!plan) return;
+      const now = dueCount(e, memberId, today());
+      const doc: ExpenseDoc = { ...e, advanced: { ...e.advanced, [memberId]: all ? plan.count : Math.min(plan.count, now + 1) }, version: e.version + 1 };
+      const undo = startOp({ splitId, doc });
+      enqueue(e.id, () => api.advanceInstallments({ splitId, expenseId: e.id, memberId, ...(all ? { all: true } : {}) })).then(
+        () => confirmOp(e.id, e.version + 1),
+        (error) => {
+          undo();
+          fail(error);
+        },
+      );
+      toast.show({ text: t(all ? 'expense.plan.advancedAll' : 'expense.plan.advancedNext') });
+    },
+    [splitId, toast, t, fail],
+  );
+
+  return { create, update, remove, removeMany, duplicate, advance, restore: (e: ExpenseDoc) => mark(e, false) };
 }

@@ -25,3 +25,32 @@ export function currencyFromLocales(locales: readonly string[]): Currency {
   }
   return DEFAULT_CURRENCY;
 }
+
+/** Fusos horários de cada moeda (os principais de cada país). */
+const BY_ZONE: Array<[RegExp, Currency]> = [
+  [/^America\/(Sao_Paulo|Rio_Branco|Manaus|Cuiaba|Campo_Grande|Porto_Velho|Boa_Vista|Belem|Fortaleza|Recife|Maceio|Bahia|Araguaina|Santarem|Eirunepe|Noronha)$/, 'BRL'],
+  [/^America\/(Argentina\/.+|Buenos_Aires)$/, 'ARS'],
+  [/^America\/Montevideo$/, 'UYU'],
+  [/^America\/(Mexico_City|Cancun|Merida|Monterrey|Matamoros|Chihuahua|Ojinaga|Mazatlan|Bahia_Banderas|Hermosillo|Tijuana)$/, 'MXN'],
+  [/^America\/(Toronto|Vancouver|Edmonton|Winnipeg|Halifax|St_Johns|Regina|Moncton|Whitehorse|Yellowknife|Iqaluit|Glace_Bay|Goose_Bay|Swift_Current|Dawson_Creek|Fort_Nelson|Rankin_Inlet|Cambridge_Bay|Inuvik)$/, 'CAD'],
+  [/^(America\/(New_York|Chicago|Denver|Los_Angeles|Phoenix|Anchorage|Detroit|Boise|Juneau|Adak|Nome|Sitka|Metlakatla|Yakutat|Menominee|Indiana\/.+|Kentucky\/.+|North_Dakota\/.+)|Pacific\/Honolulu)$/, 'USD'],
+  [/^Australia\/.+$/, 'AUD'],
+  [/^Europe\/(London|Belfast)$/, 'GBP'],
+  [/^Europe\/(Zurich|Vaduz)$/, 'CHF'],
+  [/^Europe\/(Paris|Berlin|Madrid|Rome|Lisbon|Amsterdam|Brussels|Vienna|Dublin|Helsinki|Athens|Luxembourg|Bratislava|Ljubljana|Tallinn|Riga|Vilnius|Malta|Zagreb|Monaco|San_Marino|Vatican|Andorra)$|^Atlantic\/(Madeira|Azores|Canary)$|^Asia\/Nicosia$/, 'EUR'],
+];
+
+/** Moeda do país do fuso horário do aparelho (onde a pessoa está), ou `null` se não reconhecer. */
+export function currencyFromTimeZone(zone: string | undefined): Currency | null {
+  if (!zone) return null;
+  return BY_ZONE.find(([re]) => re.test(zone))?.[1] ?? null;
+}
+
+/**
+ * Moeda que vem marcada ao criar um split (revisto em 29/10/2026): primeiro o fuso horário do
+ * aparelho (um navegador em inglês no Brasil continua em BRL), depois o país do idioma do
+ * navegador; sem nenhum dos dois, BRL.
+ */
+export function defaultCurrency(zone: string | undefined, locales: readonly string[]): Currency {
+  return currencyFromTimeZone(zone) ?? currencyFromLocales(locales);
+}

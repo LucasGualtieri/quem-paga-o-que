@@ -5,7 +5,7 @@ import { FieldValue, getFirestore, type DocumentReference, type Transaction } fr
 import { getStorage } from 'firebase-admin/storage';
 import { ledger, type Expense, type JoinOrder, type Ledger, type Payment } from '@qpq/calc';
 import { HttpsError, type CallableRequest, type FunctionsErrorCode } from 'firebase-functions/v2/https';
-import type { Currency, EntryIcon, ErrorDetails, ErrorReason, PayMode, PixKey } from '@qpq/shared';
+import { brasiliaDay, type Currency, type EntryIcon, type ErrorDetails, type ErrorReason, type PayMode, type PixKey } from '@qpq/shared';
 
 export const REGION = 'us-east1';
 
@@ -201,9 +201,12 @@ export function orderOf(split: SplitData): JoinOrder {
   return Object.fromEntries(Object.entries(split.members).map(([id, m]) => [id, m.joinOrder]));
 }
 
-/** Saldos do split, sempre pelo motor compartilhado (@qpq/calc). */
+/** Hoje em Brasília: parcelas que ainda não venceram ficam fora do saldo (spec 05). */
+export const today = () => brasiliaDay(Date.now());
+
+/** Saldos do split, sempre pelo motor compartilhado (@qpq/calc), com as parcelas vencidas até hoje. */
 export function ledgerOf(split: SplitData, money: { expenses: Expense[]; payments: Payment[] }): Ledger {
-  return ledger({ order: orderOf(split), ...money });
+  return ledger({ order: orderOf(split), ...money, today: today() });
 }
 
 /**

@@ -173,6 +173,8 @@
     "add": "Add",
     "addHint": "A name is enough. Invite by link later and each person picks who they are.",
     "submit": "Create split",
+    "editPerson": "Name of participant {{n}}",
+    "nameInvalid": "Check the friend's name",
     "removePerson": "Remove {{name}}",
     "coverPick": "Choose the split cover (optional)"
   },
@@ -420,6 +422,8 @@
       "byPct": "by %",
       "byExact": "exact amounts",
       "byItems": "by items",
+      "planNext": "{{count}}x · installment {{n}} due {{date}}",
+      "planDone": "{{count}}x · all due",
       "duplicate": "Duplicate",
       "select": "Select",
       "more": "Actions for {{name}}",
@@ -429,6 +433,7 @@
       "selection": "Selected expenses",
       "selectDay": "Select {{day}}",
       "selectAll": "Select all ({{count}})",
+      "selected_zero": "None selected",
       "selected_one": "{{count}} selected",
       "selected_other": "{{count}} selected",
       "lockSome": "Only who added it or an admin can delete {{count}} of the {{total}}.",
@@ -437,7 +442,29 @@
       "delMany": "Delete {{count}} expenses",
       "blockedMany": "These expenses have payments marked: {{names}}. Unmark them before deleting."
     },
+    "plan": {
+      "title": "Installments",
+      "sum": "{{count}}x of {{amount}}",
+      "nth": "Installment {{n}} of {{count}}",
+      "due": "Due",
+      "notYet": "Upcoming",
+      "current": "Next",
+      "counted": "{{n}} of {{count}} in the balance · {{left}} left",
+      "allCounted": "All installments are already in the balance",
+      "advanceNext": "Bring forward the next ({{amount}})",
+      "advanceAll": "Bring forward all ({{amount}})",
+      "advancedNext": "Installment brought forward",
+      "advancedAll": "Installments brought forward",
+      "note": "The next installment is already in the balance, to be paid before it is due; when it is due, the following one comes in. Bringing forward makes one person's installments count earlier.",
+      "hAdvanced": "{{name}} brought installments forward ({{count}} in the balance)",
+      "hAdvancedFor": "{{name}} brought forward {{who}}'s installments ({{count}} in the balance)"
+    },
     "form": {
+      "plan": "In installments",
+      "planHint": "The next installment is already in the balance; when it is due, the following one comes in.",
+      "planCount": "Installments",
+      "planFirst": "First installment",
+      "planSum": "{{count}}x of {{amount}} · last on {{last}}",
       "titleNew": "New expense",
       "titleEdit": "Edit expense",
       "desc": "Description",
@@ -678,6 +705,10 @@
     "expired": " · receipt expired",
     "viewAs": "View as",
     "viewingAs": "Viewing as {{name}}",
+    "soonTotal": "future installments: {{amount}}",
+    "soonNext": "future installments: {{amount}} · next one comes in on {{date}}",
+    "planDue": "installment {{n}} of {{count}} · due {{date}}",
+    "planWasDue": "installment {{n}} of {{count}} · was due {{date}}",
     "backToYou": "Back to you"
   },
   "proofVis": {
@@ -732,6 +763,8 @@
     "pixRequested": "{{name}} wants to pay you by Pix",
     "pixRequestedSub": "add your key to receive {{amount}}",
     "pixAdded": "{{name}} added a Pix key",
+    "instDue": "Installment {{n}} of {{of}} of “{{what}}” is now in the balance",
+    "instDueSub": "+{{amount}} to {{name}} · due {{date}}",
     "pixAddedSub": "you can copy the Pix now"
   },
   "fin": {
@@ -743,6 +776,7 @@
     "proofs": "This split’s receipts are deleted when you close it.",
     "pending": "Still pending",
     "allSettled": "All settled",
+    "future": "There are still {{amount}} in upcoming installments. They count when due, but with the split closed nobody can record payments until an admin reopens it.",
     "anyway": "Close anyway",
     "done": "Split closed",
     "reopened": "Split reopened",

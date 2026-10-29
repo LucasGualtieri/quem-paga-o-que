@@ -87,8 +87,10 @@ test('celular: deslizar mostra Duplicar, Editar e Excluir; segurar entra na sele
   // Cabeçalho do dia marca o dia todo.
   await lucas.locator('.daysel').first().click();
   await expect(lucas.getByRole('region', { name: 'Despesas selecionadas' })).toContainText('2 selecionadas');
-  // Com tudo marcado, o "Selecionar todas" some.
-  await expect(lucas.getByRole('button', { name: /Selecionar todas/ })).toHaveCount(0);
+  // Com tudo marcado, o "Selecionar todas" fica marcado; desmarcar tudo não sai da seleção.
+  await expect(lucas.getByRole('button', { name: /Selecionar todas/ })).toHaveAttribute('aria-pressed', 'true');
+  await lucas.getByRole('button', { name: /Selecionar todas/ }).click();
+  await expect(lucas.getByRole('region', { name: 'Despesas selecionadas' })).toContainText('Nenhuma selecionada');
   await lucas.getByRole('button', { name: 'Cancelar' }).click();
   await expect(lucas.getByRole('region', { name: 'Despesas selecionadas' })).toHaveCount(0);
 });

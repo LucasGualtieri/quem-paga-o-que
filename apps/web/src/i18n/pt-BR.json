@@ -173,6 +173,8 @@
     "add": "Adicionar",
     "addHint": "Só o nome basta. Depois você convida por link e cada um escolhe quem é.",
     "submit": "Criar split",
+    "editPerson": "Nome do participante {{n}}",
+    "nameInvalid": "Confira o nome do amigo",
     "removePerson": "Remover {{name}}",
     "coverPick": "Escolher a capa do split (opcional)"
   },
@@ -420,6 +422,8 @@
       "byPct": "por %",
       "byExact": "valores exatos",
       "byItems": "por itens",
+      "planNext": "{{count}}x · parcela {{n}} vence {{date}}",
+      "planDone": "{{count}}x · todas venceram",
       "duplicate": "Duplicar",
       "select": "Selecionar",
       "more": "Ações de {{name}}",
@@ -429,6 +433,7 @@
       "selection": "Despesas selecionadas",
       "selectDay": "Selecionar {{day}}",
       "selectAll": "Selecionar todas ({{count}})",
+      "selected_zero": "Nenhuma selecionada",
       "selected_one": "{{count}} selecionada",
       "selected_other": "{{count}} selecionadas",
       "lockSome": "Só quem lançou ou um admin pode excluir {{count}} das {{total}}.",
@@ -437,7 +442,29 @@
       "delMany": "Excluir {{count}} despesas",
       "blockedMany": "Estas despesas têm pagamentos marcados: {{names}}. Desmarque-os antes de excluir."
     },
+    "plan": {
+      "title": "Parcelas",
+      "sum": "{{count}}x de {{amount}}",
+      "nth": "Parcela {{n}} de {{count}}",
+      "due": "Venceu",
+      "notYet": "A vencer",
+      "current": "Próxima",
+      "counted": "{{n}} de {{count}} no saldo · falta {{left}}",
+      "allCounted": "Todas as parcelas já estão no saldo",
+      "advanceNext": "Antecipar a próxima ({{amount}})",
+      "advanceAll": "Antecipar todas ({{amount}})",
+      "advancedNext": "Parcela antecipada",
+      "advancedAll": "Parcelas antecipadas",
+      "note": "A próxima parcela já entra no saldo, para ser paga antes de vencer; quando ela vence, entra a seguinte. Antecipar faz as parcelas de uma pessoa contarem antes.",
+      "hAdvanced": "{{name}} antecipou parcelas ({{count}} no saldo)",
+      "hAdvancedFor": "{{name}} antecipou parcelas de {{who}} ({{count}} no saldo)"
+    },
     "form": {
+      "plan": "Parcelado",
+      "planHint": "A próxima parcela já entra no saldo; quando ela vence, entra a seguinte.",
+      "planCount": "Parcelas",
+      "planFirst": "Primeira parcela",
+      "planSum": "{{count}}x de {{amount}} · última em {{last}}",
       "titleNew": "Nova despesa",
       "titleEdit": "Editar despesa",
       "desc": "Descrição",
@@ -678,6 +705,10 @@
     "expired": " · comprovante expirado",
     "viewAs": "Ver como",
     "viewingAs": "Vendo como {{name}}",
+    "soonTotal": "parcelas futuras: {{amount}}",
+    "soonNext": "parcelas futuras: {{amount}} · a próxima entra em {{date}}",
+    "planDue": "parcela {{n}} de {{count}} · vence {{date}}",
+    "planWasDue": "parcela {{n}} de {{count}} · venceu {{date}}",
     "backToYou": "Voltar para você"
   },
   "proofVis": {
@@ -732,6 +763,8 @@
     "pixRequested": "{{name}} quer te pagar por Pix",
     "pixRequestedSub": "cadastre sua chave para receber {{amount}}",
     "pixAdded": "{{name}} cadastrou a chave Pix",
+    "instDue": "Parcela {{n}} de {{of}} de “{{what}}” entrou no saldo",
+    "instDueSub": "+{{amount}} para {{name}} · vence {{date}}",
     "pixAddedSub": "já dá para copiar o Pix"
   },
   "fin": {
@@ -743,6 +776,7 @@
     "proofs": "Os comprovantes deste split são apagados ao finalizar.",
     "pending": "Ficou pendente",
     "allSettled": "Tudo quitado",
+    "future": "Ainda há {{amount}} em parcelas a vencer. Elas entram no saldo quando vencerem, mas com o split finalizado ninguém registra pagamentos até um admin reabrir.",
     "anyway": "Finalizar mesmo assim",
     "done": "Split finalizado",
     "reopened": "Split reaberto",

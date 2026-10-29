@@ -681,3 +681,10 @@ a.mi {
   display: flex;
   flex-direction: column;
 }
+
+/* Parcelas a vencer (fora do saldo) no Meu saldo. */
+.soon {
+  display: block;
+  color: var(--muted);
+  font-style: italic;
+}

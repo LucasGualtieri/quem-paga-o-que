@@ -50,6 +50,8 @@ export interface FormState {
   longDesc: string;
   /** Ícone ou emoji da despesa; ausente = automático pela tag. */
   icon?: EntryIcon;
+  /** Parcelada (spec 05): quantas parcelas e a data da primeira; `null` = à vista. */
+  plan: { count: number; first: string } | null;
 }
 
 export function initialForm(people: readonly Member[], me: MemberId, today: string): FormState {
@@ -68,6 +70,7 @@ export function initialForm(people: readonly Member[], me: MemberId, today: stri
     tags: [],
     note: '',
     longDesc: '',
+    plan: null,
   };
 }
 
@@ -238,6 +241,7 @@ export function toInput(f: FormState): ExpenseInput {
     note: f.note.trim(),
     longDesc: f.longDesc.trim(),
     icon: f.icon ?? null,
+    installments: f.plan,
   };
   if (e.amount === null && f.mode !== 'items') out.amount = 0;
   if (e.w) out.w = e.w;
@@ -290,6 +294,7 @@ export function fromDoc(d: ExpenseDoc, lang: Lang): FormState {
     note: d.note,
     longDesc: d.longDesc,
     ...(d.icon ? { icon: d.icon } : {}),
+    plan: d.installments ? { count: d.installments.count, first: d.installments.first } : null,
   };
 }
 

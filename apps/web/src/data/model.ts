@@ -1,5 +1,5 @@
-import { effectiveAmount, shares as calcShares, ledger, type Cents, type Expense, type ExpenseMode, type JoinOrder, type MemberId, type Payment, type SplitMode, type Weights } from '@qpq/calc';
-import { AUTO_FINALIZE_DAYS, DEFAULT_CURRENCY, FINALIZE_SUGGEST_HOURS, finalizeClockStart, type Currency, type EntryIcon, type ErrorReason, type PayMode, type PixKey, type ProofInfo, type ProofVisibility } from '@qpq/shared';
+import { dueShares, effectiveAmount, shares as calcShares, ledger, type Cents, type Installments, type Expense, type ExpenseMode, type JoinOrder, type MemberId, type Payment, type SplitMode, type Weights } from '@qpq/calc';
+import { AUTO_FINALIZE_DAYS, brasiliaDay, DEFAULT_CURRENCY, FINALIZE_SUGGEST_HOURS, finalizeClockStart, type Currency, type EntryIcon, type ErrorReason, type PayMode, type PixKey, type ProofInfo, type ProofVisibility } from '@qpq/shared';
 
 /** Participante como está no Firestore (splits/{id}.members). */
 export interface MemberDoc {
@@ -75,9 +75,19 @@ export function orderOf(split: SplitDoc): JoinOrder {
   return Object.fromEntries(Object.entries(split.members).map(([id, m]) => [id, m.joinOrder]));
 }
 
-/** Parte de cada um numa despesa. */
+/** Parte de cada um numa despesa (inteira, mesmo parcelada). */
 export function sharesOf(e: ExpenseDoc, split: SplitDoc): Record<MemberId, Cents> {
   return calcShares(e, orderOf(split));
+}
+
+/** Hoje em Brasília: o dia em que as parcelas vencem (o servidor usa o mesmo). */
+export function today(): string {
+  return brasiliaDay(Date.now());
+}
+
+/** A parte que já conta no saldo: parcelada, só as parcelas vencidas ou antecipadas. */
+export function dueSharesOf(e: ExpenseDoc, split: SplitDoc): Record<MemberId, Cents> {
+  return dueShares(e, orderOf(split), today());
 }
 
 /** Uma parte da despesa por itens (um item ou o resto da compra) e quanto fica para cada um. */
@@ -113,7 +123,7 @@ export function myMember(split: SplitDoc, uid: string): Member | null {
 /** Saldo de cada participante, sempre pelo motor compartilhado. */
 export function balances(split: SplitDoc, money: Money): Record<MemberId, Cents> {
   const order: JoinOrder = Object.fromEntries(Object.entries(split.members).map(([id, m]) => [id, m.joinOrder]));
-  return ledger({ order, expenses: money.expenses, payments: money.payments }).net;
+  return ledger({ order, expenses: money.expenses, payments: money.payments, today: today() }).net;
 }
 
 /**
@@ -124,6 +134,7 @@ export function balances(split: SplitDoc, money: Money): Record<MemberId, Cents>
 export function autoFinalizeAt(split: SplitDoc, money: { expenses: readonly ExpenseDoc[]; payments: readonly PaymentDoc[] }): { since: Date; at: Date } | null {
   if (split.status !== 'open' || !split.moneyAt || money.expenses.length === 0) return null;
   if (Object.values(balances(split, money)).some((v) => v !== 0)) return null;
+  if (hasFuture(split, money)) return null;
   const since = finalizeClockStart(split.moneyAt.getTime(), split.endsOn);
   return { since: new Date(since), at: new Date(since + AUTO_FINALIZE_DAYS * 24 * 3600_000) };
 }
@@ -236,6 +247,10 @@ export interface ExpenseDoc {
   updatedBy: MemberId;
   /** Ícone ou emoji escolhido; `null`/ausente = automático pela tag. */
   icon?: EntryIcon | null;
+  /** Parcelada (spec 05): cada parcela só entra no saldo quando vence. */
+  installments?: Installments | null;
+  /** Quantas parcelas cada pessoa antecipou. */
+  advanced?: Record<MemberId, number>;
   /** Exclusão marcada (decisão 7): some das listas e do saldo; Desfazer limpa. */
   deletedAt: Date | null;
   createdAt?: Date | null;
@@ -286,4 +301,10 @@ export function activeExpenses(expenses: readonly ExpenseDoc[]): ExpenseDoc[] {
 /** Moeda do split (spec 09); os splits antigos ficam em BRL. */
 export function currencyOf(split: Pick<SplitDoc, 'currency'>): Currency {
   return split.currency ?? DEFAULT_CURRENCY;
+}
+
+/** Ainda há parcela a vencer em alguma despesa: o split não conta como quitado (spec 05). */
+export function hasFuture(split: SplitDoc, money: { expenses: readonly ExpenseDoc[]; payments: readonly PaymentDoc[] }): boolean {
+  const { F } = ledger({ order: orderOf(split), expenses: money.expenses, payments: money.payments, today: today() });
+  return Object.values(F).some((row) => Object.values(row).some((v) => v > 0));
 }

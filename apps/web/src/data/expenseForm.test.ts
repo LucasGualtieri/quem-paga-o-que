@@ -164,7 +164,12 @@ describe('toInput (o que vai para a Function)', () => {
       note: 'ok',
       longDesc: '',
       icon: null,
+      installments: null,
     });
+  });
+
+  it('parcelada leva o plano', () => {
+    expect(toInput(base({ plan: { count: 4, first: '2026-11-10' } })).installments).toEqual({ count: 4, first: '2026-11-10' });
   });
 
   it('frações/%/exato levam só os pesos de quem está na divisão, em números', () => {

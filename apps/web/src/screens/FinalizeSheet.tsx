@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ledger } from '@qpq/calc';
 import { nameKey } from '@qpq/shared';
 import { Button, Icon, Sheet, TextField } from '../components/index.ts';
-import { currencyOf, orderOf, type Money, type SplitDoc } from '../data/model.ts';
+import { currencyOf, orderOf, today, type Money, type SplitDoc } from '../data/model.ts';
 import { useLang } from '../i18n/index.ts';
 import { formatCents } from '../lib/money.ts';
 import { MemberAvatar } from './Photos.tsx';
@@ -12,7 +12,7 @@ import { MemberAvatar } from './Photos.tsx';
 export function PendingList({ split, money, who }: { split: SplitDoc; money: Money; who: (id: string) => string }) {
   const { t } = useTranslation();
   const lang = useLang();
-  const { sug } = ledger({ order: orderOf(split), expenses: money.expenses, payments: money.payments });
+  const { sug } = ledger({ order: orderOf(split), expenses: money.expenses, payments: money.payments, today: today() });
   const total = sug.reduce((s, g) => s + g.amount, 0);
   const member = (id: string) => split.members[id];
   return (
@@ -46,8 +46,11 @@ export function PendingList({ split, money, who }: { split: SplitDoc; money: Mon
  */
 export function FinalizeSheet({ open, split, money, who, onClose, onConfirm }: { open: boolean; split: SplitDoc; money: Money; who: (id: string) => string; onClose: () => void; onConfirm: () => void }) {
   const { t } = useTranslation();
+  const lang = useLang();
   if (!open) return null;
-  const { sug } = ledger({ order: orderOf(split), expenses: money.expenses, payments: money.payments });
+  const { sug, F } = ledger({ order: orderOf(split), expenses: money.expenses, payments: money.payments, today: today() });
+  // Parcelas a vencer (spec 05): continuam vencendo, mas finalizado ninguém registra pagamento.
+  const future = Object.values(F).reduce((s, row) => s + Object.values(row).reduce((a, v) => a + v, 0), 0);
   return (
     <Sheet open title={t('fin.title', { name: split.name })} onClose={onClose}>
       <span className="tagico lg fin-ico" aria-hidden="true">
@@ -57,9 +60,15 @@ export function FinalizeSheet({ open, split, money, who, onClose, onConfirm }: {
         {t('fin.body')} {t('fin.proofs')}
       </p>
       <PendingList split={split} money={money} who={who} />
+      {future > 0 && (
+        <div className="info">
+          <Icon name="clock" />
+          <span>{t('fin.future', { amount: formatCents(future, lang, { currency: currencyOf(split) }) })}</span>
+        </div>
+      )}
       <div className="sheet-acts">
         <Button block onClick={onConfirm}>
-          {sug.length ? t('fin.anyway') : t('fin.menu')}
+          {sug.length || future > 0 ? t('fin.anyway') : t('fin.menu')}
         </Button>
         <Button variant="ghost" block onClick={onClose}>
           {t('common.cancel')}

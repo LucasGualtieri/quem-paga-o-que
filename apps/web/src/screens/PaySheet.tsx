@@ -4,7 +4,7 @@ import type { ProofInfo } from '@qpq/shared';
 import { Button, Icon, Sheet } from '../components/index.ts';
 import { usePhoto } from '../data/files.ts';
 import { useProfile } from '../data/hooks.ts';
-import { canSeeProof, sharesOf, type ExpenseDoc, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
+import { canSeeProof, dueSharesOf, type ExpenseDoc, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
 import { useSession } from '../data/session.ts';
 import { useLang } from '../i18n/index.ts';
 import { useFmt } from '../lib/currency.ts';
@@ -89,7 +89,7 @@ export function usePayFlow(split: SplitDoc, me: Member, who: (id: string) => str
     const attach = target.kind === 'payment' || (target.kind === 'share' && target.attach);
     const [from, to, amount, ctx] =
       target.kind === 'share'
-        ? [target.memberId, target.expense.payer, sharesOf(target.expense, split)[target.memberId] ?? 0, t('pay.ctxShare', { expense: target.expense.name, split: split.name })]
+        ? [target.memberId, target.expense.payer, dueSharesOf(target.expense, split)[target.memberId] ?? 0, t('pay.ctxShare', { expense: target.expense.name, split: split.name })]
         : target.kind === 'settle'
           ? [target.from, target.to, target.amount, t('pay.ctxSettle', { split: split.name })]
           : [target.payment.from, target.payment.to, target.payment.amount, t('pay.ctxSettle', { split: split.name })];

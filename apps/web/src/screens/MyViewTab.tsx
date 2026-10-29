@@ -4,9 +4,10 @@ import { useSearchParams } from 'react-router';
 import { Button, Icon, InfoTip, useToast } from '../components/index.ts';
 import { api, detailsOf } from '../data/api.ts';
 import { pairsView, type PairCard, type PairEntry } from '../data/balance.ts';
-import { canSeeProof, currencyOf, membersInOrder, payModeOf, type ExpenseDoc, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
+import { dueCount, installmentDates } from '@qpq/calc';
+import { canSeeProof, currencyOf, membersInOrder, payModeOf, today, type ExpenseDoc, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
 import { useLang } from '../i18n/index.ts';
-import { dateOf, dayMonth, shortDayTime } from '../lib/dates.ts';
+import { dateOf, dayMonth, dayMonthYear, shortDayTime } from '../lib/dates.ts';
 import { formatCents } from '../lib/money.ts';
 import { safeGet, safeSet } from '../lib/storage.ts';
 import { EmptyArt, useBalanceView, useWho } from './common.tsx';
@@ -121,6 +122,13 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
   };
   const paidText = (from: string, to: string) =>
     asYou ? (from === viewer ? t('my.ePaidOut', { name: nameOf(to) }) : t('my.ePaidIn', { name: nameOf(from) })) : t('my.ePaidGen', { from: nameOf(from), to: nameOf(to) });
+  // Parcelada: qual parcela está no saldo e quando vence (ou venceu).
+  const planWhen = (e: ExpenseDoc, debtor: string) => {
+    const plan = e.installments!;
+    const n = dueCount(e, debtor, today());
+    const date = installmentDates(plan)[n - 1]!;
+    return t(date > today() ? 'my.planDue' : 'my.planWasDue', { n, count: plan.count, date: dayMonthYear(dateOf(date), lang) });
+  };
   const proofNote = (proof: { path: string | null } | null | undefined) => (proof ? (proof.path ? t('my.withProof') : t('my.expired')) : '');
 
   const caption = (c: PairCard) => {
@@ -215,7 +223,7 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
           <span className="mid">
             <span className="ttl">{e.name}</span>
             <span className="cap" style={{ whiteSpace: 'normal' }}>
-              {debtText(x.debtor, x.creditor, x.state === 'offset')} · {day}
+              {debtText(x.debtor, x.creditor, x.state === 'offset')} · {e.installments ? planWhen(e, x.debtor) : day}
               {x.state === 'offset' && (
                 <>
                   {' · '}
@@ -287,6 +295,8 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
             <span className="balcap" style={{ display: 'block' }}>
               {balCap}
             </span>
+            {/* Parcelas que ainda não venceram ficam fora do saldo (spec 05). */}
+            {v.soon !== 0 && <span className="balcap soon">{t('my.soonTotal', { amount: signed(v.soon) })}</span>}
           </span>
         </div>
       </div>
@@ -343,6 +353,11 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
                 <span className="mid">
                   <span className="ttl">{who(o)}</span>
                   <span className="cap">{caption(c)}</span>
+                  {c.soon.net !== 0 && (
+                    <span className="cap soon">
+                      {c.soon.next ? t('my.soonNext', { amount: signed(c.soon.net), date: dayMonthYear(dateOf(c.soon.next), lang) }) : t('my.soonTotal', { amount: signed(c.soon.net) })}
+                    </span>
+                  )}
                 </span>
                 <span className="right">
                   {c.status === 'zero' ? (

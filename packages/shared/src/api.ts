@@ -196,6 +196,19 @@ export interface ExpenseInput {
   longDesc?: string;
   /** Ícone ou emoji da despesa; sem escolha, o ícone da tag. */
   icon?: EntryIcon | null;
+  /** Parcelada (spec 05): `count` parcelas mensais a partir de `first`; `null` ou ausente, à vista. */
+  installments?: { count: number; first: string } | null;
+}
+
+/**
+ * "Antecipar parcelas" (spec 05): as parcelas de `memberId` passam a contar no saldo antes de
+ * vencer. `all`: todas; senão, só a próxima. A própria pessoa, quem pagou ou admin.
+ */
+export interface AdvanceInstallmentsRequest {
+  splitId: string;
+  expenseId: string;
+  memberId: string;
+  all?: boolean;
 }
 
 export interface CreateExpenseRequest {
@@ -350,7 +363,9 @@ export type NotificationKind =
   /** Quem deve pediu a chave Pix (vai para quem não tem chave; some quando ela cadastra). */
   | 'pixRequested'
   /** Quem não tinha chave cadastrou (vai para quem pediu). */
-  | 'pixAdded';
+  | 'pixAdded'
+  /** A próxima parcela de uma despesa parcelada entrou no saldo (vai para quem deve aquela parte). */
+  | 'installmentDue';
 
 export type NotificationStatus = 'new' | 'confirmed' | 'disputed';
 
@@ -380,6 +395,8 @@ export interface NotificationData {
   status: NotificationStatus;
   /** Despesa excluída ou pagamento desfeito: some da lista (decisão 7); Desfazer traz de volta. */
   hidden: boolean;
+  /** Parcela que entrou no saldo ("installmentDue"): número, total e quando vence. */
+  inst?: { n: number; of: number; due: string };
 }
 
 /** Chave Pix da pessoa (uma na v1); `null` tira. Ver `pix.ts`. */
@@ -423,6 +440,11 @@ export const AUTO_FINALIZE_DAYS = 7;
 export const ENDS_ON_MAX_DAYS = 365;
 
 const DAY_MS = 24 * 3600_000;
+
+/** Hoje (AAAA-MM-DD) no horário de Brasília: o dia em que uma parcela vence (spec 05). */
+export function brasiliaDay(now: number): string {
+  return new Date(now - 3 * 3600_000).toISOString().slice(0, 10);
+}
 
 /** Fim do dia de "Termina em" (AAAA-MM-DD): a meia-noite seguinte em Brasília, em ms. */
 export function endsOnMillis(endsOn: string): number {

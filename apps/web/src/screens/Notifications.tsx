@@ -6,7 +6,7 @@ import { currencyOf } from '../data/model.ts';
 import { bellCount, markAllRead, markRead, useNotifications, viewOf, type NotificationDoc } from '../data/notifications.ts';
 import { useSession } from '../data/session.ts';
 import { useLang } from '../i18n/index.ts';
-import { shortDayTime } from '../lib/dates.ts';
+import { dateOf, dayMonthYear, shortDayTime } from '../lib/dates.ts';
 import { formatCents } from '../lib/money.ts';
 import { MemberAvatar } from './Photos.tsx';
 
@@ -19,6 +19,7 @@ const BADGE: Record<NotificationDoc['kind'], { icon: IconName; tone: string }> =
   autoFinalized: { icon: 'flag', tone: 'acc' },
   pixRequested: { icon: 'pix', tone: 'acc' },
   pixAdded: { icon: 'pix', tone: 'pos' },
+  installmentDue: { icon: 'clock', tone: 'neg' },
 };
 
 function useUid(): string | null {
@@ -95,7 +96,7 @@ export default function Notifications() {
             {list.map((n) => {
               const split = byId.get(n.splitId);
               const name = (id: string | null) => (id && split?.members[id]?.name) || '';
-              const v = viewOf(n, (k, o) => t(k, o ?? {}), name, (c) => formatCents(c, lang, split ? { currency: currencyOf(split) } : {}));
+              const v = viewOf(n, (k, o) => t(k, o ?? {}), name, (c) => formatCents(c, lang, split ? { currency: currencyOf(split) } : {}), (ymd) => (ymd ? dayMonthYear(dateOf(ymd), lang) : ''));
               const badge = BADGE[n.kind];
               return (
                 <button key={n.id} type="button" className={`row nrow ${n.read ? '' : 'unread'}`} onClick={() => open(n, v.to)}>

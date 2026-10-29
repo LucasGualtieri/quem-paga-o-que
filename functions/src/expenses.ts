@@ -1,9 +1,9 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { onCall, type CallableRequest } from 'firebase-functions/v2/https';
-import { effectiveAmount, validateExpense, type Expense, type ExpenseMode, type JoinOrder, type SplitMode, type Weights } from '@qpq/calc';
+import { effectiveAmount, installmentDates, validateExpense, type Expense, type ExpenseMode, type Installments, type JoinOrder, type SplitMode, type Weights } from '@qpq/calc';
 import { cleanName, isValidDate, normalizeTags, parseEntryIcon, type EntryIcon, type ExpenseBatchResponse, type ExpenseWriteResponse, type ProofInfo } from '@qpq/shared';
 import { findExpense, setHidden } from './notifications.ts';
-import { db, fail, input, loadSplit, opts, payModeOf, requireMember, requireOpen, text, touchMoney, uidOf, type Member, type SplitData } from './common.ts';
+import { db, fail, input, loadSplit, opts, payModeOf, requireMember, requireOpen, text, today, touchMoney, uidOf, type Member, type SplitData } from './common.ts';
 
 const MODES: readonly ExpenseMode[] = ['equal', 'frac', 'pct', 'exact', 'items'];
 const SPLIT_MODES: readonly SplitMode[] = ['equal', 'frac', 'pct', 'exact'];
@@ -27,6 +27,8 @@ interface Clean {
   icon: EntryIcon | null;
   restMode?: SplitMode;
   restW?: Weights;
+  /** Parcelada (spec 05); `null` = à vista. */
+  installments: Installments | null;
 }
 
 function obj(v: unknown): Record<string, unknown> {
@@ -65,6 +67,14 @@ function optText(v: unknown, max: number): string {
   return s.length <= max ? s : fail('invalid-input');
 }
 
+/** Parcelas: `{ count, first }` (o motor confere os limites) ou nada. */
+function planOf(v: unknown): Installments | null {
+  if (v === undefined || v === null) return null;
+  const o = obj(v);
+  if (typeof o.count !== 'number') fail('invalid-input');
+  return { count: o.count, first: text(o.first) };
+}
+
 /** Lê e limpa o que veio do app; erros de forma viram `invalid-input`. */
 function parse(raw: unknown): { clean: Clean; amount: number | null } {
   const d = obj(raw);
@@ -86,6 +96,7 @@ function parse(raw: unknown): { clean: Clean; amount: number | null } {
     note: optText(d.note, 500),
     longDesc: optText(d.longDesc, 2000),
     icon: iconOf(d.icon),
+    installments: planOf(d.installments),
   };
   const w = weights(d.w);
   if (w && mode !== 'items') clean.w = w;
@@ -126,6 +137,21 @@ function checked(raw: unknown, split: SplitData): Clean {
   return clean;
 }
 
+/**
+ * Próximo aviso (spec 07): quando a parcela `instN` vencer, a seguinte entra no saldo. Conta o
+ * primeiro vencimento depois de hoje que ainda traz uma parcela nova (o da última não traz).
+ * O que já entrou quando a despesa é lançada (ou o plano muda) não gera aviso.
+ */
+export function nextNotice(plan: Installments | null, day: string): { instNext: string | null; instN: number | null } {
+  const dates = plan ? installmentDates(plan).slice(0, -1) : [];
+  const i = dates.findIndex((d) => d > day);
+  return i < 0 ? { instNext: null, instN: null } : { instNext: dates[i]!, instN: i + 1 };
+}
+
+function samePlan(a: Installments | null | undefined, b: Installments | null): boolean {
+  return (a?.count ?? 0) === (b?.count ?? 0) && (a?.first ?? '') === (b?.first ?? '');
+}
+
 export function expenseRef(splitId: string, id: string) {
   if (!ID.test(id)) fail('invalid-input');
   return db().doc(`splits/${splitId}/expenses/${id}`);
@@ -138,7 +164,7 @@ export function requireEditor(split: SplitData, uid: string, authorId: string): 
   return me;
 }
 
-export type HistoryKind = 'created' | 'edited' | 'deleted' | 'restored' | 'paid' | 'received' | 'unpaid' | 'confirmed' | 'disputed' | 'proof' | 'settled';
+export type HistoryKind = 'created' | 'edited' | 'deleted' | 'restored' | 'paid' | 'received' | 'unpaid' | 'confirmed' | 'disputed' | 'proof' | 'settled' | 'advanced';
 
 /** Entrada do Histórico; nas de pagamento, `memberId` é de quem é a parte. */
 export async function addHistory(
@@ -163,6 +189,7 @@ export const createExpense = onCall(opts, async (req): Promise<ExpenseWriteRespo
     const now = FieldValue.serverTimestamp();
     tx.create(ref, {
       ...clean,
+      ...nextNotice(clean.installments, today()),
       author: me,
       updatedBy: me,
       version: 1,
@@ -236,6 +263,8 @@ export const updateExpense = onCall(opts, async (req): Promise<ExpenseWriteRespo
       rest: clean.rest ?? FieldValue.delete(),
       restMode: clean.restMode ?? FieldValue.delete(),
       restW: clean.restW ?? FieldValue.delete(),
+      // Plano novo (ou à vista): os avisos recomeçam do que ainda não venceu.
+      ...(samePlan(e.installments, clean.installments) ? {} : nextNotice(clean.installments, today())),
       version,
       updatedBy: me,
       updatedAt: FieldValue.serverTimestamp(),

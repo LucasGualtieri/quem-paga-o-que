@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { endsOnAllowed, endsOnMillis, finalizeClockStart } from '../src/api.ts';
+import { brasiliaDay, endsOnAllowed, endsOnMillis, finalizeClockStart } from '../src/api.ts';
 
 const DAY = 24 * 3600_000;
 
@@ -23,5 +23,12 @@ describe('"Termina em" (spec 04)', () => {
     expect(finalizeClockStart(money, '2026-10-01')).toBe(money);
     expect(finalizeClockStart(money, '2027-01-12')).toBe(endsOnMillis('2027-01-12'));
     expect(finalizeClockStart(money, '2027-01-12') - money).toBeGreaterThan(80 * DAY);
+  });
+});
+
+describe('brasiliaDay', () => {
+  it('o dia vira à meia-noite de Brasília (03:00 UTC)', () => {
+    expect(brasiliaDay(Date.parse('2026-11-10T02:59:00Z'))).toBe('2026-11-09');
+    expect(brasiliaDay(Date.parse('2026-11-10T03:00:00Z'))).toBe('2026-11-10');
   });
 });

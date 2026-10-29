@@ -1,15 +1,19 @@
 import { byJoinOrder, joinOf } from './order.ts';
+import { dueShares } from './installments.ts';
 import { shares } from './shares.ts';
 import type { Cents, Expense, JoinOrder, Ledger, Matrix, MemberId, Payment } from './types.ts';
 
 /**
  * Saldos do split, sempre recalculados das despesas e acertos
  * (docs/spec/02-modelo-de-dados-e-calculo.md). Nada aqui é guardado.
+ * `today` (AAAA-MM-DD, horário de Brasília): de cada parcelada contam as parcelas vencidas, a
+ * próxima e as antecipadas; as outras ficam fora do saldo e vão para `F`. Sem `today`, todas contam.
  */
-export function ledger(input: { order: JoinOrder; expenses: readonly Expense[]; payments: readonly Payment[] }): Ledger {
+export function ledger(input: { order: JoinOrder; expenses: readonly Expense[]; payments: readonly Payment[]; today?: string }): Ledger {
   const { order } = input;
   const ids = byJoinOrder(Object.keys(order), order);
   const P = zeros(ids);
+  const F = zeros(ids);
   const bump = (from: MemberId, to: MemberId, v: Cents) => {
     joinOf(from, order);
     joinOf(to, order);
@@ -18,7 +22,11 @@ export function ledger(input: { order: JoinOrder; expenses: readonly Expense[]; 
 
   for (const e of input.expenses) {
     joinOf(e.payer, order);
-    const sh = shares(e, order);
+    const sh = dueShares(e, order, input.today);
+    if (e.installments) {
+      const full = shares(e, order);
+      for (const [id, v] of Object.entries(full)) if (id !== e.payer && v > sh[id]!) F[id]![e.payer]! += v - sh[id]!;
+    }
     const paid = e.paid ?? {};
     for (const id of new Set([...Object.keys(sh), ...Object.keys(paid)])) {
       if (id === e.payer) continue;
@@ -45,7 +53,7 @@ export function ledger(input: { order: JoinOrder; expenses: readonly Expense[]; 
     }
   }
 
-  return { P, M, net, sug: simplify(ids, net), pairs };
+  return { P, M, net, sug: simplify(ids, net), pairs, F };
 }
 
 /** Maiores devedores pagam aos maiores credores; empate pela ordem de entrada. */

@@ -29,6 +29,12 @@ export interface Item {
   w?: Weights;
 }
 
+/** Despesa parcelada (spec 05): `count` parcelas mensais a partir de `first` (AAAA-MM-DD). */
+export interface Installments {
+  count: number;
+  first: string;
+}
+
 export interface Expense {
   /** `null` só no modo items: o total passa a ser a soma dos itens. */
   amount: Cents | null;
@@ -43,10 +49,14 @@ export interface Expense {
   restW?: Weights;
   /** Centavos já pagos de cada parte (ver docs/spec/pontos-em-aberto.md #2). */
   paid?: Readonly<Record<MemberId, Cents>>;
+  /** Parcelada: cada parcela só entra no saldo quando vence (ou é antecipada). */
+  installments?: Installments | null;
+  /** Quantas parcelas cada pessoa antecipou (contam antes de vencer). */
+  advanced?: Readonly<Record<MemberId, number>>;
 }
 
 /** O que `shares` precisa: a despesa sem quem pagou nem o que já foi pago. */
-export type ShareInput = Omit<Expense, 'payer' | 'paid'>;
+export type ShareInput = Omit<Expense, 'payer' | 'paid' | 'installments' | 'advanced'>;
 
 /** Pagamento de acerto entre duas pessoas, sem apontar despesa. */
 export interface Payment {
@@ -75,6 +85,8 @@ export interface Ledger {
   sug: Payment[];
   /** Quantidade de pares com dívida líquida. */
   pairs: number;
+  /** Parcelas que ainda vão vencer: `F[a][b]` é o que `a` vai dever a `b` (não entra no saldo). */
+  F: Matrix;
 }
 
 export type ExpenseErrorCode =
@@ -86,7 +98,8 @@ export type ExpenseErrorCode =
   | 'pct-not-100'
   | 'exact-mismatch'
   | 'no-items'
-  | 'items-exceed-total';
+  | 'items-exceed-total'
+  | 'installments-invalid';
 
 export interface ExpenseError {
   code: ExpenseErrorCode;

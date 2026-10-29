@@ -4,8 +4,10 @@ import { Link, useNavigate } from 'react-router';
 import { nameKey, TAGS } from '@qpq/shared';
 import { Button, Chip, Icon, SkeletonCard, useToast } from '../components/index.ts';
 import { pendingChecks } from '../data/balance.ts';
-import { currencyOf, membersInOrder, payModeOf, sharesOf, type ExpenseDoc, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
+import { currencyOf, dueSharesOf, membersInOrder, payModeOf, sharesOf, today as brasiliaToday, type ExpenseDoc, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
+import { installmentDates } from '@qpq/calc';
 import { useLang } from '../i18n/index.ts';
+import { dateOf, dayMonthYear } from '../lib/dates.ts';
 import { formatCents } from '../lib/money.ts';
 import { dayLabel, EmptyArt, todayStr, useWho } from './common.tsx';
 import { EntryIconView } from './EntryIcon.tsx';
@@ -75,6 +77,7 @@ export function TxTab({
   const [open, setOpen] = useState<'p' | 't' | null>(null);
   const fmt = (c: number, signed = false) => formatCents(c, lang, { signed, currency: currencyOf(split) });
   const today = todayStr();
+  const day = useMemo(() => brasiliaToday(), []);
   const people = membersInOrder(split);
 
   const infos = useMemo(() => new Map(expenses.map((e) => [e.id, involved(e, split)])), [expenses, split]);
@@ -114,15 +117,27 @@ export function TxTab({
       const part = sh[me.id] ?? 0;
       return part > 0 ? { text: t('expense.tx.owe', { amount: fmt(part) }), tone: 'muted' } : null;
     }
+    // Detalhado: só o que já venceu se paga (parcelada, spec 05).
+    const due = dueSharesOf(e, split);
     if (e.payer === me.id) {
-      const recv = Object.entries(sh).reduce((s, [id, v]) => (id === me.id ? s : s + Math.max(0, v - (e.paid[id] ?? 0))), 0);
+      const recv = Object.entries(due).reduce((s, [id, v]) => (id === me.id ? s : s + Math.max(0, v - (e.paid[id] ?? 0))), 0);
       return recv > 0 ? { text: t('expense.tx.recv', { amount: fmt(recv, true) }), tone: 'pos' } : null;
     }
-    const owe = Math.max(0, (sh[me.id] ?? 0) - (e.paid[me.id] ?? 0));
+    const owe = Math.max(0, (due[me.id] ?? 0) - (e.paid[me.id] ?? 0));
     return owe > 0 ? { text: t('expense.tx.owe', { amount: fmt(-owe) }), tone: 'neg' } : null;
   };
 
   const modeNote = (e: ExpenseDoc) => (e.mode === 'frac' ? t('expense.tx.byFrac') : e.mode === 'pct' ? t('expense.tx.byPct') : e.mode === 'exact' ? t('expense.tx.byExact') : e.mode === 'items' ? t('expense.tx.byItems') : '');
+  // Parcelada: em quantas vezes e qual parcela está em cobrança (pelas datas, sem contar antecipações).
+  const planNote = (e: ExpenseDoc) => {
+    const plan = e.installments;
+    if (!plan) return '';
+    const dates = installmentDates(plan);
+    const k = dates.filter((d) => d <= day).length;
+    const date = (i: number) => dayMonthYear(dateOf(dates[i]!), lang);
+    // A parcela em cobrança é a primeira que ainda não venceu (spec 05).
+    return k < plan.count ? t('expense.tx.planNext', { count: plan.count, n: k + 1, date: date(k) }) : t('expense.tx.planDone', { count: plan.count });
+  };
 
   const noActive = loaded && expenses.length === 0;
 
@@ -154,7 +169,8 @@ export function TxTab({
         if (on) next.add(id);
         else next.delete(id);
       }
-      return next.size ? next : null;
+      // Zerar a seleção não sai do modo: só Cancelar (ou Esc).
+      return next;
     });
   const startSelect = (e: ExpenseDoc) => {
     setSwiped(null);
@@ -299,6 +315,19 @@ export function TxTab({
         </p>
       )}
 
+      {/* Na seleção, acima dos dias: marca (ou desmarca) todas as que estão na tela, respeitando a busca e os filtros. */}
+      {selecting && visible.length > 0 && (
+        <button type="button" className="dayhdr daysel selall" aria-pressed={chosen.length === visible.length} onClick={() => toggleSel(visible.map((e) => e.id), chosen.length < visible.length)}>
+          <span className="daysel-l">
+            <span className={`tick ${chosen.length === visible.length ? 'on' : ''}`} aria-hidden="true">
+              <Icon name="check" />
+            </span>
+            {t('expense.tx.selectAll', { count: visible.length })}
+          </span>
+          <span className="amt">{fmt(visible.reduce((s, e) => s + e.amount, 0))}</span>
+        </button>
+      )}
+
       {groups.map(([date, items]) => {
         const day = dayLabel(date, today, lang, (k) => t(k));
         const total = <span className="amt">{fmt(items.reduce((s, e) => s + e.amount, 0))}</span>;
@@ -327,6 +356,7 @@ export function TxTab({
               const mine = mineOf(e);
               const pend = e.payer === me.id && !simple ? pendingChecks(e) : 0;
               const note = modeNote(e);
+              const plan = planNote(e);
               const isSel = selected?.has(e.id) ?? false;
               return (
                 <TxRow
@@ -366,6 +396,7 @@ export function TxTab({
                       {t('expense.tx.paidBy', { name: who(e.payer) })}
                       {note ? ` · ${note}` : ''}
                     </span>
+                    {plan && <span className="cap plan-cap">{plan}</span>}
                   </span>
                   <span className="right">
                     <span className="amt strong" style={{ fontSize: 15.5 }}>
@@ -391,16 +422,12 @@ export function TxTab({
         <div className="selbar" role="region" aria-label={t('expense.tx.selection')}>
           <div className="selbar-info" aria-live="polite">
             <span className="ttl">{t('expense.tx.selected', { count: chosen.length })}</span>
-            <span className="cap">
-              {fmt(selTotal)} · {t('expense.tx.owe', { amount: fmt(selMine) })}
-            </span>
-            {notMine > 0 && <span className="cap selbar-lock">{t('expense.tx.lockSome', { count: notMine, total: chosen.length })}</span>}
-            {/* Todas as que estão na tela (respeita a busca e os filtros). */}
-            {chosen.length < visible.length && (
-              <button type="button" className="linkbtn selbar-all" onClick={() => toggleSel(visible.map((e) => e.id), true)}>
-                {t('expense.tx.selectAll', { count: visible.length })}
-              </button>
+            {chosen.length > 0 && (
+              <span className="cap">
+                {fmt(selTotal)} · {t('expense.tx.owe', { amount: fmt(selMine) })}
+              </span>
             )}
+            {notMine > 0 && <span className="cap selbar-lock">{t('expense.tx.lockSome', { count: notMine, total: chosen.length })}</span>}
           </div>
           <div className="selbar-acts">
             <Button variant="ghost" size="sm" onClick={() => setSelected(null)}>

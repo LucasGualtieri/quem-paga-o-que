@@ -5,7 +5,7 @@ import { useToast } from '../components/index.ts';
 import { api, detailsOf } from '../data/api.ts';
 import { enqueue } from '../data/expenseStore.ts';
 import { previewPhoto, uploadPhoto } from '../data/files.ts';
-import { payModeOf, sharesOf, type ExpenseDoc, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
+import { dueSharesOf, payModeOf, type ExpenseDoc, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
 import { confirmShareOp, settlePaymentOp, settleReceiptOp, startPayOp, type PaymentOp, type ReceiptOp, type ShareOp, type SharePatch } from '../data/payStore.ts';
 import { ImageError, photoName } from '../lib/image.ts';
 import { useReasonText } from './reasons.ts';
@@ -84,7 +84,7 @@ export function usePayActions(split: SplitDoc, me: Member) {
   /** "Marcar como pago" (quem deve, ou admin) ou "Recebi" (quem pagou a despesa); com foto, já anexa. */
   const mark = useCallback(
     (e: ExpenseDoc, memberId: string, file?: File | null) => {
-      const share = sharesOf(e, split)[memberId] ?? 0;
+      const share = dueSharesOf(e, split)[memberId] ?? 0;
       const iAmPayer = me.id === e.payer;
       void shareChange(e, memberId, { paid: Math.max(share, e.paid[memberId] ?? 0), pendConf: iAmPayer ? null : true }, () => api.markShare(ref(e, memberId)));
       if (file) attachShare(e, memberId, file, false);

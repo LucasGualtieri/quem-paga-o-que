@@ -581,7 +581,8 @@ textarea.input {
     background: var(--surface2);
   }
 }
-.swipe-front.new .txrow {
+/* Destaque de despesa nova: a linha inteira, inclusive o "⋯". */
+.swipe-front.new {
   animation: newrow 2.4s ease;
 }
 @keyframes newrow {
@@ -908,14 +909,12 @@ textarea.input {
   flex-direction: column;
   gap: 2px;
 }
-.selbar-info .cap {
+.selbar-info .cap,
+.selbar-info .ttl {
   white-space: normal;
 }
-.selbar-all {
-  align-self: flex-start;
-  min-height: 32px;
-  padding: 0;
-  font-size: 13px;
+.dayhdr.selall {
+  padding-bottom: 0;
 }
 .selbar-lock {
   color: var(--neg);
@@ -929,4 +928,70 @@ textarea.input {
   .swipe-front {
     transition: none;
   }
+}
+
+/* Parcelado (formulário da despesa). */
+.plan-box {
+  background: var(--surface);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.plan-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.plan-row .mid {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.plan-row .cap {
+  white-space: normal;
+}
+.plan-fields {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.plan-fields > div {
+  display: flex;
+  flex-direction: column;
+}
+.plan-fields > div:last-child {
+  flex: 1;
+  min-width: 150px;
+}
+.plan-sum {
+  margin: 0;
+  white-space: normal;
+}
+
+/* Parcelas no detalhe da despesa. */
+.plan-line {
+  gap: 10px;
+}
+.plan-line .mid {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.plan-people {
+  margin-top: 12px;
+}
+.plan-note {
+  white-space: normal;
+  padding: 8px 4px 0;
+  margin: 0;
+}
+.plan-cap {
+  display: block;
+  white-space: normal;
 }

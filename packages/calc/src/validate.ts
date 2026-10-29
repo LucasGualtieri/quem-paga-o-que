@@ -1,3 +1,4 @@
+import { isValidPlan } from './installments.ts';
 import { effectiveAmount, scaledWeight, WEIGHT_SCALE } from './shares.ts';
 import type { Cents, Expense, ExpenseError, ExpenseErrorCode, JoinOrder, MemberId, SplitMode, Weights } from './types.ts';
 
@@ -14,6 +15,7 @@ export function validateExpense(expense: Expense, order: JoinOrder): ExpenseErro
 
   if (!isPositiveCents(total)) errors.push({ code: 'amount-invalid' });
   if (!known([expense.payer, ...expense.members])) errors.push({ code: 'unknown-member' });
+  if (expense.installments && !isValidPlan(expense.installments)) errors.push({ code: 'installments-invalid' });
 
   if (expense.mode !== 'items') {
     const code = checkSplit(total, expense.members, expense.mode, expense.w);

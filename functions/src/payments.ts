@@ -1,6 +1,6 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { onCall } from 'firebase-functions/v2/https';
-import { shares } from '@qpq/calc';
+import { dueShares } from '@qpq/calc';
 import {
   coverPath,
   PAY_MODES,
@@ -12,7 +12,7 @@ import {
   type ProofInfo,
   type ProofVisibility,
 } from '@qpq/shared';
-import { db, fail, input, ledgerOf, loadSplit, opts, orderOf, payModeOf, requireAdmin, requireMember, requireOpen, text, touchMoney, uidOf, type Member, type SplitData } from './common.ts';
+import { db, fail, input, ledgerOf, loadSplit, opts, orderOf, payModeOf, requireAdmin, requireMember, requireOpen, text, today, touchMoney, uidOf, type Member, type SplitData } from './common.ts';
 import { addHistory, loadExpense, requireEditor, type HistoryKind } from './expenses.ts';
 import { findPayment, findShare, notify, notifyProof, others, setHidden, setStatus } from './notifications.ts';
 import { deleteFiles, newProof, register, requireFile, requirePath, unregister } from './proofs.ts';
@@ -43,7 +43,8 @@ async function loadShare(tx: FirebaseFirestore.Transaction, data: Record<string,
   requireOpen(split);
   const id = memberId(split, data.memberId);
   // Quem pagou nunca tem parte a marcar; quem não tem parte também não.
-  const share = id === e.payer ? 0 : (shares(e, orderOf(split))[id] ?? 0);
+  // Parcelada: só o que já venceu (ou foi antecipado) se paga.
+  const share = id === e.payer ? 0 : (dueShares(e, orderOf(split), today())[id] ?? 0);
   if (share <= 0) fail('invalid-input');
   const iAmPayer = me[0] === e.payer;
   const via = (e.via as Record<string, string> | undefined)?.[id];

@@ -1,7 +1,7 @@
 import { FieldValue, type DocumentReference, type DocumentSnapshot, type Transaction } from 'firebase-admin/firestore';
-import { shares, type Expense } from '@qpq/calc';
+import { dueShares, type Expense } from '@qpq/calc';
 import type { ProofInfo } from '@qpq/shared';
-import { orderOf, touchMoney, type SplitData } from './common.ts';
+import { orderOf, today, touchMoney, type SplitData } from './common.ts';
 import { addHistory } from './expenses.ts';
 import { unregister } from './proofs.ts';
 
@@ -60,7 +60,7 @@ export function openShares(split: SplitData, expenses: readonly DocumentSnapshot
     if (e.deletedAt) continue;
     const debtor = e.payer === b ? a : e.payer === a ? b : null;
     if (!debtor) continue;
-    const share = shares(e, order)[debtor] ?? 0;
+    const share = dueShares(e, order, today())[debtor] ?? 0;
     if (share > 0 && (e.paid?.[debtor] ?? 0) < share) out.push({ ref: d.ref, e, m: debtor, share });
   }
   return out;

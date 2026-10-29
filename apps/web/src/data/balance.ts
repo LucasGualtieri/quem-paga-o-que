@@ -1,5 +1,5 @@
-import { ledger, type Cents, type MemberId } from '@qpq/calc';
-import { membersInOrder, orderOf, sharesOf, type ExpenseDoc, type PaymentDoc, type SplitDoc } from './model.ts';
+import { dueCount, installmentDates, ledger, type Cents, type MemberId } from '@qpq/calc';
+import { dueSharesOf, membersInOrder, orderOf, today, type ExpenseDoc, type PaymentDoc, type SplitDoc } from './model.ts';
 
 /**
  * Meu saldo (spec 06, revista em 24/10/2026): um cartão por pessoa do split com o saldo do par
@@ -46,11 +46,15 @@ export interface PairCard {
   entries: PairEntry[];
   /** Pagamentos que a pessoa marcou para mim e eu ainda não confirmei. */
   toConfirm: number;
+  /** Parcelas futuras no par (fora do saldo): com sinal (positivo = a pessoa vai me dever) e quando a próxima entra. */
+  soon: { net: Cents; next: string | null };
 }
 
 export interface PairsView {
   /** Seu saldo neste split: positivo = a receber. */
   mine: Cents;
+  /** Parcelas a vencer, somadas (positivo = a receber). */
+  soon: Cents;
   cards: PairCard[];
 }
 
@@ -62,7 +66,8 @@ function entryTime(e: PairEntry): number {
 }
 
 export function pairsView(split: SplitDoc, expenses: readonly ExpenseDoc[], payments: readonly PaymentDoc[], viewer: MemberId): PairsView {
-  const { P, net } = ledger({ order: orderOf(split), expenses, payments });
+  const day = today();
+  const { P, net, F } = ledger({ order: orderOf(split), expenses, payments, today: day });
   const others = membersInOrder(split).filter((m) => m.id !== viewer);
   const cards = others.map((m): PairCard => {
     const o = m.id;
@@ -74,7 +79,7 @@ export function pairsView(split: SplitDoc, expenses: readonly ExpenseDoc[], paym
     for (const e of expenses) {
       const pair = e.payer === viewer ? o : e.payer === o ? viewer : null;
       if (!pair) continue;
-      const share = sharesOf(e, split)[pair] ?? 0;
+      const share = dueSharesOf(e, split)[pair] ?? 0;
       if (share <= 0) continue;
       const paid = e.paid[pair] ?? 0;
       const due = Math.max(0, share - paid);
@@ -100,12 +105,23 @@ export function pairsView(split: SplitDoc, expenses: readonly ExpenseDoc[], paym
     }
     entries.sort((a, b) => entryTime(a) - entryTime(b));
     const toConfirm = entries.filter((x) => (x.kind === 'share' ? x.pending && x.creditor === viewer && !x.via : !x.out && !!x.payment.pendConf)).length;
-    return { other: o, status, amount: Math.abs(pairNet), net: pairNet, entries, toConfirm };
+    // Parcelas que ainda não venceram (nem foram antecipadas): a próxima data entre as duas pessoas.
+    let next: string | null = null;
+    for (const e of expenses) {
+      const debtor = e.payer === viewer ? o : e.payer === o ? viewer : null;
+      if (!debtor || !e.installments || !e.members.length) continue;
+      const n = dueCount(e, debtor, day);
+      // A próxima entra no saldo quando vence a que está em cobrança.
+      const d = n < e.installments.count && (F[debtor]?.[e.payer] ?? 0) > 0 ? installmentDates(e.installments)[n - 1] : undefined;
+      if (d && (!next || d < next)) next = d;
+    }
+    const soon = { net: (F[o]?.[viewer] ?? 0) - (F[viewer]?.[o] ?? 0), next };
+    return { other: o, status, amount: Math.abs(pairNet), net: pairNet, entries, toConfirm, soon };
   });
   const rank: Record<PairStatus, number> = { owe: 0, owed: 1, zero: 2 };
   // Primeiro o que eu devo, depois o que me devem (maiores primeiro), quitados por último.
   cards.sort((a, b) => rank[a.status] - rank[b.status] || b.amount - a.amount);
-  return { mine: net[viewer] ?? 0, cards };
+  return { mine: net[viewer] ?? 0, cards, soon: cards.reduce((s, c) => s + c.soon.net, 0) };
 }
 
 /** Partes que quem pagou a despesa ainda precisa conferir ("1 pagamento p/ conferir"). */

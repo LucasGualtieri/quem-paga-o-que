@@ -2,14 +2,15 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useNavigate, useParams } from 'react-router';
 import { TAGS } from '@qpq/shared';
-import type { ExpenseMode } from '@qpq/calc';
-import { avatarColor, Button, Chip, Icon, PersonRow, Segmented, SkeletonCard } from '../components/index.ts';
+import { installmentDates, MAX_INSTALLMENTS, splitInstallments, type ExpenseMode } from '@qpq/calc';
+import { avatarColor, Button, Chip, Icon, PersonRow, Segmented, SkeletonCard, Stepper, Switch } from '../components/index.ts';
 import { analyze, fromDoc, initialForm, setMode, toggleMember, toInput, type FormState } from '../data/expenseForm.ts';
 import { useMoney, useSplit } from '../data/hooks.ts';
 import { currencyOf, membersInOrder, myMember, orderOf, payModeOf, type ExpenseDoc, type Member, type SplitDoc } from '../data/model.ts';
 import { touchesSettled } from '../data/settlements.ts';
 import { useSession } from '../data/session.ts';
 import { useLang } from '../i18n/index.ts';
+import { dateOf, dayMonthYear } from '../lib/dates.ts';
 import { currencySymbol, formatCents, formatInputCents } from '../lib/money.ts';
 import { amountInput, BackLink, todayStr, useWho } from './common.tsx';
 import { ErrorLine, splitErrorText, splitStatus, WeightRows } from './ExpenseParts.tsx';
@@ -314,6 +315,38 @@ function Body({ split, me, doc, warnSettled = false }: { split: SplitDoc; me: Me
             </div>
           )}
           {showSplitErr && errText !== t('expense.form.selectSome') && <ErrorLine>{errText}</ErrorLine>}
+        </div>
+
+        {/* Parcelada: cada parcela só entra no saldo quando vence (spec 05). */}
+        <div className="plan-box">
+          <div className="plan-row">
+            <span className="mid">
+              <span className="ttl">{t('expense.form.plan')}</span>
+              <span className="cap">{t('expense.form.planHint')}</span>
+            </span>
+            <Switch checked={!!form.plan} label={t('expense.form.plan')} onChange={(on) => set({ plan: on ? { count: 2, first: form.date } : null })} />
+          </div>
+          {form.plan && (
+            <>
+              <div className="plan-fields">
+                <div>
+                  <span className="label">{t('expense.form.planCount')}</span>
+                  <Stepper value={form.plan.count} min={2} max={MAX_INSTALLMENTS} onChange={(count) => set({ plan: { ...form.plan!, count } })} />
+                </div>
+                <div>
+                  <label className="label" htmlFor="ad-first">
+                    {t('expense.form.planFirst')}
+                  </label>
+                  <input id="ad-first" className="input" type="date" value={form.plan.first} onChange={(e) => e.target.value && set({ plan: { ...form.plan!, first: e.target.value } })} />
+                </div>
+              </div>
+              {a.total > 0 && (
+                <p className="cap plan-sum">
+                  {t('expense.form.planSum', { count: form.plan.count, amount: fmt(splitInstallments(a.total, form.plan.count)[1]!), last: dayMonthYear(dateOf(installmentDates(form.plan).at(-1)!), lang) })}
+                </p>
+              )}
+            </>
+          )}
         </div>
 
         <div>

@@ -1,5 +1,5 @@
 import type { ExpenseDoc, PaymentDoc, SplitDoc } from './model.ts';
-import { sharesOf } from './model.ts';
+import { dueSharesOf, sharesOf } from './model.ts';
 
 /**
  * Acertos do modo detalhado vistos nas partes (spec 06). No servidor, o acerto marca as partes do
@@ -41,14 +41,14 @@ export function applySettlements(
       for (const c of p.covers ?? []) {
         if (c.e !== e.id || next.via?.[c.m]) continue;
         // Ainda sem o `via` do servidor (a despesa chega depois do acerto).
-        set(c.m, sharesOf(next, split)[c.m] ?? 0, p.id, p.pendConf && c.m === p.from ? true : null);
+        set(c.m, dueSharesOf(next, split)[c.m] ?? 0, p.id, p.pendConf && c.m === p.from ? true : null);
       }
       if (!p.pendConf) for (const [m, id] of Object.entries(next.via ?? {})) if (id === p.id && next.pendConf[m]) set(m, next.paid[m] ?? 0, id, null);
     }
     for (const p of fresh) {
       const debtor = e.payer === p.to ? p.from : e.payer === p.from ? p.to : null;
       if (!debtor) continue;
-      const share = sharesOf(next, split)[debtor] ?? 0;
+      const share = dueSharesOf(next, split)[debtor] ?? 0;
       if (share > 0 && (next.paid[debtor] ?? 0) < share) set(debtor, share, p.id, p.pendConf && debtor === p.from ? true : null);
     }
     return next;

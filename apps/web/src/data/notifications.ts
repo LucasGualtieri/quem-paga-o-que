@@ -52,7 +52,7 @@ export interface NotificationView {
  * Textos e destino de cada aviso (spec 07). `name(id)` dá o nome atual de um participante;
  * `money` formata centavos.
  */
-export function viewOf(n: NotificationDoc, t: T, name: (id: string | null) => string, money: (c: number) => string): NotificationView {
+export function viewOf(n: NotificationDoc, t: T, name: (id: string | null) => string, money: (c: number) => string, date: (ymd: string) => string = (ymd) => ymd): NotificationView {
   const amount = money(n.amount);
   const from = name(n.from) || n.fromName;
   const what = n.expName ?? t('notif.settle');
@@ -85,6 +85,13 @@ export function viewOf(n: NotificationDoc, t: T, name: (id: string | null) => st
       return { title: t('notif.pixRequested', { name: from }), sub: `${n.splitName} · ${t('notif.pixRequestedSub', { amount })}`, to: `/s/${n.splitId}/saldo?pix=1` };
     case 'pixAdded':
       return { title: t('notif.pixAdded', { name: from }), sub: `${n.splitName} · ${t('notif.pixAddedSub')}`, to: `/s/${n.splitId}/saldo` };
+    case 'installmentDue':
+      // A próxima parcela entrou no saldo: a parte de quem recebe cresce para quem pagou a despesa.
+      return {
+        title: t('notif.instDue', { n: n.inst?.n ?? 0, of: n.inst?.of ?? 0, what }),
+        sub: `${t('notif.instDueSub', { amount, name: from, date: date(n.inst?.due ?? '') })} · ${n.splitName}`,
+        to: `/s/${n.splitId}/despesa/${n.expId}`,
+      };
     case 'splitDeleted':
       // Leva à explicação do split apagado.
       return { title: t('notif.splitDeleted', { name: from, split: n.splitName }), sub: t('notif.splitDeletedSub'), to: `/s/${n.splitId}` };

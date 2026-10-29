@@ -21,6 +21,8 @@ export interface NoteInput {
   paymentId?: string;
   payFrom?: string;
   payTo?: string;
+  /** Parcela que entrou no saldo: número, total e quando vence. */
+  inst?: { n: number; of: number; due: string };
 }
 
 /** Cria o aviso para `toMember`, se a pessoa já entrou no split. */
@@ -52,6 +54,7 @@ export function noteData(splitId: string, split: SplitData, toMember: string, n:
     read: false,
     status: 'new',
     hidden: false,
+    ...(n.inst ? { inst: n.inst } : {}),
     at: FieldValue.serverTimestamp(),
   };
 }
