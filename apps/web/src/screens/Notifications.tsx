@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { Icon, SkeletonCard, type IconName } from '../components/index.ts';
 import { useMySplits, useProfile } from '../data/hooks.ts';
+import { currencyOf } from '../data/model.ts';
 import { bellCount, markAllRead, markRead, useNotifications, viewOf, type NotificationDoc } from '../data/notifications.ts';
 import { useSession } from '../data/session.ts';
 import { useLang } from '../i18n/index.ts';
@@ -94,7 +95,7 @@ export default function Notifications() {
             {list.map((n) => {
               const split = byId.get(n.splitId);
               const name = (id: string | null) => (id && split?.members[id]?.name) || '';
-              const v = viewOf(n, (k, o) => t(k, o ?? {}), name, (c) => formatCents(c, lang));
+              const v = viewOf(n, (k, o) => t(k, o ?? {}), name, (c) => formatCents(c, lang, split ? { currency: currencyOf(split) } : {}));
               const badge = BADGE[n.kind];
               return (
                 <button key={n.id} type="button" className={`row nrow ${n.read ? '' : 'unread'}`} onClick={() => open(n, v.to)}>

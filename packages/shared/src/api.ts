@@ -1,6 +1,8 @@
 import type { ExpenseMode, MemberId, SplitMode, Weights } from '@qpq/calc';
 import type { EntryIcon } from './icons.ts';
 import type { PixKey } from './pix.ts';
+import type { Currency } from './currency.ts';
+import { isValidDate } from './expenses.ts';
 
 /**
  * Contrato das Cloud Functions chamáveis (região us-east1).
@@ -60,6 +62,8 @@ export interface CreateSplitRequest {
   selfName: string;
   /** Os outros participantes, só pelo nome. */
   people: string[];
+  /** Moeda do split; sem ela, BRL. */
+  currency?: Currency;
 }
 export interface CreateSplitResponse {
   splitId: string;
@@ -85,6 +89,8 @@ export interface PreviewInviteResponse {
   /** Você já está neste split: o app vai direto para ele. */
   alreadyMember: boolean;
   members: PreviewMember[];
+  /** Moeda do split (a chave Pix ao entrar só aparece em BRL). */
+  currency: Currency;
 }
 
 /** Entrar escolhendo um nome da lista (`memberId`) ou como participante novo (`newName`). */
@@ -214,6 +220,16 @@ export interface ExpenseRef {
 export interface ExpenseWriteResponse {
   version: number;
 }
+/** Ação em lote (excluir ou desfazer a exclusão de várias despesas): tudo ou nada. */
+export interface ExpenseBatchRef {
+  splitId: string;
+  /** De 1 a 100 despesas. */
+  expenseIds: string[];
+}
+export interface ExpenseBatchResponse {
+  /** Versão nova de cada despesa. */
+  versions: Record<string, number>;
+}
 
 /**
  * Pagamentos e comprovantes (Fase 6). Só as Functions escrevem: conferem quem pode
@@ -303,6 +319,10 @@ export interface UpdateSplitRequest {
   icon?: EntryIcon | null;
   /** Tira a foto da capa (fica o ícone ou emoji). */
   clearPhoto?: boolean;
+  /** "Termina em" (AAAA-MM-DD); `null` tira a data. */
+  endsOn?: string | null;
+  /** Troca a moeda (os valores não são convertidos). */
+  currency?: Currency;
 }
 /** Capa com foto do split; `path: null` volta para o ícone ou emoji. */
 export interface SetSplitPhotoRequest {
@@ -399,6 +419,28 @@ export interface DeletedSplitData {
 export const FINALIZE_SUGGEST_HOURS = 24;
 /** E o split finaliza sozinho depois destes dias quitado (contados da última mudança no dinheiro). */
 export const AUTO_FINALIZE_DAYS = 7;
+/** "Termina em" (data do evento): no máximo este tanto de dias à frente de hoje. */
+export const ENDS_ON_MAX_DAYS = 365;
+
+const DAY_MS = 24 * 3600_000;
+
+/** Fim do dia de "Termina em" (AAAA-MM-DD): a meia-noite seguinte em Brasília, em ms. */
+export function endsOnMillis(endsOn: string): number {
+  return Date.parse(`${endsOn}T00:00:00-03:00`) + DAY_MS;
+}
+
+/** "Termina em" aceito: data válida de hoje até ENDS_ON_MAX_DAYS dias à frente (passada também vale). */
+export function endsOnAllowed(endsOn: string, now: number): boolean {
+  return isValidDate(endsOn) && endsOnMillis(endsOn) - DAY_MS <= now + (ENDS_ON_MAX_DAYS + 1) * DAY_MS;
+}
+
+/**
+ * Desde quando contam a sugestão de finalizar e a finalização automática (spec 04): a última
+ * mudança no dinheiro ou o fim de "Termina em", o que vier depois.
+ */
+export function finalizeClockStart(moneyAt: number, endsOn: string | null | undefined): number {
+  return endsOn ? Math.max(moneyAt, endsOnMillis(endsOn)) : moneyAt;
+}
 
 /** Como o split registra pagamentos (spec 06): só o acerto do par, ou também despesa por despesa. */
 export type PayMode = 'simple' | 'detailed';

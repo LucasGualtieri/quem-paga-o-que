@@ -28,10 +28,11 @@ export default function WhoAreYou() {
   const [newName, setNewName] = useState('');
   // Chave Pix opcional (recomendada) para quem ainda não tem (spec 03).
   const profile = useProfile(session.status === 'ready' ? session.uid : null);
-  const needsPix = profile.status === 'ready' && !profile.data.pix;
   const [pixText, setPixText] = useState('');
   const [pixError, setPixError] = useState(false);
   const returned = (location.state as { error?: ErrorDetails } | null)?.error ?? null;
+  // Pix só em reais: num split em outra moeda, a chave não aparece ao entrar.
+  const needsPix = profile.status === 'ready' && !profile.data.pix && (state.status !== 'ready' || (state.data.currency ?? 'BRL') === 'BRL');
 
   // Quem abre o convite não precisa de conta (spec 03): vira convidado na hora.
   useEffect(() => {

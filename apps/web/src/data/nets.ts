@@ -1,9 +1,10 @@
 import { collection, onSnapshot } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
 import type { Payment } from '@qpq/calc';
+import { DEFAULT_CURRENCY, type Currency } from '@qpq/shared';
 import { firebase } from '../firebase.ts';
 import { toExpenseDoc } from './hooks.ts';
-import { balances, myMember, type Money, type SplitDoc } from './model.ts';
+import { balances, currencyOf, myMember, type Money, type SplitDoc } from './model.ts';
 
 /** Seu saldo em cada split, recalculado das despesas e acertos (nunca guardado). */
 export function useMyNets(splits: SplitDoc[], uid: string | null): Record<string, number> {
@@ -38,4 +39,15 @@ export function totalsOf(splits: readonly SplitDoc[], nets: Record<string, numbe
     else recv += c;
   }
   return { owe, recv, total: recv - owe };
+}
+
+/**
+ * Total da home por moeda (sem câmbio): uma linha para cada moeda dos splits, a mais usada
+ * primeiro. Com uma moeda só, é o total de sempre.
+ */
+export function totalsByCurrency(splits: readonly SplitDoc[], nets: Record<string, number>): Array<{ currency: Currency; owe: number; recv: number; total: number }> {
+  const groups = new Map<Currency, SplitDoc[]>();
+  for (const s of splits) groups.set(currencyOf(s), [...(groups.get(currencyOf(s)) ?? []), s]);
+  if (groups.size === 0) groups.set(DEFAULT_CURRENCY, []);
+  return [...groups.entries()].sort(([, a], [, b]) => b.length - a.length).map(([currency, list]) => ({ currency, ...totalsOf(list, nets) }));
 }

@@ -75,6 +75,30 @@ describe('createSplit', () => {
   });
 });
 
+describe('moeda do split (29/10/2026)', () => {
+  it('sem moeda, BRL; com moeda, a escolhida; fora da lista, recusa', async () => {
+    const lucas = await newUser();
+    const a = await createSplit(lucas);
+    expect((await splitDoc(a.splitId)) as unknown as { currency: string }).toMatchObject({ currency: 'BRL' });
+    const b = await createSplit(lucas, { name: 'Viagem', currency: 'EUR' });
+    expect((await splitDoc(b.splitId)) as unknown as { currency: string }).toMatchObject({ currency: 'EUR' });
+    expect(await reasonOf(createSplit(lucas, { currency: 'JPY' as never }))).toBe('invalid-input');
+    const zé = await newUser();
+    expect((await preview(zé, b.code)).currency).toBe('EUR');
+  });
+
+  it('só admin troca, sem converter os valores', async () => {
+    const lucas = await newUser();
+    const bia = await newUser();
+    const { splitId, code } = await createSplit(lucas);
+    await bia.call('joinSplit', { code, memberId: await memberIdByName(splitId, 'Beatriz') });
+    expect(await reasonOf(bia.call('updateSplit', { splitId, currency: 'USD' }))).toBe('not-admin');
+    expect(await reasonOf(lucas.call('updateSplit', { splitId, currency: 'XYZ' }))).toBe('invalid-input');
+    await lucas.call('updateSplit', { splitId, currency: 'USD' });
+    expect((await splitDoc(splitId)) as unknown as { currency: string }).toMatchObject({ currency: 'USD' });
+  });
+});
+
 describe('previewInvite', () => {
   it('código inválido ou inexistente', async () => {
     const zé = await newUser();

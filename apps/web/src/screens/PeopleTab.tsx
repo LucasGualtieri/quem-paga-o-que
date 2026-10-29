@@ -5,7 +5,7 @@ import { api, detailsOf } from '../data/api.ts';
 import { useProfile } from '../data/hooks.ts';
 import { useSession } from '../data/session.ts';
 import { useOptimisticAction } from '../lib/optimistic.ts';
-import { adminContact, adminHandover, balances, membersInOrder, promoteBlock, removeBlock, type Member, type MemberPatch, type Money, type SplitDoc } from '../data/model.ts';
+import { adminContact, adminHandover, balances, currencyOf, membersInOrder, promoteBlock, removeBlock, type Member, type MemberPatch, type Money, type SplitDoc } from '../data/model.ts';
 import { useLang } from '../i18n/index.ts';
 import { formatCents } from '../lib/money.ts';
 import { InviteBox } from './Created.tsx';
@@ -145,7 +145,7 @@ export function PeopleTab({ split, money, me, act }: { split: SplitDoc; money: M
                       {mine && !selfName ? t('people.youSuffix') : ''}
                     </span>
                     <span className="cap amt">
-                      {c === 0 ? t('people.settled') : t('people.balance', { amount: formatCents(c, lang, { signed: true }).replace(' ', '\u00a0') })}
+                      {c === 0 ? t('people.settled') : t('people.balance', { amount: formatCents(c, lang, { signed: true, currency: currencyOf(split) }).replace(' ', '\u00a0') })}
                       {status ? ` · ${status}` : ''}
                     </span>
                   </span>

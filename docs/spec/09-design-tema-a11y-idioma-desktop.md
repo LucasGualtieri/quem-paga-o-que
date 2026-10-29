@@ -21,7 +21,9 @@ Os tokens da Folha de estilo são a referência; nenhuma cor deve ser escrita di
 - Seleção de pessoas sem checkbox usa anel + selo de check + `aria-pressed`; interruptores usam `role="switch"`.
 - Com `prefers-reduced-motion`, sem animação no saldo e no toast.
 
-**Idioma:** PT-BR padrão e EN completo. Moeda sempre em R$ ("R$ 1.200,00"; em EN, "R$ 1,200.00").
+**Idioma:** PT-BR padrão e EN completo. Na primeira visita, sem escolha salva, vale o idioma preferido do navegador: qualquer português abre em PT-BR, o resto em EN. A escolha da pessoa (aparelho ou conta) sempre vence (29/10/2026).
+
+**Moeda** (decidido em 29/10/2026): uma por split, sem câmbio. BRL, USD, EUR, GBP, ARS, CAD, AUD, CHF, MXN e UYU (todas com centavos; valores continuam em centavos inteiros). Na criação vem marcada a do país do navegador (pt-BR → BRL, en-US → USD, países do euro → EUR…; desconhecido → BRL); o admin troca nas Configurações a qualquer momento, sem converter os valores. Splits antigos ficam em BRL. O idioma decide os separadores e a moeda o símbolo: "R$ 1.200,00" e "R$ 1,200.00"; "US$ 1.200,00" e "$1,200.00"; "€ 15,00" e "€15.00". Pix só em BRL: nas outras moedas somem a chave ao entrar, "Copiar Pix", "Pedir chave Pix" e o aviso do Meu saldo. O total da home tem uma linha por moeda.
 
 **Explicações "?"** (25/10/2026): ao lado do que não é óbvio ("Liberar nome", "Ver como", "compensado no saldo"), um "?" abre um balão curto; no celular por toque (tocar fora fecha), no computador também ao passar o mouse. O texto fica ligado ao botão para leitores de tela. Dentro de uma frase, o "?" tem o tamanho da letra, fica centrado na linha e não vai sozinho para a linha de baixo. Na explicação de "Ver como", a palavra "admins" aparece no lilás do selo de Admin.
 

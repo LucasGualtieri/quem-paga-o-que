@@ -3,15 +3,17 @@ import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router';
 import { Badge, Icon, Segmented, Sheet, SkeletonCard, ThemeToggle } from '../components/index.ts';
 import { useMoney, useMySplits, useProfile } from '../data/hooks.ts';
-import { myMember, type SplitDoc } from '../data/model.ts';
+import { currencyOf, myMember, type SplitDoc } from '../data/model.ts';
 import { useSplitEdits, withSplitEdits } from '../data/splitEdits.ts';
-import { totalsOf, useMyNets } from '../data/nets.ts';
+import { totalsByCurrency, useMyNets } from '../data/nets.ts';
 import { Bell } from './Notifications.tsx';
+import { bellCount, useNotifications } from '../data/notifications.ts';
 import { ProfileAvatar, SplitCover } from './Photos.tsx';
 import { hiddenSplits } from '../data/local.ts';
 import { useSession } from '../data/session.ts';
 import { useLang } from '../i18n/index.ts';
 import { dayMonth } from '../lib/dates.ts';
+import { CurrencyProvider } from '../lib/currency.ts';
 import { formatCents } from '../lib/money.ts';
 import { EmptyArt, useBalanceView } from './common.tsx';
 import { SplitMenuItem, useSplitActions } from './SplitActions.tsx';
@@ -39,11 +41,15 @@ export default function Home() {
   const act = (id: string) => setActing((a) => ({ id, n: (a?.n ?? 0) + 1 }));
   const press = useLongPress(act);
   const nets = useMyNets(splits, uid);
+  // Selo na capa: notificações não lidas daquele split, pela mesma regra do sino.
+  const notes = useNotifications(uid);
+  const unreadBy = new Map<string, number>();
+  for (const n of notes ?? []) if (!n.read) unreadBy.set(n.splitId, (unreadBy.get(n.splitId) ?? 0) + 1);
   const open = splits.filter((s) => s.status === 'open');
   const done = splits.filter((s) => s.status === 'done');
   const shown = filter === 'open' ? open : done;
 
-  const { owe, recv, total } = totalsOf(open, nets);
+  const totals = totalsByCurrency(open, nets);
   const loading = result.status === 'loading';
 
   return (
@@ -90,18 +96,23 @@ export default function Home() {
           <>
             <div className="card overall">
               <p className="cap">{t('home.overall')}</p>
-              <div className="bigbal">
-                <span className={`balico ${view(total).tone}`} aria-hidden="true">
-                  <Icon name={view(total).icon} />
-                </span>
-                <span>
-                  <span className={`num ${view(total).tone}`}>{total === 0 ? formatCents(0, lang) : formatCents(total, lang, { signed: true })}</span>
-                  <span className="balcap" style={{ display: 'block' }}>
-                    {total > 0 ? t('balance.receiveTotal') : total < 0 ? t('balance.oweTotal') : t('balance.allSettled')}
-                  </span>
-                </span>
-              </div>
-              <p className="cap">{t('balance.sub', { owe: formatCents(owe, lang), recv: formatCents(recv, lang) })}</p>
+              {/* Uma linha por moeda, sem câmbio (com uma moeda só, como sempre foi). */}
+              {totals.map(({ currency, owe, recv, total }) => (
+                <div key={currency} className="overall-cur">
+                  <div className="bigbal">
+                    <span className={`balico ${view(total).tone}`} aria-hidden="true">
+                      <Icon name={view(total).icon} />
+                    </span>
+                    <span>
+                      <span className={`num ${view(total).tone}`}>{formatCents(total, lang, { signed: total !== 0, currency })}</span>
+                      <span className="balcap" style={{ display: 'block' }}>
+                        {total > 0 ? t('balance.receiveTotal') : total < 0 ? t('balance.oweTotal') : t('balance.allSettled')}
+                      </span>
+                    </span>
+                  </div>
+                  <p className="cap">{t('balance.sub', { owe: formatCents(owe, lang, { currency }), recv: formatCents(recv, lang, { currency }) })}</p>
+                </div>
+              ))}
             </div>
 
             <Segmented<'open' | 'done'>
@@ -115,17 +126,28 @@ export default function Home() {
             />
 
             {shown.map((s) => {
-              const b = view(nets[s.id] ?? 0);
+              const b = view(nets[s.id] ?? 0, currencyOf(s));
               const count = Object.keys(s.members).length;
+              const unread = unreadBy.get(s.id) ?? 0;
+              // A aba já diz "Em andamento"; só o finalizado ganha a data.
+              const status = s.status === 'done' ? ` · ${s.doneAt ? t('home.doneOn', { date: dayMonth(s.doneAt, lang) }) : t('split.done')}` : '';
               return (
                 <div key={s.id} className="home-row">
                 <Link to={`/s/${s.id}`} className="home-card" {...press(s.id)}>
-                  <SplitCover split={s} />
+                  <span className="sc-coverwrap">
+                    <SplitCover split={s} />
+                    {unread > 0 && (
+                      <span className="bdg" aria-hidden="true">
+                        {bellCount(unread)}
+                      </span>
+                    )}
+                  </span>
                   <span className="hdr-mid">
                     <span className="sc-name clamp2">{s.name}</span>
                     <span className="sc-meta">
-                      <span className={`stdot ${s.status === 'done' ? 'done' : ''}`} aria-hidden="true" />
-                      {t('split.people', { count })} · {s.status === 'done' && s.doneAt ? t('home.doneOn', { date: dayMonth(s.doneAt, lang) }) : t(s.status === 'done' ? 'split.done' : 'split.open')}
+                      {t('split.people', { count })}
+                      {status}
+                      {unread > 0 && <span className="sr-only">{` · ${t('home.unread', { count: unread })}`}</span>}
                     </span>
                   </span>
                   <span className="balwrap">
@@ -221,7 +243,7 @@ function HomeSplitActionsFor({ split, me }: { split: SplitDoc; me: NonNullable<R
   const a = useSplitActions(split, me, money, false);
   const [open, setOpen] = useState(true);
   return (
-    <>
+    <CurrencyProvider value={currencyOf(split)}>
       <Sheet open={open} title={split.name} onClose={() => setOpen(false)}>
         <div className="home-actions-head">
           <SplitCover split={split} size="sm" />
@@ -242,6 +264,6 @@ function HomeSplitActionsFor({ split, me }: { split: SplitDoc; me: NonNullable<R
         </div>
       </Sheet>
       {a.sheets}
-    </>
+    </CurrencyProvider>
   );
 }

@@ -1,7 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { effectiveAmount, validateExpense, type Expense, type ExpenseMode, type JoinOrder, type SplitMode, type Weights } from '@qpq/calc';
-import { cleanName, isValidDate, normalizeTags, parseEntryIcon, type EntryIcon, type ExpenseWriteResponse, type ProofInfo } from '@qpq/shared';
+import { cleanName, isValidDate, normalizeTags, parseEntryIcon, type EntryIcon, type ExpenseBatchResponse, type ExpenseWriteResponse, type ProofInfo } from '@qpq/shared';
 import { findExpense, setHidden } from './notifications.ts';
 import { db, fail, input, loadSplit, opts, payModeOf, requireMember, requireOpen, text, touchMoney, uidOf, type Member, type SplitData } from './common.ts';
 
@@ -192,11 +192,13 @@ export async function loadExpense(tx: FirebaseFirestore.Transaction, splitId: st
 function requireNoPayments(e: StoredExpense): void {
   const paid = Object.values(e.paid ?? {}).some((v) => v > 0);
   const pending = Object.values(e.pendConf ?? {}).some(Boolean);
-  if (paid || pending) fail('has-payments');
+  // O nome diz qual barrou quando são várias (exclusão em lote).
+  if (paid || pending) fail('has-payments', { name: e.name ?? '' });
 }
 
 /** Despesa como está no Firestore (os campos que as Functions leem). */
 export interface StoredExpense extends Expense {
+  name?: string;
   version: number;
   author: string;
   updatedBy: string;
@@ -287,6 +289,90 @@ export const restoreExpense = onCall(opts, async (req): Promise<ExpenseWriteResp
     touchMoney(tx, ref);
     await addHistory(tx, ref, { seq: version, kind: 'restored', by: me });
     return { version };
+  });
+});
+
+/** Ids de uma ação em lote: de 1 a 100, sem repetir. */
+function batchIds(v: unknown): string[] {
+  if (!Array.isArray(v) || v.length === 0 || v.length > 100) return fail('invalid-input');
+  return [...new Set(v.map(text))];
+}
+
+/**
+ * Excluir várias despesas de uma vez (seleção na aba Despesas). Tudo ou nada: se uma não puder
+ * (não é de quem pede nem admin, ou tem pagamento no modo detalhado), nenhuma sai.
+ */
+export const deleteExpenses = onCall(opts, async (req): Promise<ExpenseBatchResponse> => {
+  const uid = uidOf(req);
+  const data = input(req);
+  const splitId = text(data.splitId);
+  const wanted = batchIds(data.expenseIds);
+  return db().runTransaction(async (tx) => {
+    const { split } = await loadSplit(tx, splitId);
+    requireOpen(split);
+    // Na transação, todas as leituras vêm antes de qualquer escrita.
+    const loaded = [];
+    for (const id of wanted) {
+      const { ref, e } = await loadExpense(tx, splitId, id);
+      loaded.push({ ref, e, found: e.deletedAt ? null : await findExpense(tx, splitId, ref.id) });
+    }
+    const detailed = payModeOf(split) === 'detailed';
+    let me = '';
+    for (const { e } of loaded) {
+      [me] = requireEditor(split, uid, e.author);
+      if (detailed && !e.deletedAt) requireNoPayments(e);
+    }
+    const versions: Record<string, number> = {};
+    for (const { ref, e, found } of loaded) {
+      if (!found) {
+        versions[ref.id] = e.version;
+        continue;
+      }
+      setHidden(tx, found, true);
+      const version = e.version + 1;
+      tx.update(ref, { deletedAt: FieldValue.serverTimestamp(), version, updatedBy: me, updatedAt: FieldValue.serverTimestamp() });
+      await addHistory(tx, ref, { seq: version, kind: 'deleted', by: me });
+      versions[ref.id] = version;
+    }
+    if (loaded.some((x) => x.found)) touchMoney(tx, loaded[0]!.ref);
+    return { versions };
+  });
+});
+
+/** Desfazer da exclusão em lote: tudo ou nada, como restoreExpense para cada uma. */
+export const restoreExpenses = onCall(opts, async (req): Promise<ExpenseBatchResponse> => {
+  const uid = uidOf(req);
+  const data = input(req);
+  const splitId = text(data.splitId);
+  const wanted = batchIds(data.expenseIds);
+  return db().runTransaction(async (tx) => {
+    const { split } = await loadSplit(tx, splitId);
+    requireOpen(split);
+    const loaded = [];
+    for (const id of wanted) {
+      const { ref, e } = await loadExpense(tx, splitId, id);
+      loaded.push({ ref, e, found: e.deletedAt ? await findExpense(tx, splitId, ref.id) : null });
+    }
+    const order: JoinOrder = Object.fromEntries(Object.entries(split.members).map(([id, m]) => [id, m.joinOrder]));
+    let me = '';
+    for (const { e } of loaded) {
+      [me] = requireEditor(split, uid, e.author);
+      if (e.deletedAt && validateExpense(e as unknown as Expense, order).length > 0) fail('expense-invalid', { name: e.name ?? '' });
+    }
+    const versions: Record<string, number> = {};
+    for (const { ref, e, found } of loaded) {
+      if (!found) {
+        versions[ref.id] = e.version;
+        continue;
+      }
+      setHidden(tx, found, false);
+      const version = e.version + 1;
+      tx.update(ref, { deletedAt: null, version, updatedBy: me, updatedAt: FieldValue.serverTimestamp() });
+      await addHistory(tx, ref, { seq: version, kind: 'restored', by: me });
+      versions[ref.id] = version;
+    }
+    if (loaded.some((x) => x.found)) touchMoney(tx, loaded[0]!.ref);
+    return { versions };
   });
 });
 

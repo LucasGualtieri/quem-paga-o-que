@@ -3,14 +3,27 @@ import { useTranslation } from 'react-i18next';
 import type { ExpenseInput } from '@qpq/shared';
 import { useToast } from '../components/index.ts';
 import { api, detailsOf } from '../data/api.ts';
-import { docFromInput } from '../data/expenseForm.ts';
-import { confirmOp, enqueue, setConflict, startOp } from '../data/expenseStore.ts';
+import { docFromInput, fromDoc, toInput } from '../data/expenseForm.ts';
+import { confirmOp, enqueue, enqueueAll, setConflict, startOp } from '../data/expenseStore.ts';
 import type { ExpenseDoc, Member, SplitDoc } from '../data/model.ts';
+import { useLang } from '../i18n/index.ts';
+import { todayStr } from './common.tsx';
 import { useReasonText } from './reasons.ts';
 
 /** Decisão 7: com parte paga ou pagamento esperando confirmação, não dá para excluir. */
 export function hasPayments(e: ExpenseDoc): boolean {
   return Object.values(e.paid).some((v) => v > 0) || Object.values(e.pendConf).some(Boolean);
+}
+
+/** Id gerado no aparelho: a despesa já aparece com ele antes de o servidor responder. */
+export const newExpenseId = () => Array.from(crypto.getRandomValues(new Uint8Array(10)), (b) => b.toString(16).padStart(2, '0')).join('');
+
+const NAME_MAX = 80;
+
+/** "Pizza" → "Pizza (cópia)"; a cópia de uma cópia não ganha outro sufixo. Cabe nos 80 caracteres. */
+export function copyName(name: string, suffix: string): string {
+  if (name.endsWith(` ${suffix}`)) return name;
+  return `${name.slice(0, NAME_MAX - suffix.length - 1).trimEnd()} ${suffix}`;
 }
 
 /**
@@ -19,6 +32,7 @@ export function hasPayments(e: ExpenseDoc): boolean {
  */
 export function useExpenseActions(split: SplitDoc, me: Member) {
   const { t } = useTranslation();
+  const lang = useLang();
   const toast = useToast();
   const reasonText = useReasonText();
   const splitId = split.id;
@@ -83,5 +97,55 @@ export function useExpenseActions(split: SplitDoc, me: Member) {
     [splitId, me.id, fail],
   );
 
-  return { create, update, remove, restore: (e: ExpenseDoc) => mark(e, false) };
+  /** Excluir ou desfazer várias de uma vez (seleção): uma chamada só, tudo ou nada. */
+  const markMany = useCallback(
+    (list: readonly ExpenseDoc[], deleted: boolean) => {
+      const undos = list.map((e) => startOp({ splitId, doc: { ...e, deletedAt: deleted ? new Date() : null, version: e.version + 1 } }));
+      const expenseIds = list.map((e) => e.id);
+      enqueueAll(expenseIds, () => (deleted ? api.deleteExpenses({ splitId, expenseIds }) : api.restoreExpenses({ splitId, expenseIds }))).then(
+        (r) => {
+          for (const [id, v] of Object.entries(r.versions)) confirmOp(id, v);
+        },
+        (error) => {
+          for (const undo of undos) undo();
+          fail(error);
+        },
+      );
+    },
+    [splitId, fail],
+  );
+
+  const removeMany = useCallback(
+    (list: readonly ExpenseDoc[]) => {
+      if (list.length === 1) return remove(list[0]!);
+      markMany(list, true);
+      toast.show({
+        text: t('expense.deletedMany', { count: list.length }),
+        onUndo: () => markMany(list.map((e) => ({ ...e, deletedAt: new Date(), version: e.version + 1 })), false),
+      });
+    },
+    [markMany, remove, toast, t],
+  );
+
+  /** Duplicar: cópia nova, de hoje, com "(cópia)" no nome; sem pagamentos, comprovante nem histórico. */
+  const duplicate = useCallback(
+    (e: ExpenseDoc) => {
+      const id = newExpenseId();
+      const input = { ...toInput(fromDoc(e, lang)), name: copyName(e.name, t('expense.copySuffix')), date: todayStr() };
+      const doc = docFromInput(id, input, me.id, 1);
+      const undo = startOp({ splitId, doc });
+      enqueue(id, () => api.createExpense({ splitId, id, expense: input })).then(
+        (r) => confirmOp(id, r.version),
+        (error) => {
+          undo();
+          fail(error);
+        },
+      );
+      toast.show({ text: t('expense.duplicated'), onUndo: () => mark({ ...doc, version: 1 }, true) });
+      return id;
+    },
+    [splitId, me.id, lang, mark, toast, t, fail],
+  );
+
+  return { create, update, remove, removeMany, duplicate, restore: (e: ExpenseDoc) => mark(e, false) };
 }

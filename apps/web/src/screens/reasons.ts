@@ -1,16 +1,18 @@
 import { useTranslation } from 'react-i18next';
 import type { ErrorDetails } from '@qpq/shared';
 import { useLang } from '../i18n/index.ts';
+import { useCurrency } from '../lib/currency.ts';
 import { formatCents } from '../lib/money.ts';
 
 /** Texto para o motivo de recusa de uma Function (ou o aviso genérico). */
 export function useReasonText() {
   const { t } = useTranslation();
   const lang = useLang();
+  const currency = useCurrency();
   return (details: ErrorDetails | null): string => {
     if (!details) return t('errors.saveFailed');
     const name = details.name ?? '';
-    const amount = details.amount !== undefined ? formatCents(details.amount, lang, { signed: true }) : '';
+    const amount = details.amount !== undefined ? formatCents(details.amount, lang, { signed: true, currency }) : '';
     switch (details.reason) {
       case 'last-admin':
         return t('blocks.lastAdmin');

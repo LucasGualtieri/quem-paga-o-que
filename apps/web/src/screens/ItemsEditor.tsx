@@ -4,7 +4,8 @@ import { Button, Icon } from '../components/index.ts';
 import { itemWithMode, newItem, restWithMode, type Analysis, type FormState, type ItemForm } from '../data/expenseForm.ts';
 import type { Member } from '../data/model.ts';
 import { useLang } from '../i18n/index.ts';
-import { formatCents, parseCents } from '../lib/money.ts';
+import { useCurrency, useFmt } from '../lib/currency.ts';
+import { currencySymbol, parseCents } from '../lib/money.ts';
 import { ErrorLine, ModePicker, splitStatus, WeightRows, WhoToggles } from './ExpenseParts.tsx';
 import { EntryIconView, IconButton } from './EntryIcon.tsx';
 import { MemberAvatar } from './Photos.tsx';
@@ -38,7 +39,8 @@ function AvatarStack({ ids, people, size }: { ids: readonly string[]; people: re
 export function ItemsEditor({ form, setForm, people, analysis, whoName, showErrors }: Props) {
   const { t } = useTranslation();
   const lang = useLang();
-  const fmt = (c: number) => formatCents(c, lang);
+  const currency = useCurrency();
+  const fmt = useFmt();
   const [seq, setSeq] = useState(form.items.length + 1);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const total = analysis.total;
@@ -47,7 +49,7 @@ export function ItemsEditor({ form, setForm, people, analysis, whoName, showErro
   const allMin = form.items.length > 0 && form.items.every((it) => it.min);
   const itemTitle = (it: ItemForm, i: number) => it.name.trim() || t('expense.form.itemN', { n: i + 1 });
 
-  const sharesLine = (ids: readonly string[], mode: ItemForm['mode'], w: ItemForm['w'], amount: number) => splitStatus(mode, ids, w, amount, lang, (k, o) => t(k, o ?? {}));
+  const sharesLine = (ids: readonly string[], mode: ItemForm['mode'], w: ItemForm['w'], amount: number) => splitStatus(mode, ids, w, amount, lang, (k, o) => t(k, o ?? {}), currency);
 
   const restStatus = sharesLine(form.rest, form.restMode, form.restW, Math.max(0, analysis.rest));
   const restOk = analysis.rest >= 0;
@@ -101,7 +103,7 @@ export function ItemsEditor({ form, setForm, people, analysis, whoName, showErro
                   <IconButton value={it.icon} fallback="item" size="sm" label={t('iconPicker.chooseItem')} onChange={(icon) => patchItem(it.key, (x) => { const { icon: _old, ...rest } = x; return icon ? { ...rest, icon } : rest; })} />
                   <input className="iname" value={it.name} placeholder={t('expense.form.itemN', { n: i + 1 })} aria-label={t('expense.form.itemPh')} autoComplete="off" onChange={(e) => patchItem(it.key, (x) => ({ ...x, name: e.target.value }))} />
                   <div className="minibox">
-                    <span>R$</span>
+                    <span>{currencySymbol(currency, lang)}</span>
                     <input {...amountInput(it.amountStr, lang, (amountStr) => patchItem(it.key, (x) => ({ ...x, amountStr })))} placeholder={t('expense.form.amountPh')} aria-label={t('expense.form.itemAmount')} style={{ width: 62 }} />
                   </div>
                   <button type="button" className="iconbtn" aria-label={t('expense.form.removeItem', { name: title })} onClick={() => setForm((f) => ({ ...f, items: f.items.filter((x) => x.key !== it.key) }))}>

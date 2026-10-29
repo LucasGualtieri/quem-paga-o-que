@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router';
 import { Badge, Button, Icon, Sheet, SkeletonCard } from '../components/index.ts';
 import { useHistory, useMoney, useSplit, type HistoryEntry } from '../data/hooks.ts';
-import { canSeeProof, itemsBreakdown, myMember, payModeOf, sharesOf, type ExpenseDoc, type ItemPart, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
+import { canSeeProof, currencyOf, itemsBreakdown, myMember, payModeOf, sharesOf, type ExpenseDoc, type ItemPart, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
 import { coveredExpenses, settlementOf, touchesSettled } from '../data/settlements.ts';
 import { markRead, useNotifications } from '../data/notifications.ts';
 import { useSession } from '../data/session.ts';
@@ -14,6 +14,7 @@ import { BackLink, useWho } from './common.tsx';
 import { EntryIconView } from './EntryIcon.tsx';
 import { PhotoBox, usePayFlow } from './PaySheet.tsx';
 import { hasPayments, useExpenseActions } from './useExpenseActions.ts';
+import { CurrencyProvider } from '../lib/currency.ts';
 import { MemberAvatar } from './Photos.tsx';
 
 function useWhen() {
@@ -44,7 +45,7 @@ function Body({ split, me, doc, expenses, payments }: { split: SplitDoc; me: Mem
   useEffect(() => {
     if (note && !note.read) void markRead(note.id);
   }, [note]);
-  const fmt = (c: number) => formatCents(c, lang);
+  const fmt = (c: number) => formatCents(c, lang, { currency: currencyOf(split) });
   const isOpen = split.status === 'open';
 
   const sh = sharesOf(doc, split);
@@ -113,7 +114,7 @@ function Body({ split, me, doc, expenses, payments }: { split: SplitDoc; me: Mem
     return t('expense.detail.hRestored', { name });
   };
 
-  return (
+  const page = (
     <main className="page">
       <header className="hdr">
         <BackLink to={`/s/${split.id}`} label={t('common.back')} />
@@ -447,6 +448,7 @@ function Body({ split, me, doc, expenses, payments }: { split: SplitDoc; me: Mem
       {sheets}
     </main>
   );
+  return <CurrencyProvider value={currencyOf(split)}>{page}</CurrencyProvider>;
 }
 
 /** Detalhe da despesa (/s/:id/despesa/:expId). */

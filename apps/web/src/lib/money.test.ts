@@ -22,6 +22,15 @@ describe('formatCents', () => {
     expect(formatCents(-9213, 'pt-BR')).toBe('−R$ 92,13');
   });
 
+  it('outras moedas: símbolo pelo idioma; em inglês, $ € £ colam no número', () => {
+    expect(formatCents(120000, 'pt-BR', { currency: 'USD' })).toBe('US$ 1.200,00');
+    expect(formatCents(120000, 'en', { currency: 'USD' })).toBe('$1,200.00');
+    expect(formatCents(1500, 'pt-BR', { currency: 'EUR' })).toBe('€ 15,00');
+    expect(formatCents(-1500, 'en', { currency: 'EUR' })).toBe('−€15.00');
+    expect(formatCents(1500, 'en', { currency: 'CHF' })).toBe('CHF 15.00');
+    expect(formatCents(1500, 'en', { currency: 'BRL' })).toBe('R$ 15.00');
+  });
+
   it('com sinal: + para positivo, − para negativo, nada para zero', () => {
     expect(formatCents(12000, 'pt-BR', { signed: true })).toBe('+R$ 120,00');
     expect(formatCents(-9213, 'pt-BR', { signed: true })).toBe('−R$ 92,13');
@@ -56,6 +65,8 @@ describe('parseCents (campo de valor)', () => {
   it('o que não é valor devolve null', () => {
     expect(parseCents('')).toBeNull();
     expect(parseCents('abc')).toBeNull();
+    expect(parseCents('US$ 12,50')).toBe(1250);
+    expect(parseCents('€15.00')).toBe(1500);
     expect(parseCents('-5')).toBeNull();
     expect(parseCents('1,2345')).toBeNull();
     expect(parseCents('1234567890123')).toBeNull();

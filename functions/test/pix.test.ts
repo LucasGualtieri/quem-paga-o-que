@@ -88,6 +88,10 @@ describe('requestPix (Pedir chave Pix) e o aviso quando a chave chega', () => {
     expect(await reasonOf(w.bia.call('requestPix', { splitId: w.splitId, to: w.eu }))).toBe('invalid-input');
     const outro = await newUser();
     expect(await reasonOf(outro.call('requestPix', { splitId: w.splitId, to: w.eu }))).toBe('not-member');
+    // Pix só em reais: num split em outra moeda, não há pedido de chave.
+    await w.lucas.call('setPixKey', { key: null });
+    await w.lucas.call('updateSplit', { splitId: w.splitId, currency: 'USD' });
+    expect(await reasonOf(w.bia.call('requestPix', { splitId: w.splitId, to: w.eu }))).toBe('invalid-input');
   });
 
   it('nome que ninguém escolheu não recebe pedido', async () => {

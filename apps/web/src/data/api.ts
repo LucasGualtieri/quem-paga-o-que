@@ -19,6 +19,8 @@ import type {
   CreateSplitRequest,
   CreateSplitResponse,
   ErrorDetails,
+  ExpenseBatchRef,
+  ExpenseBatchResponse,
   ExpenseRef,
   ExpenseWriteResponse,
   JoinSplitRequest,
@@ -64,6 +66,8 @@ export const api = {
   updateExpense: callable<UpdateExpenseRequest, ExpenseWriteResponse>('updateExpense'),
   deleteExpense: callable<ExpenseRef, ExpenseWriteResponse>('deleteExpense'),
   restoreExpense: callable<ExpenseRef, ExpenseWriteResponse>('restoreExpense'),
+  deleteExpenses: callable<ExpenseBatchRef, ExpenseBatchResponse>('deleteExpenses'),
+  restoreExpenses: callable<ExpenseBatchRef, ExpenseBatchResponse>('restoreExpenses'),
   // Pagamentos e comprovantes (Fase 6): só as Functions escrevem.
   markShare: callable<ShareRef, PayWriteResponse>('markShare'),
   unmarkShare: callable<ShareRef, PayWriteResponse>('unmarkShare'),

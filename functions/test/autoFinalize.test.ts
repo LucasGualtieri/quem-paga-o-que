@@ -2,7 +2,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { ExpenseInput, NotificationData } from '@qpq/shared';
 import { autoFinalizeAt } from '../src/autoFinalize.ts';
-import { admin, clearFirestore, createSplit, memberIdByName, newUser, splitDoc, type TestUser } from './helpers.ts';
+import { admin, clearFirestore, createSplit, memberIdByName, newUser, reasonOf, splitDoc, type TestUser } from './helpers.ts';
 
 // Finalização automática: 7 dias com todos quitados (contados da última mudança no dinheiro).
 beforeEach(clearFirestore);
@@ -69,5 +69,31 @@ describe('autoFinalizeAt', () => {
     await ageMoney(splitId, 30);
     expect(await autoFinalizeAt(Date.now())).toEqual([]);
     expect((await splitDoc(splitId)).status).toBe('open');
+  });
+
+  it('com "Termina em" no futuro, espera o fim do evento; só admin muda a data, até 1 ano', async () => {
+    const w = await settled();
+    await w.bia.call('createPayment', { splitId: w.splitId, id: newId(), from: w.beatriz, to: w.eu });
+    await ageMoney(w.splitId, 30);
+    const ymd = (days: number) => new Date(Date.now() + days * DAY).toISOString().slice(0, 10);
+    expect(await reasonOf(w.bia.call('updateSplit', { splitId: w.splitId, endsOn: ymd(10) }))).toBe('not-admin');
+    expect(await reasonOf(w.lucas.call('updateSplit', { splitId: w.splitId, endsOn: ymd(400) }))).toBe('invalid-input');
+    expect(await reasonOf(w.lucas.call('updateSplit', { splitId: w.splitId, endsOn: '2026-02-30' }))).toBe('invalid-input');
+    await w.lucas.call('updateSplit', { splitId: w.splitId, endsOn: ymd(10) });
+    expect((await splitDoc(w.splitId)).endsOn).toBe(ymd(10));
+    expect(await autoFinalizeAt(Date.now())).toEqual([]);
+    // 7 dias depois do fim do evento, finaliza.
+    expect(await autoFinalizeAt(Date.now() + 19 * DAY)).toEqual([w.splitId]);
+  });
+
+  it('tirar a data (ou uma data passada) volta à regra dos 7 dias', async () => {
+    const w = await settled();
+    await w.bia.call('createPayment', { splitId: w.splitId, id: newId(), from: w.beatriz, to: w.eu });
+    await w.lucas.call('updateSplit', { splitId: w.splitId, endsOn: new Date(Date.now() + 5 * DAY).toISOString().slice(0, 10) });
+    await ageMoney(w.splitId, 8);
+    expect(await autoFinalizeAt(Date.now())).toEqual([]);
+    await w.lucas.call('updateSplit', { splitId: w.splitId, endsOn: null });
+    expect((await splitDoc(w.splitId)).endsOn).toBeNull();
+    expect(await autoFinalizeAt(Date.now())).toEqual([w.splitId]);
   });
 });

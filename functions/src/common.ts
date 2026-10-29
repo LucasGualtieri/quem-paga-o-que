@@ -5,7 +5,7 @@ import { FieldValue, getFirestore, type DocumentReference, type Transaction } fr
 import { getStorage } from 'firebase-admin/storage';
 import { ledger, type Expense, type JoinOrder, type Ledger, type Payment } from '@qpq/calc';
 import { HttpsError, type CallableRequest, type FunctionsErrorCode } from 'firebase-functions/v2/https';
-import type { EntryIcon, ErrorDetails, ErrorReason, PayMode, PixKey } from '@qpq/shared';
+import type { Currency, EntryIcon, ErrorDetails, ErrorReason, PayMode, PixKey } from '@qpq/shared';
 
 export const REGION = 'us-east1';
 
@@ -71,6 +71,10 @@ export interface SplitData {
    * chave; "told" = a chave chegou e quem pediu já foi avisado. Um pedido por par e split.
    */
   pixAsks?: Record<string, Record<string, PixAsk>>;
+  /** "Termina em" (AAAA-MM-DD): antes do fim deste dia, o split não finaliza sozinho. */
+  endsOn?: string | null;
+  /** Moeda do split; ausente = BRL. */
+  currency?: Currency;
 }
 
 export type PixAsk = 'asked' | 'told';

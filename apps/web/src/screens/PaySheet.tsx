@@ -7,7 +7,7 @@ import { useProfile } from '../data/hooks.ts';
 import { canSeeProof, sharesOf, type ExpenseDoc, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
 import { useSession } from '../data/session.ts';
 import { useLang } from '../i18n/index.ts';
-import { formatCents } from '../lib/money.ts';
+import { useFmt } from '../lib/currency.ts';
 import { usePayActions } from './usePayActions.ts';
 import { MemberAvatar } from './Photos.tsx';
 
@@ -64,7 +64,7 @@ export function usePayFlow(split: SplitDoc, me: Member, who: (id: string) => str
   const [file, setFile] = useState<File | null>(null);
   const [view, setView] = useState<ProofView | null>(null);
   const [undo, setUndo] = useState<{ payment: PaymentDoc; covered: readonly ExpenseDoc[] } | null>(null);
-  const fmt = (c: number) => formatCents(c, lang);
+  const fmt = useFmt();
 
   const open = (next: PayTarget) => {
     setFile(null);

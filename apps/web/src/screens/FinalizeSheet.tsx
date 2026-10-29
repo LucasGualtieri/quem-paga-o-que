@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ledger } from '@qpq/calc';
 import { nameKey } from '@qpq/shared';
 import { Button, Icon, Sheet, TextField } from '../components/index.ts';
-import { orderOf, type Money, type SplitDoc } from '../data/model.ts';
+import { currencyOf, orderOf, type Money, type SplitDoc } from '../data/model.ts';
 import { useLang } from '../i18n/index.ts';
 import { formatCents } from '../lib/money.ts';
 import { MemberAvatar } from './Photos.tsx';
@@ -21,7 +21,7 @@ export function PendingList({ split, money, who }: { split: SplitDoc; money: Mon
         <span className="mid">
           <span className="ttl">{sug.length ? t('fin.pending') : t('fin.allSettled')}</span>
         </span>
-        {sug.length > 0 && <span className="amt strong neg">{formatCents(-total, lang)}</span>}
+        {sug.length > 0 && <span className="amt strong neg">{formatCents(-total, lang, { currency: currencyOf(split) })}</span>}
       </div>
       {sug.map((g) => (
         <div key={`${g.from}-${g.to}`} className="row fin-row">
@@ -33,7 +33,7 @@ export function PendingList({ split, money, who }: { split: SplitDoc; money: Mon
           <span className="mid">
             <span className="ttl">{t('fin.pair', { from: who(g.from), to: who(g.to) })}</span>
           </span>
-          <span className="amt strong">{formatCents(g.amount, lang)}</span>
+          <span className="amt strong">{formatCents(g.amount, lang, { currency: currencyOf(split) })}</span>
         </div>
       ))}
     </div>

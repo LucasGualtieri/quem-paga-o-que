@@ -57,7 +57,7 @@ export function MyViewPreview() {
               <EntryIconView icon={{ kind: 'icon', name: 'pizza' }} fallback={{ tags: [] }} size="sm" />
               <span className="mid">
                 <span className="ttl">Pizza</span>
-                <span className="cap">{t('my.eOwe', { name: 'Beatriz' })} · 27/12</span>
+                <span className="cap">{t('my.eOweNow', { name: 'Beatriz' })} · 27/12</span>
               </span>
               <span className="side">
                 <span className="amt strong neg">{signed(-3000)}</span>

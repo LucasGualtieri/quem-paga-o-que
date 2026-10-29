@@ -243,6 +243,60 @@ describe('deleteExpense e restoreExpense (decisão 7)', () => {
   });
 });
 
+describe('deleteExpenses e restoreExpenses (exclusão em lote)', () => {
+  it('exclui várias de uma vez e desfaz todas juntas', async () => {
+    const w = await world();
+    const a = await create(w.lucas, w, pizza(w));
+    const b = await create(w.lucas, w, pizza(w, { name: 'Uber' }));
+    const r = (await w.lucas.call('deleteExpenses', { splitId: w.splitId, expenseIds: [a.id, b.id] })) as { versions: Record<string, number> };
+    expect(r.versions).toEqual({ [a.id]: 2, [b.id]: 2 });
+    expect((await expDoc(w, a.id)).deletedAt).not.toBeNull();
+    expect((await expDoc(w, b.id)).deletedAt).not.toBeNull();
+    await w.lucas.call('restoreExpenses', { splitId: w.splitId, expenseIds: [a.id, b.id] });
+    expect((await expDoc(w, a.id)).deletedAt).toBeNull();
+    expect((await history(w, b.id)).map((h) => h.kind)).toEqual(['created', 'deleted', 'restored']);
+  });
+
+  it('tudo ou nada: uma que a pessoa não pode excluir barra o lote', async () => {
+    const w = await world();
+    const mine = await create(w.bia, w, pizza(w, { payer: w.beatriz }));
+    const lucas = await create(w.lucas, w, pizza(w));
+    expect(await reasonOf(w.bia.call('deleteExpenses', { splitId: w.splitId, expenseIds: [mine.id, lucas.id] }))).toBe('not-admin');
+    expect((await expDoc(w, mine.id)).deletedAt).toBeNull();
+    // O admin exclui as duas (inclusive a da Beatriz).
+    expect(await reasonOf(w.lucas.call('deleteExpenses', { splitId: w.splitId, expenseIds: [mine.id, lucas.id] }))).toBeNull();
+  });
+
+  it('no modo detalhado, uma com pagamento barra o lote e diz qual', async () => {
+    const w = await world();
+    await w.lucas.call('setPayMode', { splitId: w.splitId, mode: 'detailed' });
+    const a = await create(w.lucas, w, pizza(w));
+    const b = await create(w.lucas, w, pizza(w, { name: 'Uber' }));
+    await admin().doc(`splits/${w.splitId}/expenses/${b.id}`).update({ paid: { [w.beatriz]: 334 } });
+    const call = w.lucas.call('deleteExpenses', { splitId: w.splitId, expenseIds: [a.id, b.id] });
+    expect(await detailsOf(call)).toEqual({ reason: 'has-payments', name: 'Uber' });
+    expect((await expDoc(w, a.id)).deletedAt).toBeNull();
+  });
+
+  it('lista vazia, longa demais ou split finalizado recusam', async () => {
+    const w = await world();
+    const a = await create(w.lucas, w, pizza(w));
+    expect(await reasonOf(w.lucas.call('deleteExpenses', { splitId: w.splitId, expenseIds: [] }))).toBe('invalid-input');
+    expect(await reasonOf(w.lucas.call('deleteExpenses', { splitId: w.splitId, expenseIds: Array.from({ length: 101 }, (_, i) => `x${i}`) }))).toBe('invalid-input');
+    expect(await reasonOf(w.lucas.call('deleteExpenses', { splitId: w.splitId, expenseIds: [a.id, 'nadaexiste1'] }))).toBe('expense-missing');
+    await admin().doc(`splits/${w.splitId}`).update({ status: 'done' });
+    expect(await reasonOf(w.lucas.call('deleteExpenses', { splitId: w.splitId, expenseIds: [a.id] }))).toBe('split-done');
+  });
+
+  it('desfazer o lote exige que as pessoas ainda estejam no split', async () => {
+    const w = await world();
+    const a = await create(w.lucas, w, pizza(w));
+    await w.lucas.call('deleteExpenses', { splitId: w.splitId, expenseIds: [a.id] });
+    await w.lucas.call('removeMember', { splitId: w.splitId, memberId: w.catarina });
+    expect(await reasonOf(w.lucas.call('restoreExpenses', { splitId: w.splitId, expenseIds: [a.id] }))).toBe('expense-invalid');
+  });
+});
+
 describe('saldos ignoram despesas excluídas', () => {
   it('remover participante: só as despesas ativas bloqueiam', async () => {
     const w = await world();

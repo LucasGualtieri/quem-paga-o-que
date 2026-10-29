@@ -1,13 +1,13 @@
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
-import { AUTO_FINALIZE_DAYS } from '@qpq/shared';
+import { AUTO_FINALIZE_DAYS, finalizeClockStart } from '@qpq/shared';
 import { db, ledgerOf, readMoney, REGION, type SplitData } from './common.ts';
 import { notify } from './notifications.ts';
 import { purgeSplitProofs } from './proofs.ts';
 
 /**
  * Finalização automática (spec 04): split aberto, com despesa, todos com saldo zero e sem mudança
- * no dinheiro há AUTO_FINALIZE_DAYS dias. Confirmações pendentes não impedem. Todos são avisados
+ * no dinheiro há AUTO_FINALIZE_DAYS dias (contados do fim de "Termina em", se for depois). Confirmações pendentes não impedem. Todos são avisados
  * no sino; um admin pode reabrir (e aí a contagem recomeça).
  */
 
@@ -20,7 +20,9 @@ export async function autoFinalizeAt(now: number): Promise<string[]> {
   for (const d of snap.docs) {
     const finalized = await db().runTransaction(async (tx) => {
       const split = (await tx.get(d.ref)).data() as (SplitData & { moneyAt?: Timestamp }) | undefined;
-      if (!split || split.status !== 'open' || !split.moneyAt || split.moneyAt.toMillis() > cutoff.toMillis()) return false;
+      if (!split || split.status !== 'open' || !split.moneyAt) return false;
+      // Com "Termina em", a contagem só começa depois do fim do evento.
+      if (finalizeClockStart(split.moneyAt.toMillis(), split.endsOn) > cutoff.toMillis()) return false;
       const money = await readMoney(tx, d.ref);
       if (money.expenses.length === 0) return false;
       if (Object.values(ledgerOf(split, money).net).some((v) => v !== 0)) return false;

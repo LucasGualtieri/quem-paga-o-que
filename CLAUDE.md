@@ -42,7 +42,8 @@ Web app de divisão de despesas em grupo. Front estático no GitHub Pages, back-
   useOptimisticAction).
 
 ## Regras inegociáveis
-- Valores sempre em centavos inteiros; só a tela formata em R$.
+- Valores sempre em centavos inteiros; só a tela formata, na moeda do split
+  (lib/money.ts; useFmt/CurrencyProvider em lib/currency.ts).
 - Saldo nunca é guardado: é calculado das despesas e pagamentos,
   sempre pelo módulo de cálculo compartilhado.
 - Toda permissão vale no servidor (Security Rules ou Cloud Functions),

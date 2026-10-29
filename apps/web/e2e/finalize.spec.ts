@@ -87,11 +87,13 @@ test('desktop igual ao celular: coluna única, abas embaixo, sem rolagem horizon
 for (const theme of ['light', 'dark'] as const) {
   test(`acessibilidade (axe) nas telas do produto · ${theme}`, async ({ browser }) => {
     const { lucas } = await setup(browser);
-    await lucas.evaluate((t) => localStorage.setItem('qpq.theme', t), theme);
-    await lucas.reload();
-    await expect(lucas.locator('html')).toHaveClass(`theme-${theme}`);
     const url = lucas.url().replace(/#.*$/, '');
     const split = lucas.url().match(/#\/s\/([^/]+)/)![1];
+    // Pelo botão (grava no aparelho e na conta): só no localStorage, o tema salvo na conta podia
+    // chegar depois do reload e desfazer a troca.
+    await lucas.goto(url + '#/');
+    if (theme === 'dark') await lucas.getByRole('button', { name: 'Trocar para o tema escuro' }).click();
+    await expect(lucas.locator('html')).toHaveClass(`theme-${theme}`);
     for (const path of ['#/', `#/s/${split}`, `#/s/${split}/saldo`, `#/s/${split}/pessoas`, '#/notificacoes', '#/conta']) {
       await lucas.goto(url + path);
       await expect(lucas.locator('main').first()).toBeVisible();

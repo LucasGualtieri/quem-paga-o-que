@@ -1,5 +1,5 @@
 import { effectiveAmount, shares as calcShares, ledger, type Cents, type Expense, type ExpenseMode, type JoinOrder, type MemberId, type Payment, type SplitMode, type Weights } from '@qpq/calc';
-import { AUTO_FINALIZE_DAYS, FINALIZE_SUGGEST_HOURS, type EntryIcon, type ErrorReason, type PayMode, type PixKey, type ProofInfo, type ProofVisibility } from '@qpq/shared';
+import { AUTO_FINALIZE_DAYS, DEFAULT_CURRENCY, FINALIZE_SUGGEST_HOURS, finalizeClockStart, type Currency, type EntryIcon, type ErrorReason, type PayMode, type PixKey, type ProofInfo, type ProofVisibility } from '@qpq/shared';
 
 /** Participante como está no Firestore (splits/{id}.members). */
 export interface MemberDoc {
@@ -41,6 +41,10 @@ export interface SplitDoc {
   moneyAt?: Date | null;
   /** Finalizado sozinho (todos quitados há AUTO_FINALIZE_DAYS dias). */
   autoFinalized?: boolean;
+  /** "Termina em" (AAAA-MM-DD): antes do fim deste dia, o split não finaliza sozinho. */
+  endsOn?: string | null;
+  /** Moeda do split; ausente = BRL. */
+  currency?: Currency;
 }
 
 export type Member = MemberDoc & { id: MemberId };
@@ -113,17 +117,30 @@ export function balances(split: SplitDoc, money: Money): Record<MemberId, Cents>
 }
 
 /**
+ * Quando o split finaliza sozinho, se nada mudar: com todos quitados, AUTO_FINALIZE_DAYS dias
+ * depois da última mudança no dinheiro (ou do fim de "Termina em", se for depois). `null`: aberto
+ * sem despesa ou com alguém devendo.
+ */
+export function autoFinalizeAt(split: SplitDoc, money: { expenses: readonly ExpenseDoc[]; payments: readonly PaymentDoc[] }): { since: Date; at: Date } | null {
+  if (split.status !== 'open' || !split.moneyAt || money.expenses.length === 0) return null;
+  if (Object.values(balances(split, money)).some((v) => v !== 0)) return null;
+  const since = finalizeClockStart(split.moneyAt.getTime(), split.endsOn);
+  return { since: new Date(since), at: new Date(since + AUTO_FINALIZE_DAYS * 24 * 3600_000) };
+}
+
+/**
  * Sugestão "Todo mundo quitou. Finalizar?" para os admins (spec 04): split aberto, com despesa,
- * todos com saldo zero há FINALIZE_SUGGEST_HOURS horas. `pending`: ainda há pagamento esperando
- * confirmação. `autoAt`: quando ele finaliza sozinho se nada mudar.
+ * todos com saldo zero há FINALIZE_SUGGEST_HOURS horas (contadas do fim de "Termina em", se for
+ * depois). `pending`: ainda há pagamento esperando confirmação. `autoAt`: quando ele finaliza
+ * sozinho se nada mudar.
  */
 export function finalizeSuggestion(split: SplitDoc, money: { expenses: readonly ExpenseDoc[]; payments: readonly PaymentDoc[] }, now: number): { pending: boolean; autoAt: Date } | null {
-  if (split.status !== 'open' || !split.moneyAt || money.expenses.length === 0) return null;
-  const since = split.moneyAt.getTime();
+  const auto = autoFinalizeAt(split, money);
+  if (!auto) return null;
+  const since = auto.since.getTime();
   if (now - since < FINALIZE_SUGGEST_HOURS * 3600_000) return null;
-  if (Object.values(balances(split, money)).some((v) => v !== 0)) return null;
   const pending = money.expenses.some((e) => Object.entries(e.pendConf).some(([id, v]) => v && (e.paid[id] ?? 0) > 0)) || money.payments.some((p) => !!p.pendConf);
-  return { pending, autoAt: new Date(since + AUTO_FINALIZE_DAYS * 24 * 3600_000) };
+  return { pending, autoAt: auto.at };
 }
 
 function linkedAdminsExcept(split: SplitDoc, memberId: MemberId): number {
@@ -264,4 +281,9 @@ export function payModeOf(split: Pick<SplitDoc, 'payMode'>): PayMode {
 /** Despesas que contam (as excluídas ficam de fora). */
 export function activeExpenses(expenses: readonly ExpenseDoc[]): ExpenseDoc[] {
   return expenses.filter((e) => !e.deletedAt);
+}
+
+/** Moeda do split (spec 09); os splits antigos ficam em BRL. */
+export function currencyOf(split: Pick<SplitDoc, 'currency'>): Currency {
+  return split.currency ?? DEFAULT_CURRENCY;
 }

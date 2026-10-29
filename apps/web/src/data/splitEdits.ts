@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import type { EntryIcon, PayMode, ProofVisibility } from '@qpq/shared';
+import type { Currency, EntryIcon, PayMode, ProofVisibility } from '@qpq/shared';
 import type { SplitDoc } from './model.ts';
 
 /**
@@ -16,6 +16,8 @@ export interface SplitPatch {
   doneAt?: Date | null;
   payMode?: PayMode;
   proofVisibility?: ProofVisibility;
+  endsOn?: string | null;
+  currency?: Currency;
 }
 
 interface Edit {
@@ -51,7 +53,9 @@ function reached(split: SplitDoc, p: SplitPatch): boolean {
     (!p.clearPhoto || !split.photo) &&
     (p.status === undefined || split.status === p.status) &&
     (p.payMode === undefined || (split.payMode ?? 'simple') === p.payMode) &&
-    (p.proofVisibility === undefined || (split.proofVisibility ?? 'all') === p.proofVisibility)
+    (p.proofVisibility === undefined || (split.proofVisibility ?? 'all') === p.proofVisibility) &&
+    (p.endsOn === undefined || (split.endsOn ?? null) === p.endsOn) &&
+    (p.currency === undefined || (split.currency ?? 'BRL') === p.currency)
   );
 }
 
@@ -67,6 +71,8 @@ export function withSplitEdits(split: SplitDoc, pending: readonly Edit[] = edits
       if (p.doneAt !== undefined) next.doneAt = p.doneAt;
       if (p.payMode !== undefined) next.payMode = p.payMode;
       if (p.proofVisibility !== undefined) next.proofVisibility = p.proofVisibility;
+      if (p.endsOn !== undefined) next.endsOn = p.endsOn;
+      if (p.currency !== undefined) next.currency = p.currency;
       return next;
     }, split);
 }

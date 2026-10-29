@@ -1,20 +1,34 @@
+import { DEFAULT_CURRENCY, type Currency } from '@qpq/shared';
 import type { Lang } from '../i18n/index.ts';
 
 const MINUS = '−';
 
+const localeOf = (lang: Lang) => (lang === 'en' ? 'en-US' : 'pt-BR');
+
+/** Símbolo da moeda no idioma da tela: "R$", "US$" (PT) ou "$" (EN), "€", "CHF"… */
+export function currencySymbol(currency: Currency, lang: Lang): string {
+  const parts = new Intl.NumberFormat(localeOf(lang), { style: 'currency', currency }).formatToParts(0);
+  return parts.find((p) => p.type === 'currency')?.value ?? currency;
+}
+
+/** Só o número, com milhar e duas casas ("1.200,00" ou "1,200.00"). */
+function amountText(abs: number, lang: Lang): string {
+  const grouped = new Intl.NumberFormat(localeOf(lang), { maximumFractionDigits: 0, useGrouping: 'always' }).format(Math.floor(abs / 100));
+  return `${grouped}${lang === 'en' ? '.' : ','}${String(abs % 100).padStart(2, '0')}`;
+}
+
 /**
- * Centavos → texto em reais. A moeda é sempre R$; só os separadores mudam:
- * "R$ 1.200,00" em PT-BR, "R$ 1,200.00" em EN. Conta só com inteiros.
+ * Centavos → texto na moeda do split (sem moeda, R$). O idioma decide os separadores e a moeda o
+ * símbolo: "R$ 1.200,00" e "R$ 1,200.00"; "US$ 1.200,00" e "$1,200.00"; "€ 15,00" e "€15.00".
+ * Em inglês, símbolo de sinais ($, €, £) cola no número; R$ e siglas (CHF) levam espaço.
+ * Conta só com inteiros.
  */
-export function formatCents(cents: number, lang: Lang, opts: { signed?: boolean } = {}): string {
-  const abs = Math.abs(cents);
-  const units = Math.floor(abs / 100);
-  const rest = abs % 100;
-  const locale = lang === 'en' ? 'en-US' : 'pt-BR';
-  const grouped = new Intl.NumberFormat(locale, { maximumFractionDigits: 0, useGrouping: 'always' }).format(units);
-  const body = `R$ ${grouped}${lang === 'en' ? '.' : ','}${String(rest).padStart(2, '0')}`;
+export function formatCents(cents: number, lang: Lang, opts: { signed?: boolean; currency?: Currency } = {}): string {
+  const currency = opts.currency ?? DEFAULT_CURRENCY;
+  const symbol = currencySymbol(currency, lang);
+  const glue = lang === 'en' && currency !== 'BRL' && !/[A-Za-z]$/.test(symbol) ? '' : ' ';
   const sign = cents < 0 ? MINUS : opts.signed && cents > 0 ? '+' : '';
-  return sign + body;
+  return `${sign}${symbol}${glue}${amountText(Math.abs(cents), lang)}`;
 }
 
 /**
@@ -22,7 +36,8 @@ export function formatCents(cents: number, lang: Lang, opts: { signed?: boolean 
  * "1,200.50": o último separador seguido de 1 ou 2 dígitos é o decimal; os outros são milhar.
  */
 export function parseCents(input: string): number | null {
-  let s = input.replace(/R\$|\s/g, '');
+  // Sem o símbolo da moeda ("R$", "US$", "€"…) nem espaços.
+  let s = input.replace(/^[^\d.,\-−]+|\s/g, '');
   if (s === '') return null;
   if (/^[.,]/.test(s)) s = `0${s}`;
   if (!/^\d[\d.,]*$/.test(s)) return null;
@@ -44,7 +59,7 @@ export function parseCents(input: string): number | null {
 
 /** Centavos → texto para editar no campo (com milhar, duas casas, sem "R$"). */
 export function formatInputCents(cents: number, lang: Lang): string {
-  return formatCents(cents, lang).replace('R$ ', '');
+  return amountText(Math.abs(cents), lang);
 }
 
 /**

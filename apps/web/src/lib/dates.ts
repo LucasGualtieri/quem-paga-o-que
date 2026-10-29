@@ -16,6 +16,13 @@ export function dayMonth(d: Date, lang: Lang): string {
   return shortDay(d, lang).replace(/^[^,]*, /, '');
 }
 
+/** "31 dez" (ano corrente) ou "12 jan 2027"; em EN, "Dec 31" ou "Jan 12, 2027". */
+export function dayMonthYear(d: Date, lang: Lang, now = new Date()): string {
+  const base = dayMonth(d, lang);
+  if (d.getFullYear() === now.getFullYear()) return base;
+  return lang === 'en' ? `${base}, ${d.getFullYear()}` : `${base} ${d.getFullYear()}`;
+}
+
 /** "Ter, 22 dez · 18:20" em PT, "Tue, Dec 22 · 6:20 PM" em EN. */
 export function shortDayTime(d: Date, lang: Lang): string {
   const time = new Intl.DateTimeFormat(lang === 'en' ? 'en-US' : 'pt-BR', { hour: 'numeric', minute: '2-digit', hour12: lang === 'en' }).format(d);

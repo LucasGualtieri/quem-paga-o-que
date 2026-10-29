@@ -392,6 +392,28 @@
   gap: 2px;
   min-width: 0;
 }
+/* Explicação dos modos de pagamento (Configurações do split). */
+.optrow .mode-head {
+  font-weight: 600;
+  white-space: normal;
+  margin-top: 2px;
+}
+.optrow .mode-body,
+.optrow .mode-fit {
+  white-space: normal;
+}
+.optrow .mode-body {
+  margin-top: 4px;
+}
+.optrow .mode-fit {
+  font-style: italic;
+  margin-top: 4px;
+}
+.optrow .mode-more {
+  align-self: flex-start;
+  min-height: 36px;
+  padding: 0;
+}
 .av.has-img {
   overflow: hidden;
   padding: 0;
@@ -628,4 +650,34 @@ a.mi {
   flex-direction: column;
   gap: 4px;
   font-weight: 600;
+}
+
+/* Prazos (Configurações do split): "Termina em" e os cronômetros do app. */
+.ends-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.ends-row .input {
+  flex: 1;
+  min-width: 0;
+}
+.ends-clear {
+  align-self: flex-start;
+  min-height: 36px;
+  padding: 0;
+}
+.row2.deadline,
+.row2.ends-on {
+  gap: 4px;
+}
+
+/* Moeda do split (criação e Configurações). */
+.currency-select {
+  width: 100%;
+  appearance: auto;
+}
+.currency-row {
+  display: flex;
+  flex-direction: column;
 }

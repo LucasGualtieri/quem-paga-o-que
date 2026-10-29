@@ -20,6 +20,8 @@ export const requestPix = onCall(opts, async (req) => {
     if (to === me) fail('self-action');
     if (!target.uid) fail('not-joined');
     if (target.pix) fail('invalid-input');
+    // Pix só existe em reais.
+    if ((split.currency ?? 'BRL') !== 'BRL') fail('invalid-input');
     // Já pediu neste split: não pede de novo (nem enche o sino de quem recebe).
     if (split.pixAsks?.[to]?.[me]) return;
     const owed = ledgerOf(split, await readMoney(tx, ref)).M[me]?.[to] ?? 0;

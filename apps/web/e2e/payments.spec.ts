@@ -57,7 +57,7 @@ test('Beatriz marca a parte paga e envia comprovante → Lucas confere a foto e 
   await shot(bia, 'meu-saldo');
   await card.locator('.pchead').click();
   const entry = card.locator('.pcentry', { hasText: 'Pizza' });
-  await expect(entry).toContainText('você devia para Lucas');
+  await expect(entry).toContainText('você deve para Lucas');
   await expect(entry).toContainText('−R$ 30,00');
   await shot(bia, 'meu-saldo-aberta');
   await entry.getByRole('button', { name: 'Marcar como pago' }).click();
@@ -121,7 +121,7 @@ test('parte paga vira linha resolvida no mesmo lugar; quem recebeu confirma ali 
   const { lucas, bia } = await setup(browser);
   const card = await openCard(lucas, 'Beatriz');
   const entry = card.locator('.pcentry', { hasText: 'Pizza' });
-  await expect(entry).toContainText('Beatriz te devia');
+  await expect(entry).toContainText('Beatriz te deve');
   await expect(entry.getByRole('button', { name: 'Recebi' })).toBeVisible();
 
   await payPizzaShare(bia);

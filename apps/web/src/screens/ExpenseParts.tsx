@@ -5,7 +5,9 @@ import { AvatarToggle, avatarColor, Icon, Segmented, Stepper } from '../componen
 import { itemWithMode, type ItemForm, type WeightText } from '../data/expenseForm.ts';
 import type { Member } from '../data/model.ts';
 import { useLang, type Lang } from '../i18n/index.ts';
-import { formatCents, parseCents } from '../lib/money.ts';
+import { DEFAULT_CURRENCY, type Currency } from '@qpq/shared';
+import { useCurrency } from '../lib/currency.ts';
+import { currencySymbol, formatCents, parseCents } from '../lib/money.ts';
 import { MemberAvatar } from './Photos.tsx';
 import { amountInput } from './common.tsx';
 
@@ -20,7 +22,7 @@ export function weightOf(s: string | undefined): number {
 type T = (k: string, o?: Record<string, unknown>) => string;
 
 /** Linha de situação da divisão: soma de %, ou quanto falta nos valores exatos. */
-export function splitStatus(mode: SplitMode, ids: readonly string[], w: WeightText, total: Cents, lang: Lang, t: T): { text: string; ok: boolean } | null {
+export function splitStatus(mode: SplitMode, ids: readonly string[], w: WeightText, total: Cents, lang: Lang, t: T, currency: Currency = DEFAULT_CURRENCY): { text: string; ok: boolean } | null {
   if (mode === 'pct') {
     const sum = Math.round(ids.reduce((s, id) => s + weightOf(w[id]), 0) * 100) / 100;
     const diff = Math.abs(Math.round((100 - sum) * 100) / 100);
@@ -29,8 +31,8 @@ export function splitStatus(mode: SplitMode, ids: readonly string[], w: WeightTe
   }
   if (mode === 'exact') {
     const sum = ids.reduce((s, id) => s + (parseCents(w[id] ?? '') ?? 0), 0);
-    const base = t('expense.form.exactSum', { sum: formatCents(sum, lang), total: formatCents(total, lang) });
-    return sum === total ? { text: `${base} · ${t('expense.form.allGood')}`, ok: true } : { text: `${base} · ${t(sum < total ? 'expense.form.exactLeft' : 'expense.form.exactOver', { diff: formatCents(Math.abs(total - sum), lang) })}`, ok: false };
+    const base = t('expense.form.exactSum', { sum: formatCents(sum, lang, { currency }), total: formatCents(total, lang, { currency }) });
+    return sum === total ? { text: `${base} · ${t('expense.form.allGood')}`, ok: true } : { text: `${base} · ${t(sum < total ? 'expense.form.exactLeft' : 'expense.form.exactOver', { diff: formatCents(Math.abs(total - sum), lang, { currency }) })}`, ok: false };
   }
   return null;
 }
@@ -56,10 +58,11 @@ interface WeightRowsProps {
   whoName: (id: string) => string;
 }
 
-/** Um controle por pessoa: stepper de pedaços, % ou valor exato (R$). */
+/** Um controle por pessoa: stepper de pedaços, % ou valor exato (na moeda do split). */
 export function WeightRows({ mode, people, w, onChange, caption, compact, whoName }: WeightRowsProps) {
   const { t } = useTranslation();
   const lang = useLang();
+  const currency = useCurrency();
   return (
     <>
       {people.map((p) => {
@@ -71,7 +74,7 @@ export function WeightRows({ mode, people, w, onChange, caption, compact, whoNam
             </div>
           ) : (
             <div className="minibox">
-              {mode === 'exact' && <span>R$</span>}
+              {mode === 'exact' && <span>{currencySymbol(currency, lang)}</span>}
               <input
                 {...(mode === 'exact' ? amountInput(w[p.id] ?? '', lang, (v) => onChange(p.id, v)) : { inputMode: 'decimal' as const, value: w[p.id] ?? '', onChange: (e: ChangeEvent<HTMLInputElement>) => onChange(p.id, e.target.value) })}
                 aria-label={t('expense.form.weightAria', { name })}

@@ -128,3 +128,17 @@ export function enqueue<T>(expenseId: string, fn: () => Promise<T>): Promise<T> 
   next.then(clear, clear);
   return next;
 }
+
+/** Uma chamada que mexe em várias despesas (lote): espera a fila de todas e entra na de cada uma. */
+export function enqueueAll<T>(expenseIds: readonly string[], fn: () => Promise<T>): Promise<T> {
+  const prev = Promise.all(expenseIds.map((id) => (queues.get(id) ?? Promise.resolve()).catch(() => {})));
+  const next = prev.then(fn);
+  for (const id of expenseIds) {
+    queues.set(id, next);
+    const clear = () => {
+      if (queues.get(id) === next) queues.delete(id);
+    };
+    next.then(clear, clear);
+  }
+  return next;
+}

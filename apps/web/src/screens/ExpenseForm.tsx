@@ -6,22 +6,22 @@ import type { ExpenseMode } from '@qpq/calc';
 import { avatarColor, Button, Chip, Icon, PersonRow, Segmented, SkeletonCard } from '../components/index.ts';
 import { analyze, fromDoc, initialForm, setMode, toggleMember, toInput, type FormState } from '../data/expenseForm.ts';
 import { useMoney, useSplit } from '../data/hooks.ts';
-import { membersInOrder, myMember, orderOf, payModeOf, type ExpenseDoc, type Member, type SplitDoc } from '../data/model.ts';
+import { currencyOf, membersInOrder, myMember, orderOf, payModeOf, type ExpenseDoc, type Member, type SplitDoc } from '../data/model.ts';
 import { touchesSettled } from '../data/settlements.ts';
 import { useSession } from '../data/session.ts';
 import { useLang } from '../i18n/index.ts';
-import { formatCents } from '../lib/money.ts';
+import { currencySymbol, formatCents, formatInputCents } from '../lib/money.ts';
 import { amountInput, BackLink, todayStr, useWho } from './common.tsx';
 import { ErrorLine, splitErrorText, splitStatus, WeightRows } from './ExpenseParts.tsx';
 import { IconButton } from './EntryIcon.tsx';
 import { ItemsEditor } from './ItemsEditor.tsx';
-import { useExpenseActions } from './useExpenseActions.ts';
+import { newExpenseId, useExpenseActions } from './useExpenseActions.ts';
+import { CurrencyProvider } from '../lib/currency.ts';
 import { ReceiptField } from './ReceiptField.tsx';
 import { usePayActions } from './usePayActions.ts';
 import { MemberAvatar } from './Photos.tsx';
 
 // getRandomValues (e não randomUUID): funciona também fora de HTTPS, como no teste pela rede local.
-const newExpenseId = () => Array.from(crypto.getRandomValues(new Uint8Array(10)), (b) => b.toString(16).padStart(2, '0')).join('');
 
 function Body({ split, me, doc, warnSettled = false }: { split: SplitDoc; me: Member; doc?: ExpenseDoc; warnSettled?: boolean }) {
   const { t } = useTranslation();
@@ -34,7 +34,8 @@ function Body({ split, me, doc, warnSettled = false }: { split: SplitDoc; me: Me
   const pay = usePayActions(split, me);
   // Foto do comprovante: 'keep' = como está; null = tirar; File = nova (vai depois de salvar).
   const [receipt, setReceipt] = useState<File | null | 'keep'>('keep');
-  const fmt = (c: number) => formatCents(c, lang);
+  const currency = currencyOf(split);
+  const fmt = (c: number) => formatCents(c, lang, { currency });
   // A versão que a pessoa está editando (decisão 8): fixa desde que abriu.
   const expectedVersion = useRef(doc?.version ?? 0).current;
 
@@ -93,7 +94,7 @@ function Body({ split, me, doc, warnSettled = false }: { split: SplitDoc; me: Me
     }
   };
 
-  const status = form.mode !== 'items' && form.mode !== 'equal' ? splitStatus(form.mode, form.members, form.w, a.total, lang, (k, o) => t(k, o ?? {})) : null;
+  const status = form.mode !== 'items' && form.mode !== 'equal' ? splitStatus(form.mode, form.members, form.w, a.total, lang, (k, o) => t(k, o ?? {}), currency) : null;
   const pctFill = form.mode === 'pct' ? a.pctSum : a.total > 0 ? (a.exactSum / a.total) * 100 : 0;
   const mine = a.shares[me.id] ?? 0;
   const per = selected.length ? Math.round(a.total / selected.length) : 0;
@@ -108,7 +109,7 @@ function Body({ split, me, doc, warnSettled = false }: { split: SplitDoc; me: Me
   ].filter((x): x is string => !!x);
   const missingText = missing.length ? t('expense.form.missing', { list: new Intl.ListFormat(lang === 'en' ? 'en' : 'pt-BR', { type: 'conjunction' }).format(missing) }) : null;
 
-  return (
+  const page = (
     <main className="page">
       <header className="hdr">
         <BackLink to={back} label={t('expense.form.close')} icon="x" />
@@ -161,13 +162,13 @@ function Body({ split, me, doc, warnSettled = false }: { split: SplitDoc; me: Me
           </label>
           <div className={`amtbox ${showErrors && a.amountError ? 'err' : ''}`}>
             <span className="cur" aria-hidden="true">
-              R$
+              {currencySymbol(currency, lang)}
             </span>
             <input
               id="ad-amt"
               className="amtinput"
               {...amountInput(form.amountStr, lang, (amountStr) => set({ amountStr }))}
-              placeholder={isItems && a.total > 0 ? formatCents(a.total, lang).replace('R$ ', '') : t('expense.form.amountPh')}
+              placeholder={isItems && a.total > 0 ? formatInputCents(a.total, lang) : t('expense.form.amountPh')}
               autoComplete="off"
               aria-required="true"
               aria-invalid={showErrors && a.amountError ? true : undefined}
@@ -373,6 +374,7 @@ function Body({ split, me, doc, warnSettled = false }: { split: SplitDoc; me: Me
       </form>
     </main>
   );
+  return <CurrencyProvider value={currencyOf(split)}>{page}</CurrencyProvider>;
 }
 
 interface SplitModeOption {

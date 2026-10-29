@@ -167,8 +167,10 @@ a {
   flex: none;
   padding: 0;
 }
-.iconbtn:hover {
-  background: var(--surface2);
+@media (hover: hover) {
+  .iconbtn:hover {
+    background: var(--surface2);
+  }
 }
 
 /* Botões */
@@ -341,8 +343,10 @@ a {
 .prow:first-child {
   border-top: 0;
 }
-.prow:hover {
-  background: var(--surface2);
+@media (hover: hover) {
+  .prow:hover {
+    background: var(--surface2);
+  }
 }
 .prow.me {
   background: var(--me-soft);
@@ -711,8 +715,10 @@ a {
   border-radius: 999px;
   cursor: pointer;
 }
-.toastbtn:hover {
-  background: var(--accent-soft);
+@media (hover: hover) {
+  .toastbtn:hover {
+    background: var(--accent-soft);
+  }
 }
 @keyframes toastIn {
   from {

@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router';
 import { Button, Icon, InfoTip, useToast } from '../components/index.ts';
 import { api, detailsOf } from '../data/api.ts';
 import { pairsView, type PairCard, type PairEntry } from '../data/balance.ts';
-import { canSeeProof, membersInOrder, payModeOf, type ExpenseDoc, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
+import { canSeeProof, currencyOf, membersInOrder, payModeOf, type ExpenseDoc, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
 import { useLang } from '../i18n/index.ts';
 import { dateOf, dayMonth, shortDayTime } from '../lib/dates.ts';
 import { formatCents } from '../lib/money.ts';
@@ -82,9 +82,11 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
   const [asked, setAsked] = useState<ReadonlySet<string>>(new Set());
   // Simplificado: paga-se só o saldo do par; as despesas do cartão são só leitura (spec 06).
   const simple = payModeOf(split) === 'simple';
-  const fmt = (c: number) => formatCents(c, lang);
-  const showNudge = self && isOpen && v.mine > 0 && !me.pix && !pixSaved && !nudgeHidden;
-  const signed = (c: number) => formatCents(c, lang, { signed: true });
+  const fmt = (c: number) => formatCents(c, lang, { currency: currencyOf(split) });
+  // Pix só existe em reais: em outra moeda, nada de chave, Copiar Pix nem pedido.
+  const pix = currencyOf(split) === 'BRL';
+  const showNudge = pix && self && isOpen && v.mine > 0 && !me.pix && !pixSaved && !nudgeHidden;
+  const signed = (c: number) => formatCents(c, lang, { signed: true, currency: currencyOf(split) });
   const nameOf = (id: string) => split.members[id]?.name ?? '?';
   const askPix = (o: string) => {
     setAsked((s) => new Set(s).add(o));
@@ -98,7 +100,7 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
       toast.show({ kind: 'error', text: reasonText(detailsOf(error)) });
     });
   };
-  // "você devia…" só quando é a própria pessoa e ela prefere "Você" ao nome.
+  // "você deve…" só quando é a própria pessoa e ela prefere "Você" ao nome.
   const asYou = self && who(me.id) !== nameOf(me.id);
 
   if (expenses.length === 0 && payments.length === 0) {
@@ -112,8 +114,11 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
     );
   }
 
-  const debtText = (debtor: string, creditor: string) =>
-    asYou ? (debtor === viewer ? t('my.eOwe', { name: nameOf(creditor) }) : t('my.eOwed', { name: nameOf(debtor) })) : t('my.eGen', { from: nameOf(debtor), to: nameOf(creditor) });
+  // Parte em aberto no presente ("você deve"); compensada ou paga no acerto, no passado ("você devia").
+  const debtText = (debtor: string, creditor: string, past: boolean) => {
+    const [owe, owed, gen] = past ? (['my.eOwe', 'my.eOwed', 'my.eGen'] as const) : (['my.eOweNow', 'my.eOwedNow', 'my.eGenNow'] as const);
+    return asYou ? (debtor === viewer ? t(owe, { name: nameOf(creditor) }) : t(owed, { name: nameOf(debtor) })) : t(gen, { from: nameOf(debtor), to: nameOf(creditor) });
+  };
   const paidText = (from: string, to: string) =>
     asYou ? (from === viewer ? t('my.ePaidOut', { name: nameOf(to) }) : t('my.ePaidIn', { name: nameOf(from) })) : t('my.ePaidGen', { from: nameOf(from), to: nameOf(to) });
   const proofNote = (proof: { path: string | null } | null | undefined) => (proof ? (proof.path ? t('my.withProof') : t('my.expired')) : '');
@@ -184,7 +189,7 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
       // Paga num acerto (modo detalhado): "Paga no acerto" ou "Compensada no acerto"; Desfazer desfaz o acerto.
       const p = payments.find((q) => q.id === x.via);
       const label = p?.from === x.debtor ? t('expense.detail.paidSettle') : t('expense.detail.offsetSettle');
-      const note = `${debtText(x.debtor, x.creditor)} · ${label}${x.paidAt ? ` · ${when(x.paidAt)}` : ''}`;
+      const note = `${debtText(x.debtor, x.creditor, true)} · ${label}${x.paidAt ? ` · ${when(x.paidAt)}` : ''}`;
       return resolved(`s-${e.id}`, icon, e.name, note, x.share, null, isOpen && p ? () => flow.undoSettlement(p, coveredExpenses(p, expenses)) : null);
     }
     if (x.state === 'paid') {
@@ -210,7 +215,7 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
           <span className="mid">
             <span className="ttl">{e.name}</span>
             <span className="cap" style={{ whiteSpace: 'normal' }}>
-              {debtText(x.debtor, x.creditor)} · {day}
+              {debtText(x.debtor, x.creditor, x.state === 'offset')} · {day}
               {x.state === 'offset' && (
                 <>
                   {' · '}
@@ -310,7 +315,7 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
           </span>
         </div>
       )}
-      <PixSheet open={pixOpen && self && !me.pix && !pixSaved} onClose={closePix} onSaved={() => setPixSaved(true)} onFailed={() => setPixSaved(false)} />
+      <PixSheet open={pix && pixOpen && self && !me.pix && !pixSaved} onClose={closePix} onSaved={() => setPixSaved(true)} onFailed={() => setPixSaved(false)} />
 
       <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div className="sec-h" style={{ paddingBottom: 0, alignItems: 'center' }}>
@@ -355,9 +360,10 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
                 <div className="pcmain">
                   {c.status === 'owe' ? (
                     <>
-                      {self && <CopyPixButton split={split} to={o} amount={c.amount} />}
+                      {pix && self && <CopyPixButton split={split} to={o} amount={c.amount} />}
                       {/* Sem chave (e a pessoa já entrou): pedir, uma vez por split (spec 06). */}
-                      {self &&
+                      {pix &&
+                        self &&
                         !split.members[o]?.pix &&
                         !!split.members[o]?.uid &&
                         (split.pixAsks?.[o]?.[me.id] || asked.has(o) ? (

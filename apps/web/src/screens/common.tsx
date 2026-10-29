@@ -8,7 +8,8 @@ import { useSession } from '../data/session.ts';
 import { useLang, type Lang } from '../i18n/index.ts';
 import { dateOf, shortDay } from '../lib/dates.ts';
 import { formatCents, typeAmount } from '../lib/money.ts';
-import { inviteLink, shortInviteLink } from '@qpq/shared';
+import { inviteLink, shortInviteLink, type Currency } from '@qpq/shared';
+import { useCurrency } from '../lib/currency.ts';
 import { inviteHost } from '../firebase.ts';
 
 /** Ilustração dos estados vazios; o "+" amarelo só aparece quando há ação. */
@@ -52,10 +53,11 @@ export function Header({ left, title, right }: { left?: ReactNode; title: ReactN
 export function useBalanceView() {
   const { t } = useTranslation();
   const lang = useLang();
-  return (cents: number) => ({
+  const fallback = useCurrency();
+  return (cents: number, currency: Currency = fallback) => ({
     tone: cents > 0 ? ('pos' as const) : cents < 0 ? ('neg' as const) : ('zero' as const),
     icon: cents > 0 ? ('in' as const) : cents < 0 ? ('out' as const) : ('check' as const),
-    amount: cents === 0 ? t('balance.settled') : formatCents(cents, lang, { signed: true }),
+    amount: cents === 0 ? t('balance.settled') : formatCents(cents, lang, { signed: true, currency }),
     caption: cents > 0 ? t('balance.toReceive') : cents < 0 ? t('balance.youOwe') : t('balance.allSquare'),
   });
 }

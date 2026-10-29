@@ -156,7 +156,9 @@
     "newSplit": "New split",
     "join": "Join with code or link",
     "doneOn": "Closed {{date}}",
-    "actions": "Actions for {{name}}"
+    "actions": "Actions for {{name}}",
+    "unread_one": "{{count}} unread notification",
+    "unread_other": "{{count}} unread notifications"
   },
   "create": {
     "title": "New split",
@@ -417,7 +419,23 @@
       "byFrac": "by shares",
       "byPct": "by %",
       "byExact": "exact amounts",
-      "byItems": "by items"
+      "byItems": "by items",
+      "duplicate": "Duplicate",
+      "select": "Select",
+      "more": "Actions for {{name}}",
+      "lockEdit": "Only {{name}} (who added it) or an admin can edit.",
+      "lockDel": "Only {{name}} (who added it) or an admin can delete.",
+      "swipeHint": "Swipe an expense to the left to edit, duplicate or delete.",
+      "selection": "Selected expenses",
+      "selectDay": "Select {{day}}",
+      "selectAll": "Select all ({{count}})",
+      "selected_one": "{{count}} selected",
+      "selected_other": "{{count}} selected",
+      "lockSome": "Only who added it or an admin can delete {{count}} of the {{total}}.",
+      "delManyT": "Delete {{count}} expenses?",
+      "delManyB": "These expenses leave the balances. You can undo right after.",
+      "delMany": "Delete {{count}} expenses",
+      "blockedMany": "These expenses have payments marked: {{names}}. Unmark them before deleting."
     },
     "form": {
       "titleNew": "New expense",
@@ -559,6 +577,10 @@
     },
     "added": "Expense added",
     "deleted": "Expense deleted",
+    "deletedMany_one": "{{count}} expense deleted",
+    "deletedMany_other": "{{count}} expenses deleted",
+    "duplicated": "Expense duplicated",
+    "copySuffix": "(copy)",
     "conflict": {
       "title": "{{name}} changed this expense while you were editing.",
       "body": "Your edit wasn’t saved. See the new version or save yours on top.",
@@ -641,6 +663,9 @@
     "eOwe": "you owed {{name}}",
     "eOwed": "{{name}} owed you",
     "eGen": "{{from}} owed {{to}}",
+    "eOweNow": "you owe {{name}}",
+    "eOwedNow": "{{name}} owes you",
+    "eGenNow": "{{from}} owes {{to}}",
     "ePaidOut": "you paid {{name}}",
     "ePaidIn": "{{name}} paid you",
     "ePaidGen": "{{from}} paid {{to}}",
@@ -875,6 +900,11 @@
     "offsetLabel": "What does netted in the balance mean?",
     "offset": "This share wasn’t paid, but the balance between you already reached zero or flipped to the other side, so it no longer counts."
   },
+  "currency": {
+    "label": "Currency",
+    "note": "Amounts aren't converted: only the currency changes. Pix only shows up in reais (BRL).",
+    "saved": "Currency: {{value}}"
+  },
   "config": {
     "menu": "Split settings",
     "title": "Split settings",
@@ -886,11 +916,46 @@
       "simple": "Simple",
       "detailed": "Detailed"
     },
-    "modeSub": {
-      "simple": "Everyone pays their balance with each person in one go, in My balance. Expenses only show each person's share.",
-      "detailed": "You can pay expense by expense. Settling up in My balance marks every open expense between the two people as paid."
+    "modeHead": {
+      "simple": "You settle up once with each person.",
+      "detailed": "Each expense is paid separately."
     },
-    "modeNote": "You can switch anytime: nobody's balance changes.",
+    "modeBody": {
+      "simple": "The app adds up everything you owe someone and everything they owe you, and shows a single amount. Example: you owe Beatriz {{a}} for groceries, and she owes you {{b}} for the Uber. You pay her {{c}} and you're all square. The payment is marked in My balance.",
+      "detailed": "Each expense gets its own “Mark as paid”: you pay your share of the groceries today and the Uber next week, and each expense shows who has already paid. You can also settle everything at once in My balance: then every expense between you is marked as paid."
+    },
+    "modeFit": {
+      "simple": "Good for trips and outings where everyone settles up at the end.",
+      "detailed": "Good for installments, household bills, or when everyone pays on the spot."
+    },
+    "modeNote": "In both modes, what each person owes is the same. Only how payments are marked changes. You can switch anytime.",
+    "modeExample": "See example",
+    "modeExampleHide": "Hide example",
+    "deadlines": {
+      "title": "Deadlines",
+      "endsOn": "Ends on",
+      "endsHint": "Optional. Until the end of this day, the split doesn't close on its own. Up to 1 year ahead.",
+      "endsNone": "No date",
+      "endsSave": "Save date",
+      "endsClear": "Remove date",
+      "endsErr": "Pick a date up to {{date}}.",
+      "endsSaved": "Ends on {{date}}",
+      "endsCleared": "Date removed",
+      "autoTitle": "Automatic closing",
+      "autoDone": "Closed on {{date}}.",
+      "autoDoneAuto": "Closed automatically on {{date}}: everyone had settled up.",
+      "autoSoon": "Everyone settled up: the split closes on its own on {{date}}, if nothing changes.",
+      "autoRule": "When everyone settles up, the split closes on its own {{days}} days later.",
+      "autoRuleEnds": "When everyone settles up, the split closes on its own {{days}} days later, never before {{date}}.",
+      "doneTitle": "Closed split",
+      "doneRule": "It stays saved, read-only. An admin can reopen it anytime.",
+      "proofsTitle": "Receipts",
+      "proofsRule": "Payment receipts and expense photos are kept for {{days}} days and deleted when the split is closed.",
+      "emptyTitle": "Split with nobody",
+      "emptyRule": "If everyone leaves, the split is deleted after {{days}} days with nobody joining.",
+      "inviteTitle": "Invite",
+      "inviteRule": "The invite link and code don't expire. An admin can create a new code in People."
+    },
     "modeSaved": "Payments: {{value}}",
     "adminOnly": "Only admins can change the split settings.",
     "doneNote": "Split finished: reopen it to change the name, cover and payment mode."

@@ -11,6 +11,8 @@ export default defineConfig({
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
   use: {
     baseURL: 'http://localhost:4173',
+    // O app abre no idioma do navegador: os testes leem os textos em PT-BR.
+    locale: 'pt-BR',
     trace: 'retain-on-failure',
   },
   projects: [

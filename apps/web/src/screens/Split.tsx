@@ -5,7 +5,8 @@ import { Button, Icon, SkeletonCard, useToast, type IconName } from '../componen
 import { detailsOf } from '../data/api.ts';
 import { useMoney, useSplit } from '../data/hooks.ts';
 import { pendingJoins } from '../data/local.ts';
-import { applyPatches, finalizeSuggestion, membersInOrder, myMember, type ExpenseDoc, type Member, type MemberPatch, type Money, type PaymentDoc, type SplitDoc } from '../data/model.ts';
+import { DEFAULT_CURRENCY } from '@qpq/shared';
+import { applyPatches, currencyOf, finalizeSuggestion, membersInOrder, myMember, type ExpenseDoc, type Member, type MemberPatch, type Money, type PaymentDoc, type SplitDoc } from '../data/model.ts';
 import { useSplitEdits, withSplitEdits } from '../data/splitEdits.ts';
 import { useSession } from '../data/session.ts';
 import { useOptimisticAction } from '../lib/optimistic.ts';
@@ -22,6 +23,7 @@ import { SplitCover } from './Photos.tsx';
 import { PeopleTab, type PeopleAction } from './PeopleTab.tsx';
 import { SplitMenuItem, useSplitActions } from './SplitActions.tsx';
 import { TxTab } from './TxTab.tsx';
+import { CurrencyProvider } from '../lib/currency.ts';
 import { useReasonText } from './reasons.ts';
 
 const TABS: Array<{ key: string; path: string; icon: IconName; label: string }> = [
@@ -105,6 +107,8 @@ export default function Split() {
   const added = (useLocation().state as { added?: string } | null)?.added ?? null;
   const [menu, setMenu] = useState(false);
   const [, bump] = useState(0);
+  // Na seleção de despesas, a barra de ações cobre as abas e o "+" some.
+  const [selecting, setSelecting] = useState(false);
 
   // Já mostrou este split: perder o acesso depois volta ao início (salvo se ele foi apagado).
   const seen = useRef<string | null>(null);
@@ -251,7 +255,7 @@ export default function Split() {
   };
 
   const goAdd = () => void navigate(`/s/${id}/despesa/nova`);
-  const txTab = view && me && <TxTab split={view} me={me} expenses={money.expenses} loaded={money.loaded} canAdd={isOpen} onAdd={goAdd} lastAdded={added} />;
+  const txTab = view && me && <TxTab split={view} me={me} expenses={money.expenses} payments={money.payments} loaded={money.loaded} canAdd={isOpen} onAdd={goAdd} lastAdded={added} onSelecting={setSelecting} />;
   const tabBody =
     !view || !me ? (
       <SplitSkeleton />
@@ -263,7 +267,7 @@ export default function Split() {
       <MoneyTab split={view} me={me} expenses={money.expenses} payments={money.payments} />
     );
 
-  return (
+  const page = (
     <main className="page">
       {view && me ? (
         <WithSplitActions split={view} me={me} money={money}>
@@ -275,7 +279,7 @@ export default function Split() {
 
       {tabBody}
 
-      {view && me && current.key === 'tx' && isOpen && money.expenses.length > 0 && (
+      {view && me && current.key === 'tx' && isOpen && money.expenses.length > 0 && !selecting && (
         <Link to={`/s/${id}/despesa/nova`} className="fab" aria-label={t('expense.tx.add')}>
           <Icon name="plus" size="lg" />
         </Link>
@@ -298,6 +302,7 @@ export default function Split() {
       </nav>
     </main>
   );
+  return <CurrencyProvider value={view ? currencyOf(view) : DEFAULT_CURRENCY}>{page}</CurrencyProvider>;
 }
 
 type SplitActions = ReturnType<typeof useSplitActions>;

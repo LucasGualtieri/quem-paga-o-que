@@ -156,7 +156,9 @@
     "newSplit": "Novo split",
     "join": "Entrar com código ou link",
     "doneOn": "Finalizado em {{date}}",
-    "actions": "Ações de {{name}}"
+    "actions": "Ações de {{name}}",
+    "unread_one": "{{count}} notificação não lida",
+    "unread_other": "{{count}} notificações não lidas"
   },
   "create": {
     "title": "Novo split",
@@ -417,7 +419,23 @@
       "byFrac": "por frações",
       "byPct": "por %",
       "byExact": "valores exatos",
-      "byItems": "por itens"
+      "byItems": "por itens",
+      "duplicate": "Duplicar",
+      "select": "Selecionar",
+      "more": "Ações de {{name}}",
+      "lockEdit": "Só {{name}} (quem lançou) ou um admin pode editar.",
+      "lockDel": "Só {{name}} (quem lançou) ou um admin pode excluir.",
+      "swipeHint": "Deslize uma despesa para a esquerda para editar, duplicar ou excluir.",
+      "selection": "Despesas selecionadas",
+      "selectDay": "Selecionar {{day}}",
+      "selectAll": "Selecionar todas ({{count}})",
+      "selected_one": "{{count}} selecionada",
+      "selected_other": "{{count}} selecionadas",
+      "lockSome": "Só quem lançou ou um admin pode excluir {{count}} das {{total}}.",
+      "delManyT": "Excluir {{count}} despesas?",
+      "delManyB": "Essas despesas saem dos saldos. Dá para desfazer logo depois.",
+      "delMany": "Excluir {{count}} despesas",
+      "blockedMany": "Estas despesas têm pagamentos marcados: {{names}}. Desmarque-os antes de excluir."
     },
     "form": {
       "titleNew": "Nova despesa",
@@ -559,6 +577,10 @@
     },
     "added": "Despesa adicionada",
     "deleted": "Despesa excluída",
+    "deletedMany_one": "{{count}} despesa excluída",
+    "deletedMany_other": "{{count}} despesas excluídas",
+    "duplicated": "Despesa duplicada",
+    "copySuffix": "(cópia)",
     "conflict": {
       "title": "{{name}} alterou esta despesa enquanto você editava.",
       "body": "Sua edição não foi salva. Veja a versão nova ou salve a sua por cima.",
@@ -641,6 +663,9 @@
     "eOwe": "você devia para {{name}}",
     "eOwed": "{{name}} te devia",
     "eGen": "{{from}} devia para {{to}}",
+    "eOweNow": "você deve para {{name}}",
+    "eOwedNow": "{{name}} te deve",
+    "eGenNow": "{{from}} deve para {{to}}",
     "ePaidOut": "você pagou para {{name}}",
     "ePaidIn": "{{name}} te pagou",
     "ePaidGen": "{{from}} pagou para {{to}}",
@@ -875,6 +900,11 @@
     "offsetLabel": "O que é compensado no saldo?",
     "offset": "Essa parte não foi paga, mas o saldo entre vocês já zerou ou virou para o outro lado, então ela não pesa mais."
   },
+  "currency": {
+    "label": "Moeda",
+    "note": "Os valores não são convertidos: só a moeda muda. Pix só aparece em reais.",
+    "saved": "Moeda: {{value}}"
+  },
   "config": {
     "menu": "Configurações do split",
     "title": "Configurações do split",
@@ -886,11 +916,46 @@
       "simple": "Simplificado",
       "detailed": "Detalhado"
     },
-    "modeSub": {
-      "simple": "Cada um paga o saldo com cada pessoa de uma vez, no Meu saldo. As despesas mostram só quanto é a parte de cada um.",
-      "detailed": "Dá para pagar despesa por despesa. Acertar o saldo no Meu saldo marca como pagas todas as despesas em aberto entre as duas pessoas."
+    "modeHead": {
+      "simple": "Vocês acertam uma vez com cada pessoa.",
+      "detailed": "Cada despesa é paga separadamente."
     },
-    "modeNote": "Dá para trocar quando quiser: o saldo de ninguém muda.",
+    "modeBody": {
+      "simple": "O app junta tudo o que você deve para alguém e tudo o que essa pessoa te deve, e mostra um valor só. Exemplo: você deve {{a}} do mercado para a Beatriz, e ela te deve {{b}} do Uber. Você paga {{c}} para ela e fica tudo certo. O pagamento é marcado no Meu saldo.",
+      "detailed": "Cada despesa ganha o próprio “Marcar como pago”: você paga a sua parte do mercado hoje e a do Uber semana que vem, e cada despesa mostra quem já pagou. Também dá para acertar tudo de uma vez no Meu saldo: aí todas as despesas entre vocês ficam marcadas como pagas."
+    },
+    "modeFit": {
+      "simple": "Bom para viagens e rolês em que todo mundo acerta no final.",
+      "detailed": "Bom para parcelas, contas da casa ou quando cada um paga na hora."
+    },
+    "modeNote": "Nos dois modos, quanto cada um deve é igual. Só muda como os pagamentos são marcados. Dá para trocar quando quiser.",
+    "modeExample": "Ver exemplo",
+    "modeExampleHide": "Ocultar exemplo",
+    "deadlines": {
+      "title": "Prazos",
+      "endsOn": "Termina em",
+      "endsHint": "Opcional. Antes do fim deste dia, o split não finaliza sozinho. Até 1 ano à frente.",
+      "endsNone": "Sem data",
+      "endsSave": "Salvar data",
+      "endsClear": "Remover data",
+      "endsErr": "Escolha uma data até {{date}}.",
+      "endsSaved": "Termina em {{date}}",
+      "endsCleared": "Data removida",
+      "autoTitle": "Finalização automática",
+      "autoDone": "Finalizado em {{date}}.",
+      "autoDoneAuto": "Finalizado automaticamente em {{date}}: todos tinham quitado.",
+      "autoSoon": "Todos quitaram: o split finaliza sozinho em {{date}}, se nada mudar.",
+      "autoRule": "Quando todo mundo quitar, o split finaliza sozinho {{days}} dias depois.",
+      "autoRuleEnds": "Quando todo mundo quitar, o split finaliza sozinho {{days}} dias depois, nunca antes de {{date}}.",
+      "doneTitle": "Split finalizado",
+      "doneRule": "Fica guardado, só para leitura. Um admin pode reabrir quando quiser.",
+      "proofsTitle": "Comprovantes",
+      "proofsRule": "Comprovantes e fotos das despesas ficam guardados por {{days}} dias e são apagados quando o split é finalizado.",
+      "emptyTitle": "Split sem ninguém",
+      "emptyRule": "Se todo mundo sair, o split é apagado depois de {{days}} dias sem ninguém entrar.",
+      "inviteTitle": "Convite",
+      "inviteRule": "O link e o código de convite não expiram. Um admin pode gerar um código novo em Pessoas."
+    },
     "modeSaved": "Pagamentos: {{value}}",
     "adminOnly": "Só admins mudam as configurações do split.",
     "doneNote": "Split finalizado: reabra para mudar o nome, a capa e o modo de pagamento."

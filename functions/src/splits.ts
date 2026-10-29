@@ -5,6 +5,9 @@ import { deleteFiles, purgeSplitProofs } from './proofs.ts';
 import type { Expense, Payment } from '@qpq/calc';
 import {
   cleanName,
+  DEFAULT_CURRENCY,
+  endsOnAllowed,
+  isCurrency,
   findDuplicate,
   generateCode,
   isCoverEmoji,
@@ -91,6 +94,8 @@ export const createSplit = onCall(opts, async (req): Promise<CreateSplitResponse
   const people = Array.isArray(data.people) ? data.people.map((p) => cleanName(text(p))) : fail('invalid-input');
   if (!isValidName(name, SPLIT_NAME_MAX) || icon === false || !isValidName(selfName)) fail('invalid-input');
   if (people.length > MAX_PEOPLE || !people.every((p) => isValidName(p))) fail('invalid-input');
+  // Moeda do split; sem ela, BRL (só as da lista, todas com centavos).
+  const currency = data.currency === undefined ? DEFAULT_CURRENCY : isCurrency(data.currency) ? data.currency : fail('invalid-input');
   const dup = findDuplicate([selfName, ...people]);
   if (dup !== null) fail('name-taken', { name: dup });
 
@@ -122,6 +127,7 @@ export const createSplit = onCall(opts, async (req): Promise<CreateSplitResponse
       createdAt: now,
       createdBy: selfId,
       nextJoinOrder: people.length + 1,
+      currency,
       ...mirrors(members),
     });
     tx.set(db().doc(`users/${uid}`), { displayName: selfName }, { merge: true });
@@ -144,6 +150,7 @@ export const previewInvite = onCall(opts, async (req): Promise<PreviewInviteResp
       members: Object.entries(split.members)
         .sort(([, a], [, b]) => a.joinOrder - b.joinOrder)
         .map(([id, m]) => ({ id, name: m.name, joinOrder: m.joinOrder, taken: m.uid !== null && m.uid !== uid })),
+      currency: split.currency ?? DEFAULT_CURRENCY,
     };
   });
 });
@@ -295,6 +302,10 @@ export const updateSplit = onCall(opts, async (req) => {
   if (name !== undefined && !isValidName(name, SPLIT_NAME_MAX)) fail('invalid-input');
   const icon = data.icon === undefined ? undefined : parseEntryIcon(data.icon);
   if (icon === false) fail('invalid-input');
+  // "Termina em": de qualquer data passada até ENDS_ON_MAX_DAYS à frente; `null` tira.
+  const endsOn = data.endsOn === undefined || data.endsOn === null ? data.endsOn : text(data.endsOn);
+  if (typeof endsOn === 'string' && !endsOnAllowed(endsOn, Date.now())) fail('invalid-input');
+  if (data.currency !== undefined && !isCurrency(data.currency)) fail('invalid-input');
   const old = await db().runTransaction(async (tx) => {
     const { ref, split } = await loadSplit(tx, data.splitId);
     requireAdmin(split, uid);
@@ -303,6 +314,9 @@ export const updateSplit = onCall(opts, async (req) => {
     if (name !== undefined) patch.name = name;
     if (icon !== undefined) Object.assign(patch, { icon, emoji: '' });
     if (data.clearPhoto === true) patch.photo = null;
+    if (endsOn !== undefined) patch.endsOn = endsOn;
+    // Trocar a moeda não converte os valores (decidido em 29/10/2026).
+    if (data.currency !== undefined) patch.currency = data.currency;
     if (Object.keys(patch).length) tx.update(ref, patch);
     return data.clearPhoto === true ? (split.photo ?? null) : null;
   });

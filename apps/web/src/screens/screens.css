@@ -217,8 +217,11 @@ button.ea-plus {
   cursor: pointer;
   transition: transform 0.15s;
 }
-button.ea-plus:hover {
-  transform: scale(1.06);
+/* Hover só onde existe mouse: no toque, o navegador deixa o último toque "em cima" e a linha parecia selecionada. */
+@media (hover: hover) {
+  button.ea-plus:hover {
+    transform: scale(1.06);
+  }
 }
 button.ea-plus:active {
   transform: scale(0.94);
@@ -250,6 +253,16 @@ button.ea-plus:active {
 .balcap {
   font: 700 12px 'Figtree', sans-serif;
   color: var(--muted);
+}
+/* Total da home com mais de uma moeda: um bloco por moeda. */
+.overall-cur {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.overall-cur + .overall-cur {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
 }
 .overall {
   padding: 18px;
@@ -290,16 +303,15 @@ button.ea-plus:active {
   gap: 6px;
   margin-top: 4px;
 }
-.stdot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
+/* Selo de notificações não lidas no canto da capa (mesmo do sino). */
+.sc-coverwrap {
+  position: relative;
   flex: none;
+  display: flex;
 }
-.stdot.done {
-  background: transparent;
-  box-shadow: inset 0 0 0 2px var(--zero);
+.sc-coverwrap .bdg {
+  top: -6px;
+  right: -6px;
 }
 .balwrap {
   display: flex;
@@ -601,8 +613,10 @@ input[type='radio'] {
   cursor: pointer;
   text-align: left;
 }
-.mi:hover {
-  background: var(--surface2);
+@media (hover: hover) {
+  .mi:hover {
+    background: var(--surface2);
+  }
 }
 .mi.danger {
   color: var(--neg);

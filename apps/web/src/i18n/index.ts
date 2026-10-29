@@ -8,12 +8,25 @@ export type Lang = 'pt-BR' | 'en';
 
 const KEY = 'qpq.lang';
 
+/**
+ * Primeira visita (sem escolha salva): o idioma preferido do navegador. Qualquer português
+ * (pt-BR, pt-PT…) abre em PT-BR; o resto, em EN. A escolha da pessoa sempre vence.
+ */
+export function detectLang(languages: readonly string[]): Lang {
+  const first = languages[0];
+  if (!first) return 'pt-BR';
+  return /^pt\b/i.test(first) ? 'pt-BR' : 'en';
+}
+
 function storedLang(): Lang {
+  let saved: string | null = null;
   try {
-    return localStorage.getItem(KEY) === 'en' ? 'en' : 'pt-BR';
+    saved = localStorage.getItem(KEY);
   } catch {
-    return 'pt-BR';
+    // Sem armazenamento: detecta de novo a cada visita.
   }
+  if (saved === 'en' || saved === 'pt-BR') return saved;
+  return typeof navigator === 'undefined' ? 'pt-BR' : detectLang(navigator.languages?.length ? navigator.languages : [navigator.language]);
 }
 
 void i18n.use(initReactI18next).init({

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
-import { cleanName, findDuplicate, isValidName, nameKey, pickCover, SPLIT_DEFAULT_ICON, SPLIT_NAME_MAX, splitCover, type EntryIcon } from '@qpq/shared';
+import { cleanName, currencyFromLocales, findDuplicate, isValidName, nameKey, pickCover, SPLIT_DEFAULT_ICON, SPLIT_NAME_MAX, splitCover, type Currency, type EntryIcon } from '@qpq/shared';
+import { CurrencyPicker } from './CurrencyPicker.tsx';
 import { Avatar, avatarColor, Badge, Button, Cover, Icon, TextField, useToast } from '../components/index.ts';
 import { api, detailsOf } from '../data/api.ts';
 import { useMySplits, useProfileName } from '../data/hooks.ts';
@@ -40,6 +41,8 @@ export default function CreateSplit() {
   const [selfName, setSelfName] = useState('');
   const [selfTouched, setSelfTouched] = useState(false);
   const [people, setPeople] = useState<string[]>([]);
+  // Moeda: vem marcada pelo país do navegador (en-US → USD, pt-BR → BRL…).
+  const [currency, setCurrency] = useState<Currency>(() => currencyFromLocales(navigator.languages ?? [navigator.language]));
   const [newName, setNewName] = useState('');
   const [addError, setAddError] = useState<string | undefined>();
   const [created, setCreated] = useState<{ name: string; icon: EntryIcon } | null>(null);
@@ -97,7 +100,7 @@ export default function CreateSplit() {
     // Otimista: a tela do convite abre na hora; link e código chegam em seguida.
     setCreated({ name: cleanName(name), icon: cover });
     try {
-      const res = await api.createSplit({ name, icon: cover, selfName, people });
+      const res = await api.createSplit({ name, icon: cover, selfName, people, currency });
       if (photo) uploadCover(res.splitId, photo);
       if (mounted.current) void navigate(`/s/${res.splitId}/pronto`, { replace: true });
     } catch (error) {
@@ -207,6 +210,13 @@ export default function CreateSplit() {
             </Button>
           </div>
           <p className="hint">{t('create.addHint')}</p>
+        </div>
+
+        <div className="currency-row">
+          <label className="label" htmlFor="create-currency">
+            {t('currency.label')}
+          </label>
+          <CurrencyPicker id="create-currency" value={currency} onChange={setCurrency} />
         </div>
       </div>
       <div className="bottombar">
