@@ -165,7 +165,9 @@ export default function Split() {
             </h1>
             {view && (
               <p className="cap">
-                {t('split.people', { count })} · {t(isOpen ? 'split.open' : 'split.done')}
+                {/* Em andamento é o normal: só o finalizado ganha o aviso (como na home). */}
+                {t('split.people', { count })}
+                {isOpen ? '' : ` · ${t('split.done')}`}
               </p>
             )}
           </div>

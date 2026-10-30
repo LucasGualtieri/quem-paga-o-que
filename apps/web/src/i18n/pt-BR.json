@@ -706,9 +706,9 @@
     "viewAs": "Ver como",
     "viewingAs": "Vendo como {{name}}",
     "soonTotal": "parcelas futuras: {{amount}}",
-    "soonNext": "parcelas futuras: {{amount}} · a próxima entra em {{date}}",
-    "planDue": "parcela {{n}} de {{count}} · vence {{date}}",
-    "planWasDue": "parcela {{n}} de {{count}} · venceu {{date}}",
+    "soonNext": "parcelas futuras: {{amount}} · próxima {{date}}",
+    "planDue": "parcela {{n}} de {{count}} · vence {{date}}",
+    "planWasDue": "parcela {{n}} de {{count}} · venceu {{date}}",
     "backToYou": "Voltar para você"
   },
   "proofVis": {

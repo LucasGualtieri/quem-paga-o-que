@@ -127,7 +127,8 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
     const plan = e.installments!;
     const n = dueCount(e, debtor, today());
     const date = installmentDates(plan)[n - 1]!;
-    return t(date > today() ? 'my.planDue' : 'my.planWasDue', { n, count: plan.count, date: dayMonthYear(dateOf(date), lang) });
+    // Data sem quebra no meio ("2 nov" nunca vira "2" / "nov").
+    return t(date > today() ? 'my.planDue' : 'my.planWasDue', { n, count: plan.count, date: dayMonthYear(dateOf(date), lang).replace(/ /g, '\u00a0') });
   };
   const proofNote = (proof: { path: string | null } | null | undefined) => (proof ? (proof.path ? t('my.withProof') : t('my.expired')) : '');
 
@@ -251,41 +252,39 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
 
   return (
     <div className="content with-tabs" style={{ gap: 18 }}>
-      {me.admin && (
-        <div className="viewas">
-          <div className="viewas-field">
-            <label className="cap" htmlFor={viewAsId}>
-              {t('my.viewAs')}
-            </label>
-            {/* Só admin vê esta opção: a explicação destaca "admins" no lilás do selo de Admin. */}
-            <InfoTip label={t('tips.viewAsLabel')} text={<Trans i18nKey="tips.viewAs" components={{ b: <span className="tip-admin" /> }} />} />
-            <span className="viewas-sel">
-              <select id={viewAsId} value={viewer} onChange={(e) => setChosen(e.target.value)}>
-                {membersInOrder(split).map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.id === me.id ? t('common.you') : m.name}
-                  </option>
-                ))}
-              </select>
-              <Icon name="down" size="sm" />
-            </span>
-          </div>
-          {!self && (
-            <div className="banner viewbanner" role="status">
-              <Icon name="user" size="sm" />
-              <span style={{ flex: 1 }}>{t('my.viewingAs', { name: nameOf(viewer) })}</span>
-              <button type="button" className="linkbtn" onClick={() => setChosen(me.id)}>
-                {t('my.backToYou')}
-              </button>
-            </div>
-          )}
+      {me.admin && !self && (
+        <div className="banner viewbanner" role="status">
+          <Icon name="user" size="sm" />
+          <span style={{ flex: 1 }}>{t('my.viewingAs', { name: nameOf(viewer) })}</span>
+          <button type="button" className="linkbtn" onClick={() => setChosen(me.id)}>
+            {t('my.backToYou')}
+          </button>
         </div>
       )}
 
       <div className="card" style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 8 }} aria-live="polite">
-        <p className="cap" style={{ fontWeight: 700 }}>
-          {self ? t('my.yourBal') : t('my.theirBal', { name: nameOf(viewer) })}
-        </p>
+        <div className="balhead">
+          <p className="cap" style={{ fontWeight: 700 }}>
+            {self ? t('my.yourBal') : t('my.theirBal', { name: nameOf(viewer) })}
+          </p>
+          {/* "Ver como" (só admin): compacto, no canto do cartão, para não gastar uma linha inteira. */}
+          {me.admin && (
+            <span className="viewas-mini">
+              <InfoTip label={t('tips.viewAsLabel')} text={<Trans i18nKey="tips.viewAs" components={{ b: <span className="tip-admin" /> }} />} />
+              <span className="viewas-sel">
+                <Icon name="user" size="sm" className="lead" />
+                <select id={viewAsId} aria-label={t('my.viewAs')} value={viewer} onChange={(e) => setChosen(e.target.value)}>
+                  {membersInOrder(split).map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.id === me.id ? t('common.you') : m.name}
+                    </option>
+                  ))}
+                </select>
+                <Icon name="down" size="sm" />
+              </span>
+            </span>
+          )}
+        </div>
         <div className={`bigbal ${flash}`}>
           <span className={`balico ${mine.tone}`} aria-hidden="true">
             <Icon name={mine.icon} />
@@ -348,17 +347,20 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
           const toCheck = c.entries.flatMap((x) => (x.kind === 'payment' && !x.out && x.payment.pendConf ? [x.payment] : []));
           return (
             <div key={o} className={`pcard ${c.status === 'zero' ? 'zero' : ''}`}>
-              <button type="button" className="pchead" aria-expanded={opened} onClick={() => setOpen((s) => ({ ...s, [o]: !opened }))}>
+              <button type="button" className={`pchead ${c.status !== 'zero' || c.toConfirm > 0 || c.soon.net !== 0 ? 'two' : ''}`} aria-expanded={opened} onClick={() => setOpen((s) => ({ ...s, [o]: !opened }))}>
                 <MemberAvatar member={split.members[o]} />
-                <span className="mid">
-                  <span className="ttl">{who(o)}</span>
-                  <span className="cap">{caption(c)}</span>
-                  {c.soon.net !== 0 && (
-                    <span className="cap soon">
-                      {c.soon.next ? t('my.soonNext', { amount: signed(c.soon.net), date: dayMonthYear(dateOf(c.soon.next), lang) }) : t('my.soonTotal', { amount: signed(c.soon.net) })}
-                    </span>
-                  )}
-                </span>
+                <span className="ttl pcname">{who(o)}</span>
+                {/* Status e parcelas futuras embaixo, na largura do cartão (o valor fica só na primeira linha). */}
+                {(c.status !== 'zero' || c.toConfirm > 0 || c.soon.net !== 0) && (
+                  <span className="pcsub">
+                    {c.status !== 'zero' || c.toConfirm > 0 ? <span className="cap">{caption(c)}</span> : null}
+                    {c.soon.net !== 0 && (
+                      <span className="cap soon">
+                        {c.soon.next ? t('my.soonNext', { amount: signed(c.soon.net), date: dayMonthYear(dateOf(c.soon.next), lang).replace(/ /g, '\u00a0') }) : t('my.soonTotal', { amount: signed(c.soon.net) })}
+                      </span>
+                    )}
+                  </span>
+                )}
                 <span className="right">
                   {c.status === 'zero' ? (
                     <span className="zerotag">
@@ -390,7 +392,8 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
                             {t('pix.ask')}
                           </Button>
                         ))}
-                      <Button size="sm" icon={<Icon name="check" size="sm" />} onClick={() => flow.settle(viewer, o, c.amount)}>
+                      {/* Sem ícone: lado a lado com o Pix, o texto precisa caber em 360 px. */}
+                      <Button size="sm" onClick={() => flow.settle(viewer, o, c.amount)}>
                         {t('pay.markPaid')}
                       </Button>
                     </>

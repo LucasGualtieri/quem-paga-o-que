@@ -97,13 +97,50 @@ async function seedSettled(name) {
   return code;
 }
 
+/**
+ * Viagem com hospedagem parcelada (spec 05), igual à viagem de ano novo: Airbnb de R$ 2.500,00
+ * pago pela Beatriz em 4x, vencendo todo dia 2, dividido igualmente entre os quatro. A próxima
+ * parcela já está no saldo; as outras aparecem como parcelas futuras. Quem entrar como Lucas
+ * vira admin.
+ */
+async function seedInstallments(name) {
+  const bia = await user();
+  const { splitId, code } = await bia('createSplit', { name, icon: { kind: 'emoji', value: '😀' }, selfName: 'Beatriz', people: ['Lucas', 'Catarina', 'Fillipe'] });
+  const preview = await bia('previewInvite', { code });
+  const m = Object.fromEntries(preview.members.map((x) => [x.name, x.id]));
+  const fi = await user();
+  await fi('joinSplit', { code, memberId: m.Fillipe });
+  // Próximo dia 2 (horário de Brasília): a 1ª parcela ainda vai vencer e já está no saldo.
+  const now = new Date(Date.now() - 3 * 3600_000);
+  const first = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + (now.getUTCDate() < 2 ? 0 : 1), 2)).toISOString().slice(0, 10);
+  const all = [m.Lucas, m.Beatriz, m.Catarina, m.Fillipe];
+  const today = now.toISOString().slice(0, 10);
+  await bia('createExpense', { splitId, id: id(), expense: { name: 'Airbnb', amount: 250000, payer: m.Beatriz, members: all, mode: 'equal', date: today, tags: ['stay'], icon: { kind: 'icon', name: 'home' }, installments: { count: 4, first } } });
+  const ref = db.doc(`splits/${splitId}`);
+  const members = (await ref.get()).get('members');
+  for (const k of Object.keys(members)) members[k].admin = false;
+  await ref.update({ members, adminUids: [] });
+  return code;
+}
+
 const ip = process.argv[2] ?? 'localhost';
+// `--so-parcelas`: cria só a viagem parcelada, na infra que já está rodando (sem apagar nada).
+if (process.argv.includes('--so-parcelas')) {
+  const p = await seedInstallments('Ano Novo Amigubis (celular)');
+  const d = await seedInstallments('Ano Novo Amigubis (computador)');
+  console.log('\nViagem com hospedagem parcelada (Airbnb em 4x). Entre como "Lucas":');
+  console.log(`  Celular:    http://${ip}:5173/#/convite/${p}`);
+  console.log(`  Computador: http://localhost:5173/#/convite/${d}\n`);
+  process.exit(0);
+}
 const phone = await seed('Rolê de teste (celular)', { kind: 'icon', name: 'beach' });
 const desk = await seed('Rolê de teste (computador)', { kind: 'icon', name: 'pizza' });
 const phoneDet = await seed('Rolê detalhado (celular)', { kind: 'icon', name: 'tent' }, 'detailed');
 const deskDet = await seed('Rolê detalhado (computador)', { kind: 'icon', name: 'music' }, 'detailed');
 const phoneDone = await seedSettled('Viagem quitada (celular)');
 const deskDone = await seedSettled('Viagem quitada (computador)');
+const phoneInst = await seedInstallments('Ano Novo Amigubis (celular)');
+const deskInst = await seedInstallments('Ano Novo Amigubis (computador)');
 console.log('\nPronto. Entre como "Lucas" (você vira admin):');
 console.log(`  Celular (mesma rede Wi-Fi): http://${ip}:5173/#/convite/${phone}`);
 console.log(`  Computador:                 http://localhost:5173/#/convite/${desk}`);
@@ -112,5 +149,8 @@ console.log(`  Celular:    http://${ip}:5173/#/convite/${phoneDet}`);
 console.log(`  Computador: http://localhost:5173/#/convite/${deskDet}`);
 console.log('Split quitado há 2 dias (sugestão de finalizar):');
 console.log(`  Celular:    http://${ip}:5173/#/convite/${phoneDone}`);
-console.log(`  Computador: http://localhost:5173/#/convite/${deskDone}\n`);
+console.log(`  Computador: http://localhost:5173/#/convite/${deskDone}`);
+console.log('Viagem com hospedagem parcelada (Airbnb em 4x, a próxima parcela já no saldo):');
+console.log(`  Celular:    http://${ip}:5173/#/convite/${phoneInst}`);
+console.log(`  Computador: http://localhost:5173/#/convite/${deskInst}\n`);
 process.exit(0);

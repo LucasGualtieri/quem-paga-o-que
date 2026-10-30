@@ -33,10 +33,14 @@
   box-shadow: var(--shadow);
   overflow: hidden;
 }
+/* Cabeçalho do cartão do par: avatar, nome, valor e seta na primeira linha; status e parcelas
+   futuras na segunda, com a largura toda (no celular a coluna do meio era estreita demais). */
 .pchead {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 12px;
+  column-gap: 12px;
+  row-gap: 2px;
   width: 100%;
   min-height: 68px;
   padding: 10px 14px;
@@ -65,18 +69,46 @@
   padding: 0 14px 4px;
   animation: inlIn 0.2s ease;
 }
+/* Linha de despesa no cartão do par: ícone, nome e valor na primeira linha; o texto embaixo,
+   com a largura toda (as ações da linha paga, câmera e Desfazer, ficam à direita dele). */
 .pcline {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 10px;
+  column-gap: 10px;
+  row-gap: 2px;
   min-height: 54px;
+  padding: 8px 0;
   border-top: 1px solid var(--line);
 }
-.pcline .mid {
-  flex: 1;
+.pcline > :first-child {
+  grid-row: 1 / span 2;
+}
+.pcline .mid,
+.pcline .side {
+  display: contents;
+}
+.pcline .mid .ttl {
+  grid-column: 2;
+  grid-row: 1;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
+}
+.pcline .mid .cap {
+  grid-column: 2 / -1;
+  grid-row: 2;
+}
+.pcline:has(.sideacts > *) .mid .cap {
+  grid-column: 2;
+}
+.pcline .side .amt {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+}
+.pcline .side .sideacts {
+  grid-column: 3;
+  grid-row: 2;
+  justify-self: end;
 }
 .pcline .ttl {
   font-size: 14px;
@@ -148,12 +180,20 @@
   color: var(--zero);
   font: 800 12.5px 'Figtree', sans-serif;
 }
+/* Ações do par lado a lado, em colunas iguais na largura do cartão (empilhadas gastavam meio
+   cartão no celular); um botão só ocupa a largura toda. */
 .pcmain {
-  display: flex;
-  justify-content: flex-end;
-  flex-wrap: wrap;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   gap: 8px;
   padding: 0 14px 12px;
+}
+.pcmain > .btn {
+  width: 100%;
+  min-width: 0;
+  padding: 0 10px;
+  white-space: nowrap;
 }
 .pcpend {
   display: flex;
@@ -424,13 +464,6 @@
   object-fit: cover;
   display: block;
 }
-.pcline .side {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  flex: none;
-  padding: 6px 0;
-}
 .pcline .sideacts {
   display: flex;
   align-items: center;
@@ -687,4 +720,58 @@ a.mi {
   display: block;
   color: var(--muted);
   font-style: italic;
+}
+.pchead.two > .av {
+  grid-row: 1 / span 2;
+}
+.pchead .pcname {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pchead .pcsub {
+  grid-column: 2 / -1;
+  grid-row: 2;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.pchead .pcsub .cap {
+  white-space: normal;
+}
+/* Saldo do split com o "Ver como" compacto no canto. */
+.balhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.viewas-mini {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  max-width: 60%;
+}
+.viewas-mini .viewas-sel select {
+  height: 36px;
+  border-radius: 999px;
+  padding: 0 30px 0 32px;
+  font: 700 13px 'Figtree', sans-serif;
+  background: var(--surface2);
+  color: var(--text);
+  border: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  min-width: 0;
+  max-width: 100%;
+  text-overflow: ellipsis;
+}
+.viewas-mini .viewas-sel .ic {
+  right: 10px;
+}
+.viewas-mini .viewas-sel .ic.lead {
+  right: auto;
+  left: 11px;
 }

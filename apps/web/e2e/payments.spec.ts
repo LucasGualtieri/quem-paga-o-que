@@ -65,7 +65,7 @@ test('Beatriz marca a parte paga e envia comprovante → Lucas confere a foto e 
   await expect(entry).toHaveClass(/done/);
   await expect(entry).toContainText('você pagou para Lucas');
   await expect(entry).toContainText('esperando Lucas confirmar');
-  await expect(card.locator('.pchead')).toContainText('Tudo certo');
+  await expect(card.locator('.pchead')).toContainText('Quitado');
   await expect(toast(bia)).toContainText('Pagamento registrado');
 
   await entry.getByRole('button', { name: 'Enviar comprovante' }).click();
@@ -149,7 +149,7 @@ test('acerto do par: Beatriz paga o saldo com o Lucas; ele confirma; Desfazer vo
   await expect(card.getByRole('button', { name: 'Copiar Pix' })).toHaveCount(0);
   await card.locator('.pcmain').getByRole('button', { name: 'Marcar como pago' }).click();
   await expect(toast(bia)).toContainText('Pagamento registrado · avisamos Lucas');
-  await expect(card.locator('.pchead')).toContainText('Tudo certo');
+  await expect(card.locator('.pchead')).toContainText('Quitado');
   await expect(bia.locator('.bigbal')).toContainText('você está quitado');
   await card.locator('.pchead').click();
   const settle = card.locator('.pcentry.done', { hasText: 'Acerto de contas' });
@@ -183,7 +183,7 @@ test('"Não recebi" no acerto: some dos dois lados e avisa quem pagou', async ({
   await tab(bia, 'Meu saldo').click();
   const card = bia.locator('.pcard', { has: bia.locator('.pchead .ttl', { hasText: 'Lucas' }) });
   await card.locator('.pcmain').getByRole('button', { name: 'Marcar como pago' }).click();
-  await expect(card.locator('.pchead')).toContainText('Tudo certo');
+  await expect(card.locator('.pchead')).toContainText('Quitado');
 
   await tab(lucas, 'Meu saldo').click();
   const pend = lucas.locator('.pcpend');
@@ -206,14 +206,14 @@ test('admin vê como outra pessoa e registra o acerto por ela', async ({ browser
   await expect(card.locator('.pchead')).toContainText('Beatriz deve');
   await shot(lucas, 'ver-como');
   await card.locator('.pcmain').getByRole('button', { name: 'Marcar como pago' }).click();
-  await expect(card.locator('.pchead')).toContainText('Tudo certo');
+  await expect(card.locator('.pchead')).toContainText('Quitado');
   await lucas.getByRole('button', { name: 'Voltar para você' }).click();
   await expect(lucas.locator('.viewbanner')).toHaveCount(0);
-  await expect(lucas.locator('.pcard', { has: lucas.locator('.pchead .ttl', { hasText: 'Beatriz' }) }).locator('.pchead')).toContainText('Tudo certo');
+  await expect(lucas.locator('.pcard', { has: lucas.locator('.pchead .ttl', { hasText: 'Beatriz' }) }).locator('.pchead')).toContainText('Quitado');
   // Registrado por quem recebe: já vale, sem "para conferir"; Beatriz vê o par quitado.
   await expect(lucas.locator('.pcpend')).toHaveCount(0);
   await tab(bia, 'Meu saldo').click();
-  await expect(bia.locator('.pcard', { has: bia.locator('.pchead .ttl', { hasText: 'Lucas' }) }).locator('.pchead')).toContainText('Tudo certo');
+  await expect(bia.locator('.pcard', { has: bia.locator('.pchead .ttl', { hasText: 'Lucas' }) }).locator('.pchead')).toContainText('Quitado');
   // Quem não é admin não tem o seletor.
   await expect(bia.getByLabel('Ver como', { exact: true })).toHaveCount(0);
 });
@@ -263,7 +263,7 @@ test('modo simplificado: despesas só com a parte de cada um; paga-se o saldo do
   // Dentro do cartão, as despesas são só leitura; o acerto fica no topo.
   await expect(card.locator('.pcentry', { hasText: 'Pizza' }).getByRole('button')).toHaveCount(0);
   await card.locator('.pcmain').getByRole('button', { name: 'Marcar como pago' }).click();
-  await expect(card.locator('.pchead')).toContainText('Tudo certo');
+  await expect(card.locator('.pchead')).toContainText('Quitado');
   await shot(bia, 'simplificado-meu-saldo');
 
   // Excluir a despesa continua permitido, com aviso para quem já acertou.
@@ -287,7 +287,7 @@ test('modo detalhado: o acerto marca as despesas do par; Desfazer numa delas des
   const card = await openCard(bia, 'Lucas');
   await expect(card.locator('.pchead')).toContainText('R$ 20,00');
   await card.locator('.pcmain').getByRole('button', { name: 'Marcar como pago' }).click();
-  await expect(card.locator('.pchead')).toContainText('Tudo certo');
+  await expect(card.locator('.pchead')).toContainText('Quitado');
   const pizza = card.locator('.pcentry', { hasText: 'Pizza' });
   await expect(pizza).toHaveClass(/done/);
   await expect(pizza).toContainText('Paga no acerto');

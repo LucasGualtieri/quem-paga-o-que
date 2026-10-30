@@ -706,9 +706,9 @@
     "viewAs": "View as",
     "viewingAs": "Viewing as {{name}}",
     "soonTotal": "future installments: {{amount}}",
-    "soonNext": "future installments: {{amount}} · next one comes in on {{date}}",
-    "planDue": "installment {{n}} of {{count}} · due {{date}}",
-    "planWasDue": "installment {{n}} of {{count}} · was due {{date}}",
+    "soonNext": "future installments: {{amount}} · next {{date}}",
+    "planDue": "installment {{n}} of {{count}} · due {{date}}",
+    "planWasDue": "installment {{n}} of {{count}} · was due {{date}}",
     "backToYou": "Back to you"
   },
   "proofVis": {
