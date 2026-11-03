@@ -14,8 +14,8 @@ import { MemberAvatar } from './Photos.tsx';
 
 /** O que a folha de pagamento confirma: parte de despesa, acerto novo ou comprovante depois. */
 type PayTarget =
-  | { kind: 'share'; expense: ExpenseDoc; memberId: string; attach: boolean; upTo?: number }
-  | { kind: 'settle'; from: string; to: string; amount: number; inst?: PaymentInst }
+  | { kind: 'share'; expense: ExpenseDoc; memberId: string; attach: boolean; upTo?: number; received?: boolean | undefined }
+  | { kind: 'settle'; from: string; to: string; amount: number; inst?: PaymentInst; received?: boolean | undefined }
   | { kind: 'payment'; payment: PaymentDoc };
 
 interface ProofView {
@@ -76,18 +76,20 @@ export function usePayFlow(split: SplitDoc, me: Member, who: (id: string) => str
   const flow = {
     ...actions,
     /** Marcar como pago (ou Recebi): direto, ou pela folha se a pessoa pediu para perguntar. */
-    markShare: (expense: ExpenseDoc, memberId: string) => (askProof ? open({ kind: 'share', expense, memberId, attach: false }) : actions.mark(expense, memberId)),
+    /** `received`: é o "Recebi" de quem recebe (ou de um admin por ela): já confirma. */
+    markShare: (expense: ExpenseDoc, memberId: string, received?: boolean) =>
+      askProof ? open({ kind: 'share', expense, memberId, attach: false, received }) : actions.mark(expense, memberId, null, undefined, received),
     attachShare: (expense: ExpenseDoc, memberId: string) => open({ kind: 'share', expense, memberId, attach: true }),
     /**
      * Pagar uma parcela só (spec 05): no detalhado, marca a parte até ela; no simplificado, é um
      * acerto com o valor dela.
      */
-    payInst: (expense: ExpenseDoc, memberId: string, n: number, amount: number) => {
-      if (payModeOf(split) === 'detailed') return askProof ? open({ kind: 'share', expense, memberId, attach: false, upTo: n }) : actions.mark(expense, memberId, null, n);
+    payInst: (expense: ExpenseDoc, memberId: string, n: number, amount: number, received?: boolean) => {
+      if (payModeOf(split) === 'detailed') return askProof ? open({ kind: 'share', expense, memberId, attach: false, upTo: n, received }) : actions.mark(expense, memberId, null, n, received);
       const inst = { e: expense.id, n };
-      return askProof ? open({ kind: 'settle', from: memberId, to: expense.payer, amount, inst }) : actions.settle(memberId, expense.payer, amount, null, inst);
+      return askProof ? open({ kind: 'settle', from: memberId, to: expense.payer, amount, inst, received }) : actions.settle(memberId, expense.payer, amount, null, inst, received);
     },
-    settle: (from: string, to: string, amount: number) => (askProof ? open({ kind: 'settle', from, to, amount }) : actions.settle(from, to, amount)),
+    settle: (from: string, to: string, amount: number, received?: boolean) => (askProof ? open({ kind: 'settle', from, to, amount, received }) : actions.settle(from, to, amount, null, undefined, received)),
     attachPayment: (payment: PaymentDoc) => open({ kind: 'payment', payment }),
     viewProof: (v: ProofView) => setView(v),
     /** Desfazer uma parte paga num acerto (modo detalhado) desfaz o acerto inteiro: a folha diz o que ele cobre. */
@@ -116,8 +118,8 @@ export function usePayFlow(split: SplitDoc, me: Member, who: (id: string) => str
       if (target.kind === 'share') {
         if (target.attach) {
           if (file) actions.attachShare(target.expense, target.memberId, file);
-        } else actions.mark(target.expense, target.memberId, file, target.upTo);
-      } else if (target.kind === 'settle') actions.settle(target.from, target.to, target.amount, file, target.inst);
+        } else actions.mark(target.expense, target.memberId, file, target.upTo, target.received);
+      } else if (target.kind === 'settle') actions.settle(target.from, target.to, target.amount, file, target.inst, target.received);
       else if (file) actions.attachPayment(target.payment, file);
     };
     const fromM = split.members[from];

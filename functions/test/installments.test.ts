@@ -192,6 +192,24 @@ describe('pagar parcela por parcela (29/10/2026)', () => {
     expect(await w.lucas.call('createPayment', { splitId: w.splitId, id: newId(), from: w.eu, to: w.beatriz })).toEqual({ amount: 10000 });
   });
 
+  it('"Recebi" de um admin pelo "Ver como" de quem recebe já nasce confirmado', async () => {
+    const w = await world();
+    const id = await create(w.bia, w, airbnb(w, monthsFromNow(0)));
+    const pid = newId();
+    // Lucas (admin) registra que a Beatriz recebeu a parcela 1 da Catarina.
+    await w.lucas.call('createPayment', { splitId: w.splitId, id: pid, from: w.catarina, to: w.beatriz, inst: { expenseId: id, n: 1 }, received: true });
+    expect((await admin().doc(`splits/${w.splitId}/payments/${pid}`).get()).get('pendConf')).toBe(false);
+    // Sem dizer que é "Recebi" (o admin marcando pelo lado de quem deve), espera a Beatriz confirmar.
+    const other = newId();
+    await w.lucas.call('createPayment', { splitId: w.splitId, id: other, from: w.catarina, to: w.beatriz, inst: { expenseId: id, n: 2 } });
+    expect((await admin().doc(`splits/${w.splitId}/payments/${other}`).get()).get('pendConf')).toBe(true);
+
+    const d = await world('detailed');
+    const e2 = await create(d.bia, d, airbnb(d, monthsFromNow(0)));
+    await d.lucas.call('markShare', { splitId: d.splitId, expenseId: e2, memberId: d.catarina, upTo: 1, received: true });
+    expect(((await exp(d, e2)).pendConf as Record<string, boolean>)[d.catarina]).toBeUndefined();
+  });
+
   it('acerto de parcela não existe no modo detalhado', async () => {
     const w = await world('detailed');
     const id = await create(w.bia, w, airbnb(w, monthsFromNow(0)));

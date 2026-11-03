@@ -261,6 +261,8 @@ export interface ShareRef {
   memberId: string;
   /** Parcelada, modo detalhado: paga só até esta parcela (a parcela vencida antes da próxima). */
   upTo?: number;
+  /** "Recebi" de um admin agindo por quem pagou a despesa: já nasce confirmado. */
+  received?: boolean;
 }
 export interface PayWriteResponse {
   /** `paySeq` da despesa depois da mudança: o app tira a mudança otimista quando o snapshot chega nele. */
@@ -275,6 +277,8 @@ export interface CreatePaymentRequest {
   to: string;
   /** Modo simplificado: paga só a parcela `n` da despesa parcelada (acerto parcial, spec 05). */
   inst?: { expenseId: string; n: number };
+  /** "Recebi" de um admin agindo por quem recebe (pelo "Ver como"): já nasce confirmado. */
+  received?: boolean;
 }
 /** No acerto de uma parcela: a despesa (`e`) e o número da parcela (`n`). */
 export interface PaymentInst {

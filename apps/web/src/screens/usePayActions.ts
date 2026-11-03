@@ -74,7 +74,7 @@ export function usePayActions(split: SplitDoc, me: Member) {
     [splitId, shareChange, toast, t, me.id, notified],
   );
 
-  const ref = (e: ExpenseDoc, memberId: string, upTo?: number) => ({ splitId, expenseId: e.id, memberId, ...(upTo ? { upTo } : {}) });
+  const ref = (e: ExpenseDoc, memberId: string, upTo?: number, received?: boolean) => ({ splitId, expenseId: e.id, memberId, ...(upTo ? { upTo } : {}), ...(received ? { received: true } : {}) });
   /** Parcelada: quanto fica pago até a parcela `k` (spec 05). */
   const through = (e: ExpenseDoc, memberId: string, k: number) => sumThrough(sharesOf(e, split)[memberId] ?? 0, e.installments!.count, k);
 
@@ -91,10 +91,11 @@ export function usePayActions(split: SplitDoc, me: Member) {
    * Parcelada: `upTo` paga só até aquela parcela.
    */
   const mark = useCallback(
-    (e: ExpenseDoc, memberId: string, file?: File | null, upTo?: number) => {
+    (e: ExpenseDoc, memberId: string, file?: File | null, upTo?: number, received?: boolean) => {
       const share = upTo ? through(e, memberId, upTo) : (dueSharesOf(e, split)[memberId] ?? 0);
-      const iAmPayer = me.id === e.payer;
-      void shareChange(e, memberId, { paid: Math.max(share, e.paid[memberId] ?? 0), pendConf: iAmPayer ? null : true }, () => api.markShare(ref(e, memberId, upTo)));
+      // "Recebi" (quem pagou, ou admin por ela no "Ver como") já confirma.
+      const iAmPayer = me.id === e.payer || !!received;
+      void shareChange(e, memberId, { paid: Math.max(share, e.paid[memberId] ?? 0), pendConf: iAmPayer ? null : true }, () => api.markShare(ref(e, memberId, upTo, received)));
       if (file) attachShare(e, memberId, file, false);
       // Marcar a própria parte avisa quem pagou a despesa (spec 07).
       const payer = !iAmPayer && memberId === me.id ? notified(e.payer) : null;
@@ -196,13 +197,14 @@ export function usePayActions(split: SplitDoc, me: Member) {
 
   /** Acerto do par; com `inst`, só aquela parcela (modo simplificado, spec 05). */
   const settle = useCallback(
-    (from: string, to: string, amount: number, file?: File | null, inst?: PaymentInst) => {
+    (from: string, to: string, amount: number, file?: File | null, inst?: PaymentInst, received?: boolean) => {
       const id = newPaymentId();
       // Registrado por quem recebe já vale; senão espera quem recebe confirmar (como no servidor).
-      const doc: PaymentDoc = { id, from, to, amount, by: me.id, when: new Date(), proof: null, pendConf: me.id !== to, ...(inst ? { inst } : {}) };
+      // "Recebi" (quem recebe, ou admin por ela no "Ver como") já nasce confirmado.
+      const doc: PaymentDoc = { id, from, to, amount, by: me.id, when: new Date(), proof: null, pendConf: me.id !== to && !received, ...(inst ? { inst } : {}) };
       // No modo detalhado, o acerto marca as partes do par (spec 06): o aparelho já mostra isso.
       if (payModeOf(split) === 'detailed') doc.viaShares = true;
-      void paymentChange({ kind: 'payment', splitId, id, doc }, async () => (await api.createPayment({ splitId, id, from, to, ...(inst ? { inst: { expenseId: inst.e, n: inst.n } } : {}) })).amount > 0);
+      void paymentChange({ kind: 'payment', splitId, id, doc }, async () => (await api.createPayment({ splitId, id, from, to, ...(inst ? { inst: { expenseId: inst.e, n: inst.n } } : {}), ...(received ? { received: true } : {}) })).amount > 0);
       if (file) attachPayment(doc, file, false);
       // Quem paga avisa quem recebe.
       const to_ = from === me.id ? notified(to) : null;

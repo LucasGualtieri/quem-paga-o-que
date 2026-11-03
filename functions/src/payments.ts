@@ -46,7 +46,8 @@ async function loadShare(tx: FirebaseFirestore.Transaction, data: Record<string,
   // Parcelada: só o que já venceu (ou foi antecipado) se paga.
   const share = id === e.payer ? 0 : (dueShares(e, orderOf(split), today())[id] ?? 0);
   if (share <= 0) fail('invalid-input');
-  const iAmPayer = me[0] === e.payer;
+  // "Recebi": quem pagou a despesa, ou um admin agindo por ela (pelo "Ver como"), já confirma (spec 06).
+  const iAmPayer = me[0] === e.payer || (data.received === true && me[1].admin);
   const via = (e.via as Record<string, string> | undefined)?.[id];
   return { splitId, split, me, ref, e, id, share, iAmPayer, paid: e.paid?.[id] ?? 0, pending: !!e.pendConf?.[id], proof: e.proof?.[id], via };
 }
@@ -245,8 +246,9 @@ export const createPayment = onCall(opts, async (req): Promise<CreatePaymentResp
     const amount = inst ? inst.amount : owed;
     if (inst && inst.amount > owed) fail('invalid-input');
     if (amount <= 0) return { amount: 0 };
-    // Quem recebe registrando já está confirmando; senão, fica esperando a confirmação (como na parte).
-    const pendConf = me[0] !== to;
+    // Quem recebe registrando já está confirmando, e também um admin que registra "Recebi" por ela
+    // (pelo "Ver como"); senão, fica esperando a confirmação (como na parte).
+    const pendConf = me[0] !== to && !(data.received === true && me[1].admin);
     // Modo detalhado: o acerto marca todas as partes em aberto do par, nos dois sentidos (spec 06).
     const detailed = payModeOf(split) === 'detailed';
     const open = detailed ? openShares(split, expenses.docs, from, to) : [];

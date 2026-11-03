@@ -263,10 +263,10 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
         {isOpen && x.state === 'open' && (x.inst ? x.inst.first : !simple) && (
           <div className="pcact">
             {x.inst
-              ? small(owe ? t('pay.markPaid') : t('pay.gotIt'), () => flow.payInst(e, x.debtor, x.inst!.n, x.due))
+              ? small(owe ? t('pay.markPaid') : t('pay.gotIt'), () => flow.payInst(e, x.debtor, x.inst!.n, x.due, !owe))
               : owe
                 ? small(t('pay.markPaid'), () => flow.markShare(e, viewer))
-                : small(t('pay.gotIt'), () => flow.markShare(e, c.other))}
+                : small(t('pay.gotIt'), () => flow.markShare(e, c.other, true))}
           </div>
         )}
       </div>
@@ -426,7 +426,7 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
                       </Button>
                     </>
                   ) : (
-                    <Button size="sm" variant="secondary" icon={<Icon name="check" size="sm" />} onClick={() => flow.settle(o, viewer, c.amount)}>
+                    <Button size="sm" variant="secondary" icon={<Icon name="check" size="sm" />} onClick={() => flow.settle(o, viewer, c.amount, true)}>
                       {t('pay.gotIt')}
                     </Button>
                   )}

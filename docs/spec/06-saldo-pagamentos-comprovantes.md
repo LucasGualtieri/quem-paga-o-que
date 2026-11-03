@@ -25,7 +25,7 @@ Marcar como pago vale na hora (atualização otimista); quem recebe pode confirm
 - **Cartão aberto:** as despesas que formam o saldo do par, por data ("Pizza · você devia para Beatriz −R$ 30,00", "Gasolina · Beatriz te devia +R$ 20,00"), e os acertos já feitos como **linhas resolvidas** (cinza, tracejadas, com Desfazer e câmera para ver ou enviar comprovante). Parte que não pesa mais porque o par já zerou ou virou para o outro lado aparece como "compensado no saldo".
 - **Pagamento parcial** (só no modo detalhado, salvo a parcela, ver acima): cada despesa aberta em que você deve tem o próprio "Marcar como pago" (e em que te devem, "Recebi"); o detalhe da despesa continua funcionando igual. Valor livre fica fora desta versão.
 - **A linha fica no lugar:** pagar uma parte só troca o estado da linha dentro do cartão; nada pula para o fim (decidido em 24/10/2026).
-- **Cada um só vê o que é com ele:** pares entre outras pessoas não aparecem. **Admin** tem no topo "Ver como: Você ▾" para ver o Meu saldo de qualquer pessoa, com a faixa "Vendo como Beatriz · Voltar para você", e pode registrar acertos e confirmar por ela.
+- **Cada um só vê o que é com ele:** pares entre outras pessoas não aparecem. **Admin** tem no topo "Ver como: Você ▾" para ver o Meu saldo de qualquer pessoa, com a faixa "Vendo como Beatriz · Voltar para você", e pode registrar acertos e confirmar por ela. O "Recebi" que o admin toca na visão de quem recebe já é a confirmação dela: nasce confirmado, sem "para conferir" (03/11/2026). O "Marcar como pago" que ele toca na visão de quem deve continua esperando quem recebe confirmar.
 
 **Comprovante:**
 
