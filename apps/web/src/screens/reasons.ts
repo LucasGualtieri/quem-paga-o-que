@@ -43,6 +43,7 @@ export function useReasonText() {
       case 'proof-exists':
       case 'proof-invalid':
       case 'payment-missing':
+      case 'installment-paid':
       case 'split-gone':
         return t(`reasons.${details.reason}`, { name });
       default:

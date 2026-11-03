@@ -1,17 +1,21 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { onCall } from 'firebase-functions/v2/https';
-import { dueCount, installmentDates, shares, splitInstallments } from '@qpq/calc';
+import { dueCount, installmentDates, shares, splitInstallments, sumThrough } from '@qpq/calc';
 import { brasiliaDay } from '@qpq/shared';
 import { db, fail, input, loadSplit, opts, orderOf, requireMember, requireOpen, text, today, touchMoney, uidOf, type SplitData } from './common.ts';
 import { addHistory, loadExpense, type StoredExpense } from './expenses.ts';
 import { notify } from './notifications.ts';
 
 /**
- * Despesa parcelada (spec 05): cada parcela só entra no saldo quando vence. "Antecipar" faz as
- * parcelas de uma pessoa contarem antes; a rotina de hora em hora avisa quem deve quando uma vence.
+ * Despesa parcelada (spec 05): contam no saldo as parcelas vencidas e a próxima. "Antecipar" faz
+ * as parcelas de uma pessoa contarem antes (e dá para desfazer); a rotina de hora em hora avisa
+ * quem deve quando a parcela seguinte entra.
  */
 
-/** Antecipar a próxima parcela (ou todas) de `memberId`: a própria pessoa, quem pagou ou admin. */
+/**
+ * Antecipar a próxima parcela (ou todas) de `memberId`, ou desfazer (`undo`): a própria pessoa,
+ * quem pagou ou admin.
+ */
 export const advanceInstallments = onCall(opts, async (req) => {
   const uid = uidOf(req);
   const data = input(req);
@@ -25,8 +29,23 @@ export const advanceInstallments = onCall(opts, async (req) => {
     const plan = e.installments;
     if (!plan) fail('invalid-input');
     const id = text(data.memberId);
-    if (id === e.payer || !((shares(e, orderOf(split))[id] ?? 0) > 0)) fail('invalid-input');
+    const share = shares(e, orderOf(split))[id] ?? 0;
+    if (id === e.payer || !(share > 0)) fail('invalid-input');
     if (me !== id && me !== e.payer && !mine.admin) fail('not-involved');
+    if (data.undo === true) {
+      // Desfazer: as antecipadas voltam ao calendário (as vencidas e a próxima continuam).
+      const byDate = dueCount({ installments: plan }, id, today());
+      if ((e.advanced?.[id] ?? 0) <= byDate) return { advanced: byDate };
+      // Parcela antecipada já paga (pela parte, no detalhado, ou pelo acerto dela) bloqueia.
+      const payments = await tx.get(ref.parent.parent!.collection('payments'));
+      const paidInst = payments.docs.some((p) => p.get('from') === id && p.get('inst')?.e === ref.id && (p.get('inst')?.n ?? 0) > byDate);
+      if ((e.paid?.[id] ?? 0) > sumThrough(share, plan!.count, byDate) || paidInst) fail('installment-paid');
+      const version = e.version + 1;
+      tx.update(ref, { [`advanced.${id}`]: FieldValue.delete(), version, updatedBy: me, updatedAt: FieldValue.serverTimestamp() });
+      touchMoney(tx, ref);
+      await addHistory(tx, ref, { seq: version, kind: 'unadvanced', by: me, memberId: id, to: byDate });
+      return { advanced: byDate };
+    }
     const now = dueCount(e, id, today());
     if (now >= plan.count) return { advanced: plan.count };
     const advanced = data.all === true ? plan.count : now + 1;

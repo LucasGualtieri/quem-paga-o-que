@@ -99,8 +99,8 @@ async function seedSettled(name) {
 
 /**
  * Viagem com hospedagem parcelada (spec 05), igual à viagem de ano novo: Airbnb de R$ 2.500,00
- * pago pela Beatriz em 4x, vencendo todo dia 2, dividido igualmente entre os quatro. A próxima
- * parcela já está no saldo; as outras aparecem como parcelas futuras. Quem entrar como Lucas
+ * pago pela Beatriz em 4x, vencendo todo dia 2, dividido igualmente entre os quatro. A 1ª já
+ * venceu e a 2ª (a próxima) também está no saldo; as outras aparecem como parcelas futuras. Quem entrar como Lucas
  * vira admin.
  */
 async function seedInstallments(name) {
@@ -110,9 +110,10 @@ async function seedInstallments(name) {
   const m = Object.fromEntries(preview.members.map((x) => [x.name, x.id]));
   const fi = await user();
   await fi('joinSplit', { code, memberId: m.Fillipe });
-  // Próximo dia 2 (horário de Brasília): a 1ª parcela ainda vai vencer e já está no saldo.
+  // Último dia 2 (horário de Brasília): a 1ª parcela já venceu e a 2ª, a próxima, também está no
+  // saldo, para testar pagar só a vencida.
   const now = new Date(Date.now() - 3 * 3600_000);
-  const first = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + (now.getUTCDate() < 2 ? 0 : 1), 2)).toISOString().slice(0, 10);
+  const first = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (now.getUTCDate() < 2 ? 1 : 0), 2)).toISOString().slice(0, 10);
   const all = [m.Lucas, m.Beatriz, m.Catarina, m.Fillipe];
   const today = now.toISOString().slice(0, 10);
   await bia('createExpense', { splitId, id: id(), expense: { name: 'Airbnb', amount: 250000, payer: m.Beatriz, members: all, mode: 'equal', date: today, tags: ['stay'], icon: { kind: 'icon', name: 'home' }, installments: { count: 4, first } } });
@@ -150,7 +151,7 @@ console.log(`  Computador: http://localhost:5173/#/convite/${deskDet}`);
 console.log('Split quitado há 2 dias (sugestão de finalizar):');
 console.log(`  Celular:    http://${ip}:5173/#/convite/${phoneDone}`);
 console.log(`  Computador: http://localhost:5173/#/convite/${deskDone}`);
-console.log('Viagem com hospedagem parcelada (Airbnb em 4x, a próxima parcela já no saldo):');
+console.log('Viagem com hospedagem parcelada (Airbnb em 4x: a 1ª já venceu e a 2ª está no saldo):');
 console.log(`  Celular:    http://${ip}:5173/#/convite/${phoneInst}`);
 console.log(`  Computador: http://localhost:5173/#/convite/${deskInst}\n`);
 process.exit(0);

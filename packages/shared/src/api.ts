@@ -40,7 +40,9 @@ export type ErrorReason =
   | 'not-pending'
   | 'proof-exists'
   | 'proof-invalid'
-  | 'payment-missing';
+  | 'payment-missing'
+  /** Desfazer antecipação: uma das parcelas antecipadas já foi paga (spec 05). */
+  | 'installment-paid';
 
 export interface ErrorDetails {
   reason: ErrorReason;
@@ -209,6 +211,8 @@ export interface AdvanceInstallmentsRequest {
   expenseId: string;
   memberId: string;
   all?: boolean;
+  /** Desfaz a antecipação: as parcelas antecipadas voltam ao calendário. */
+  undo?: boolean;
 }
 
 export interface CreateExpenseRequest {
@@ -255,6 +259,8 @@ export interface ShareRef {
   splitId: string;
   expenseId: string;
   memberId: string;
+  /** Parcelada, modo detalhado: paga só até esta parcela (a parcela vencida antes da próxima). */
+  upTo?: number;
 }
 export interface PayWriteResponse {
   /** `paySeq` da despesa depois da mudança: o app tira a mudança otimista quando o snapshot chega nele. */
@@ -267,6 +273,13 @@ export interface CreatePaymentRequest {
   id: string;
   from: string;
   to: string;
+  /** Modo simplificado: paga só a parcela `n` da despesa parcelada (acerto parcial, spec 05). */
+  inst?: { expenseId: string; n: number };
+}
+/** No acerto de uma parcela: a despesa (`e`) e o número da parcela (`n`). */
+export interface PaymentInst {
+  e: string;
+  n: number;
 }
 export interface CreatePaymentResponse {
   /** Centavos registrados (a dívida do par no servidor); 0 = nada a acertar, nada foi gravado. */

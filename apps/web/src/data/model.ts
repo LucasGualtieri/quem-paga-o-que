@@ -1,5 +1,5 @@
 import { dueShares, effectiveAmount, shares as calcShares, ledger, type Cents, type Installments, type Expense, type ExpenseMode, type JoinOrder, type MemberId, type Payment, type SplitMode, type Weights } from '@qpq/calc';
-import { AUTO_FINALIZE_DAYS, brasiliaDay, DEFAULT_CURRENCY, FINALIZE_SUGGEST_HOURS, finalizeClockStart, type Currency, type EntryIcon, type ErrorReason, type PayMode, type PixKey, type ProofInfo, type ProofVisibility } from '@qpq/shared';
+import { AUTO_FINALIZE_DAYS, brasiliaDay, DEFAULT_CURRENCY, FINALIZE_SUGGEST_HOURS, finalizeClockStart, type Currency, type EntryIcon, type ErrorReason, type PaymentInst, type PayMode, type PixKey, type ProofInfo, type ProofVisibility } from '@qpq/shared';
 
 /** Participante como está no Firestore (splits/{id}.members). */
 export interface MemberDoc {
@@ -287,6 +287,8 @@ export interface PaymentDoc {
   covers?: Array<{ e: string; m: MemberId; prev?: Cents; prevAt?: number; prevVia?: string }>;
   /** Acerto antigo incorporado por um acerto do modo detalhado. */
   absorbedBy?: string;
+  /** Acerto de uma parcela só (modo simplificado, spec 05): a despesa e o número da parcela. */
+  inst?: PaymentInst;
 }
 
 export function payModeOf(split: Pick<SplitDoc, 'payMode'>): PayMode {

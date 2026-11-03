@@ -29,6 +29,18 @@ test('lança parcelada, vencidas e a próxima entram no saldo e antecipar conta 
   await lucas.getByRole('link', { name: 'Meu saldo' }).click();
   await expect(lucas.locator('.bigbal')).toContainText('+R$ 400,00');
   await expect(lucas.locator('.bigbal')).toContainText('parcelas futuras: +R$ 200,00');
+  // Uma linha por parcela no saldo; só a primeira em aberto tem "Recebi" (03/11/2026).
+  const card = lucas.locator('.pcard', { has: lucas.locator('.pchead .ttl', { hasText: 'Beatriz' }) });
+  await card.locator('.pchead').click();
+  const first = card.locator('.pcentry', { hasText: 'parcela 1 de 3' });
+  const second = card.locator('.pcentry', { hasText: 'parcela 2 de 3' });
+  await expect(first).toContainText('R$ 100,00');
+  await expect(second).toContainText('R$ 100,00');
+  await expect(second.getByRole('button', { name: 'Recebi' })).toHaveCount(0);
+  await first.getByRole('button', { name: 'Recebi' }).click();
+  await expect(card.locator('.pcentry', { hasText: 'parcela 1 de 3' })).toContainText('Beatriz te pagou');
+  await expect(card.locator('.pcentry', { hasText: 'parcela 2 de 3' }).getByRole('button', { name: 'Recebi' })).toBeVisible();
+  await shot(lucas, 'saldo-por-parcela');
 
   await lucas.getByRole('link', { name: 'Despesas' }).click();
   await lucas.locator('.txrow', { hasText: 'Airbnb' }).click();

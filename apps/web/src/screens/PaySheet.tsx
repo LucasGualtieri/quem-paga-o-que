@@ -1,10 +1,11 @@
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ProofInfo } from '@qpq/shared';
+import { sumThrough } from '@qpq/calc';
+import type { PaymentInst, ProofInfo } from '@qpq/shared';
 import { Button, Icon, Sheet } from '../components/index.ts';
 import { usePhoto } from '../data/files.ts';
 import { useProfile } from '../data/hooks.ts';
-import { canSeeProof, dueSharesOf, type ExpenseDoc, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
+import { canSeeProof, dueSharesOf, payModeOf, sharesOf, type ExpenseDoc, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
 import { useSession } from '../data/session.ts';
 import { useLang } from '../i18n/index.ts';
 import { useFmt } from '../lib/currency.ts';
@@ -13,8 +14,8 @@ import { MemberAvatar } from './Photos.tsx';
 
 /** O que a folha de pagamento confirma: parte de despesa, acerto novo ou comprovante depois. */
 type PayTarget =
-  | { kind: 'share'; expense: ExpenseDoc; memberId: string; attach: boolean }
-  | { kind: 'settle'; from: string; to: string; amount: number }
+  | { kind: 'share'; expense: ExpenseDoc; memberId: string; attach: boolean; upTo?: number }
+  | { kind: 'settle'; from: string; to: string; amount: number; inst?: PaymentInst }
   | { kind: 'payment'; payment: PaymentDoc };
 
 interface ProofView {
@@ -77,6 +78,15 @@ export function usePayFlow(split: SplitDoc, me: Member, who: (id: string) => str
     /** Marcar como pago (ou Recebi): direto, ou pela folha se a pessoa pediu para perguntar. */
     markShare: (expense: ExpenseDoc, memberId: string) => (askProof ? open({ kind: 'share', expense, memberId, attach: false }) : actions.mark(expense, memberId)),
     attachShare: (expense: ExpenseDoc, memberId: string) => open({ kind: 'share', expense, memberId, attach: true }),
+    /**
+     * Pagar uma parcela só (spec 05): no detalhado, marca a parte até ela; no simplificado, é um
+     * acerto com o valor dela.
+     */
+    payInst: (expense: ExpenseDoc, memberId: string, n: number, amount: number) => {
+      if (payModeOf(split) === 'detailed') return askProof ? open({ kind: 'share', expense, memberId, attach: false, upTo: n }) : actions.mark(expense, memberId, null, n);
+      const inst = { e: expense.id, n };
+      return askProof ? open({ kind: 'settle', from: memberId, to: expense.payer, amount, inst }) : actions.settle(memberId, expense.payer, amount, null, inst);
+    },
     settle: (from: string, to: string, amount: number) => (askProof ? open({ kind: 'settle', from, to, amount }) : actions.settle(from, to, amount)),
     attachPayment: (payment: PaymentDoc) => open({ kind: 'payment', payment }),
     viewProof: (v: ProofView) => setView(v),
@@ -89,7 +99,7 @@ export function usePayFlow(split: SplitDoc, me: Member, who: (id: string) => str
     const attach = target.kind === 'payment' || (target.kind === 'share' && target.attach);
     const [from, to, amount, ctx] =
       target.kind === 'share'
-        ? [target.memberId, target.expense.payer, dueSharesOf(target.expense, split)[target.memberId] ?? 0, t('pay.ctxShare', { expense: target.expense.name, split: split.name })]
+        ? [target.memberId, target.expense.payer, target.upTo ? sumThrough(sharesOf(target.expense, split)[target.memberId] ?? 0, target.expense.installments!.count, target.upTo) - (target.expense.paid[target.memberId] ?? 0) : (dueSharesOf(target.expense, split)[target.memberId] ?? 0), t('pay.ctxShare', { expense: target.expense.name, split: split.name })]
         : target.kind === 'settle'
           ? [target.from, target.to, target.amount, t('pay.ctxSettle', { split: split.name })]
           : [target.payment.from, target.payment.to, target.payment.amount, t('pay.ctxSettle', { split: split.name })];
@@ -106,8 +116,8 @@ export function usePayFlow(split: SplitDoc, me: Member, who: (id: string) => str
       if (target.kind === 'share') {
         if (target.attach) {
           if (file) actions.attachShare(target.expense, target.memberId, file);
-        } else actions.mark(target.expense, target.memberId, file);
-      } else if (target.kind === 'settle') actions.settle(target.from, target.to, target.amount, file);
+        } else actions.mark(target.expense, target.memberId, file, target.upTo);
+      } else if (target.kind === 'settle') actions.settle(target.from, target.to, target.amount, file, target.inst);
       else if (file) actions.attachPayment(target.payment, file);
     };
     const fromM = split.members[from];

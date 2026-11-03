@@ -1,11 +1,12 @@
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { proofPath, receiptPath, type ProofInfo } from '@qpq/shared';
+import { sumThrough } from '@qpq/calc';
+import { proofPath, receiptPath, type PaymentInst, type ProofInfo } from '@qpq/shared';
 import { useToast } from '../components/index.ts';
 import { api, detailsOf } from '../data/api.ts';
 import { enqueue } from '../data/expenseStore.ts';
 import { previewPhoto, uploadPhoto } from '../data/files.ts';
-import { dueSharesOf, payModeOf, type ExpenseDoc, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
+import { dueSharesOf, payModeOf, sharesOf, type ExpenseDoc, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
 import { confirmShareOp, settlePaymentOp, settleReceiptOp, startPayOp, type PaymentOp, type ReceiptOp, type ShareOp, type SharePatch } from '../data/payStore.ts';
 import { ImageError, photoName } from '../lib/image.ts';
 import { useReasonText } from './reasons.ts';
@@ -73,24 +74,31 @@ export function usePayActions(split: SplitDoc, me: Member) {
     [splitId, shareChange, toast, t, me.id, notified],
   );
 
-  const ref = (e: ExpenseDoc, memberId: string) => ({ splitId, expenseId: e.id, memberId });
+  const ref = (e: ExpenseDoc, memberId: string, upTo?: number) => ({ splitId, expenseId: e.id, memberId, ...(upTo ? { upTo } : {}) });
+  /** Parcelada: quanto fica pago até a parcela `k` (spec 05). */
+  const through = (e: ExpenseDoc, memberId: string, k: number) => sumThrough(sharesOf(e, split)[memberId] ?? 0, e.installments!.count, k);
 
+  /** Desfazer a parte paga; numa parcelada, `upTo` mantém pagas as parcelas até ela. */
   const unmark = useCallback(
-    (e: ExpenseDoc, memberId: string) => void shareChange(e, memberId, { paid: null, pendConf: null, proof: null }, () => api.unmarkShare(ref(e, memberId))),
+    (e: ExpenseDoc, memberId: string, upTo?: number) =>
+      void shareChange(e, memberId, upTo ? { paid: through(e, memberId, upTo) } : { paid: null, pendConf: null, proof: null }, () => api.unmarkShare(ref(e, memberId, upTo))),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [shareChange],
+    [shareChange, split],
   );
 
-  /** "Marcar como pago" (quem deve, ou admin) ou "Recebi" (quem pagou a despesa); com foto, já anexa. */
+  /**
+   * "Marcar como pago" (quem deve, ou admin) ou "Recebi" (quem pagou a despesa); com foto, já anexa.
+   * Parcelada: `upTo` paga só até aquela parcela.
+   */
   const mark = useCallback(
-    (e: ExpenseDoc, memberId: string, file?: File | null) => {
-      const share = dueSharesOf(e, split)[memberId] ?? 0;
+    (e: ExpenseDoc, memberId: string, file?: File | null, upTo?: number) => {
+      const share = upTo ? through(e, memberId, upTo) : (dueSharesOf(e, split)[memberId] ?? 0);
       const iAmPayer = me.id === e.payer;
-      void shareChange(e, memberId, { paid: Math.max(share, e.paid[memberId] ?? 0), pendConf: iAmPayer ? null : true }, () => api.markShare(ref(e, memberId)));
+      void shareChange(e, memberId, { paid: Math.max(share, e.paid[memberId] ?? 0), pendConf: iAmPayer ? null : true }, () => api.markShare(ref(e, memberId, upTo)));
       if (file) attachShare(e, memberId, file, false);
       // Marcar a própria parte avisa quem pagou a despesa (spec 07).
       const payer = !iAmPayer && memberId === me.id ? notified(e.payer) : null;
-      toast.show({ text: iAmPayer ? t('pay.received') : payer ? t('pay.recordedTo', { name: payer }) : t('pay.recorded'), onUndo: () => unmark(e, memberId) });
+      toast.show({ text: iAmPayer ? t('pay.received') : payer ? t('pay.recordedTo', { name: payer }) : t('pay.recorded'), onUndo: () => unmark(e, memberId, upTo && upTo > 1 ? upTo - 1 : undefined) });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [split, me.id, shareChange, attachShare, unmark, toast, t, notified],
@@ -186,14 +194,15 @@ export function usePayActions(split: SplitDoc, me: Member) {
     [splitId, paymentChange, toast, t, nameOf, notified],
   );
 
+  /** Acerto do par; com `inst`, só aquela parcela (modo simplificado, spec 05). */
   const settle = useCallback(
-    (from: string, to: string, amount: number, file?: File | null) => {
+    (from: string, to: string, amount: number, file?: File | null, inst?: PaymentInst) => {
       const id = newPaymentId();
       // Registrado por quem recebe já vale; senão espera quem recebe confirmar (como no servidor).
-      const doc: PaymentDoc = { id, from, to, amount, by: me.id, when: new Date(), proof: null, pendConf: me.id !== to };
+      const doc: PaymentDoc = { id, from, to, amount, by: me.id, when: new Date(), proof: null, pendConf: me.id !== to, ...(inst ? { inst } : {}) };
       // No modo detalhado, o acerto marca as partes do par (spec 06): o aparelho já mostra isso.
       if (payModeOf(split) === 'detailed') doc.viaShares = true;
-      void paymentChange({ kind: 'payment', splitId, id, doc }, async () => (await api.createPayment({ splitId, id, from, to })).amount > 0);
+      void paymentChange({ kind: 'payment', splitId, id, doc }, async () => (await api.createPayment({ splitId, id, from, to, ...(inst ? { inst: { expenseId: inst.e, n: inst.n } } : {}) })).amount > 0);
       if (file) attachPayment(doc, file, false);
       // Quem paga avisa quem recebe.
       const to_ = from === me.id ? notified(to) : null;

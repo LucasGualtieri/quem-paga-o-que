@@ -4,7 +4,6 @@ import { useSearchParams } from 'react-router';
 import { Button, Icon, InfoTip, useToast } from '../components/index.ts';
 import { api, detailsOf } from '../data/api.ts';
 import { pairsView, type PairCard, type PairEntry } from '../data/balance.ts';
-import { dueCount, installmentDates } from '@qpq/calc';
 import { canSeeProof, currencyOf, membersInOrder, payModeOf, today, type ExpenseDoc, type Member, type PaymentDoc, type SplitDoc } from '../data/model.ts';
 import { useLang } from '../i18n/index.ts';
 import { dateOf, dayMonth, dayMonthYear, shortDayTime } from '../lib/dates.ts';
@@ -123,13 +122,9 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
   const paidText = (from: string, to: string) =>
     asYou ? (from === viewer ? t('my.ePaidOut', { name: nameOf(to) }) : t('my.ePaidIn', { name: nameOf(from) })) : t('my.ePaidGen', { from: nameOf(from), to: nameOf(to) });
   // Parcelada: qual parcela está no saldo e quando vence (ou venceu).
-  const planWhen = (e: ExpenseDoc, debtor: string) => {
-    const plan = e.installments!;
-    const n = dueCount(e, debtor, today());
-    const date = installmentDates(plan)[n - 1]!;
-    // Data sem quebra no meio ("2 nov" nunca vira "2" / "nov").
-    return t(date > today() ? 'my.planDue' : 'my.planWasDue', { n, count: plan.count, date: dayMonthYear(dateOf(date), lang).replace(/ /g, '\u00a0') });
-  };
+  // Parcela da linha: "parcela 1 de 4 · venceu 2 nov" (data sem quebra no meio).
+  const instText = (inst: { n: number; of: number; date: string }) =>
+    t(inst.date > today() ? 'my.planDue' : 'my.planWasDue', { n: inst.n, count: inst.of, date: dayMonthYear(dateOf(inst.date), lang).replace(/ /g, '\u00a0') });
   const proofNote = (proof: { path: string | null } | null | undefined) => (proof ? (proof.path ? t('my.withProof') : t('my.expired')) : '');
 
   const caption = (c: PairCard) => {
@@ -193,13 +188,34 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
     }
     const e = x.expense;
     const icon = <EntryIconView icon={e.icon} fallback={{ tags: e.tags }} size="sm" />;
-    const day = dayMonth(dateOf(e.date), lang);
+    // Parcelada: a linha é da parcela (número e vencimento no lugar da data da despesa).
+    const day = x.inst ? instText(x.inst) : dayMonth(dateOf(e.date), lang);
+    const key = `s-${e.id}${x.inst ? `-${x.inst.n}` : ''}`;
+    const instPay = x.inst?.payment;
+    if (x.state === 'paid' && instPay) {
+      // Acerto de uma parcela (simplificado): comprovante, Desfazer e Confirmar como num acerto.
+      const party = instPay.from === me.id || instPay.to === me.id;
+      const camera = instPay.proof?.path
+        ? { view: true, onClick: () => flow.viewProof({ proof: instPay.proof!, from: instPay.from, to: instPay.to, amount: instPay.amount, what: e.name }) }
+        : isOpen && !instPay.proof && party
+          ? { view: false, onClick: () => flow.attachPayment(instPay) }
+          : null;
+      const wait = instPay.pendConf ? ` · ${x.creditor === viewer ? t('my.marked', { name: nameOf(x.debtor) }) : t('my.waiting', { name: nameOf(x.creditor) })}` : '';
+      const acts =
+        isOpen && instPay.pendConf && x.creditor === viewer ? (
+          <>
+            {small(t('pay.notRecv'), () => flow.disputePayment(instPay), 'ghost')}
+            {small(t('pay.confirmShort'), () => flow.confirmPayment(instPay), 'primary')}
+          </>
+        ) : undefined;
+      return resolved(key, icon, e.name, `${paidText(x.debtor, x.creditor)} · ${day} · ${when(instPay.when)}${proofNote(instPay.proof)}${wait}`, x.share, camera, isOpen ? () => flow.undoPayment(instPay) : null, acts);
+    }
     if (x.state === 'paid' && x.via) {
       // Paga num acerto (modo detalhado): "Paga no acerto" ou "Compensada no acerto"; Desfazer desfaz o acerto.
       const p = payments.find((q) => q.id === x.via);
       const label = p?.from === x.debtor ? t('expense.detail.paidSettle') : t('expense.detail.offsetSettle');
       const note = `${debtText(x.debtor, x.creditor, true)} · ${label}${x.paidAt ? ` · ${when(x.paidAt)}` : ''}`;
-      return resolved(`s-${e.id}`, icon, e.name, note, x.share, null, isOpen && p ? () => flow.undoSettlement(p, coveredExpenses(p, expenses)) : null);
+      return resolved(key, icon, e.name, x.inst ? `${note} · ${day}` : note, x.share, null, isOpen && p ? () => flow.undoSettlement(p, coveredExpenses(p, expenses)) : null);
     }
     if (x.state === 'paid') {
       // Parte paga: as duas pessoas ou admin desfazem e anexam (spec 04). No simplificado, comprovante só no acerto.
@@ -213,18 +229,21 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
             {small(t('pay.confirmShort'), () => flow.confirm(e, x.debtor), 'primary')}
           </>
         ) : undefined;
-      return resolved(`s-${e.id}`, icon, e.name, `${paidText(x.debtor, x.creditor)} · ${x.paidAt ? when(x.paidAt) : day}${proofNote(proof)}${wait}`, x.share, camera, isOpen ? () => flow.unmark(e, x.debtor) : null, acts);
+      // Parcelada (detalhado): a parte é acumulada, então só a última parcela paga se desfaz.
+      const undo = !isOpen || (x.inst && !x.inst.last) ? null : x.inst ? () => flow.unmark(e, x.debtor, x.inst!.n > 1 ? x.inst!.n - 1 : undefined) : () => flow.unmark(e, x.debtor);
+      const note = x.inst ? `${paidText(x.debtor, x.creditor)} · ${day}${x.paidAt && x.inst.last ? ` · ${when(x.paidAt)}` : ''}` : `${paidText(x.debtor, x.creditor)} · ${x.paidAt ? when(x.paidAt) : day}`;
+      return resolved(key, icon, e.name, `${note}${proofNote(proof)}${wait}`, x.share, x.inst && !x.inst.last ? null : camera, undo, x.inst && !x.inst.last ? undefined : acts);
     }
     const owe = x.debtor === viewer;
     const tone = x.state === 'offset' ? 'zero' : owe ? 'neg' : 'pos';
     return (
-      <div key={`s-${e.id}`} className="pcentry">
+      <div key={key} className="pcentry">
         <div className="pcline">
           {icon}
           <span className="mid">
             <span className="ttl">{e.name}</span>
             <span className="cap" style={{ whiteSpace: 'normal' }}>
-              {debtText(x.debtor, x.creditor, x.state === 'offset')} · {e.installments ? planWhen(e, x.debtor) : day}
+              {debtText(x.debtor, x.creditor, x.state === 'offset')} · {day}
               {x.state === 'offset' && (
                 <>
                   {' · '}
@@ -240,7 +259,16 @@ export function MyViewTab({ split, me, expenses, payments, flow }: Props) {
             <span className={`amt strong ${tone}`}>{signed(owe ? -x.due : x.due)}</span>
           </span>
         </div>
-        {isOpen && !simple && x.state === 'open' && <div className="pcact">{owe ? small(t('pay.markPaid'), () => flow.markShare(e, viewer)) : small(t('pay.gotIt'), () => flow.markShare(e, c.other))}</div>}
+        {/* Parcela: só a primeira em aberto se paga (nos dois modos); despesa comum, só no detalhado. */}
+        {isOpen && x.state === 'open' && (x.inst ? x.inst.first : !simple) && (
+          <div className="pcact">
+            {x.inst
+              ? small(owe ? t('pay.markPaid') : t('pay.gotIt'), () => flow.payInst(e, x.debtor, x.inst!.n, x.due))
+              : owe
+                ? small(t('pay.markPaid'), () => flow.markShare(e, viewer))
+                : small(t('pay.gotIt'), () => flow.markShare(e, c.other))}
+          </div>
+        )}
       </div>
     );
   };

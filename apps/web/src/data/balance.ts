@@ -1,5 +1,5 @@
-import { dueCount, installmentDates, ledger, type Cents, type MemberId } from '@qpq/calc';
-import { dueSharesOf, membersInOrder, orderOf, today, type ExpenseDoc, type PaymentDoc, type SplitDoc } from './model.ts';
+import { dueCount, installmentDates, ledger, splitInstallments, sumThrough, type Cents, type MemberId } from '@qpq/calc';
+import { dueSharesOf, membersInOrder, orderOf, payModeOf, sharesOf, today, type ExpenseDoc, type PaymentDoc, type SplitDoc } from './model.ts';
 
 /**
  * Meu saldo (spec 06, revista em 24/10/2026): um cartão por pessoa do split com o saldo do par
@@ -33,6 +33,12 @@ export type PairEntry =
       paidAt: Date | null;
       /** Paga num acerto do Meu saldo (modo detalhado): o id do acerto. */
       via: string | null;
+      /**
+       * Parcelada (spec 05): uma entrada por parcela que está no saldo. `payment`: o acerto daquela
+       * parcela (modo simplificado). `first`: a primeira ainda não paga (a que se paga agora);
+       * `last`: a última paga (a que se desfaz).
+       */
+      inst?: { n: number; of: number; date: string; payment: PaymentDoc | null; first: boolean; last: boolean };
     }
   | { kind: 'payment'; payment: PaymentDoc; out: boolean };
 
@@ -62,7 +68,7 @@ const dayMs = (ymd: string) => new Date(`${ymd}T12:00:00`).getTime();
 
 function entryTime(e: PairEntry): number {
   if (e.kind === 'payment') return e.payment.when?.getTime() ?? Infinity;
-  return dayMs(e.expense.date) + (e.expense.createdAt?.getTime() ?? 0) / 1e13;
+  return dayMs(e.expense.date) + (e.expense.createdAt?.getTime() ?? 0) / 1e13 + (e.inst?.n ?? 0) / 1e3;
 }
 
 export function pairsView(split: SplitDoc, expenses: readonly ExpenseDoc[], payments: readonly PaymentDoc[], viewer: MemberId): PairsView {
@@ -79,6 +85,10 @@ export function pairsView(split: SplitDoc, expenses: readonly ExpenseDoc[], paym
     for (const e of expenses) {
       const pair = e.payer === viewer ? o : e.payer === o ? viewer : null;
       if (!pair) continue;
+      if (e.installments) {
+        entries.push(...installmentEntries(split, e, pair, payments, day, openFor(pair)));
+        continue;
+      }
       const share = dueSharesOf(e, split)[pair] ?? 0;
       if (share <= 0) continue;
       const paid = e.paid[pair] ?? 0;
@@ -100,6 +110,8 @@ export function pairsView(split: SplitDoc, expenses: readonly ExpenseDoc[], paym
     for (const p of payments) {
       // Acerto antigo incorporado por um acerto do modo detalhado: aparece só o acerto que o incorporou.
       if (p.absorbedBy) continue;
+      // Acerto de uma parcela aparece na linha da parcela.
+      if (p.inst) continue;
       if (p.from === viewer && p.to === o) entries.push({ kind: 'payment', payment: p, out: true });
       else if (p.from === o && p.to === viewer) entries.push({ kind: 'payment', payment: p, out: false });
     }
@@ -127,4 +139,42 @@ export function pairsView(split: SplitDoc, expenses: readonly ExpenseDoc[], paym
 /** Partes que quem pagou a despesa ainda precisa conferir ("1 pagamento p/ conferir"). */
 export function pendingChecks(e: ExpenseDoc): number {
   return Object.entries(e.pendConf).filter(([id, v]) => v && (e.paid[id] ?? 0) > 0).length;
+}
+
+/**
+ * Parcelada (spec 05): uma entrada por parcela que está no saldo de `debtor` (vencidas, a próxima e
+ * as antecipadas). Paga: no detalhado, pela parte acumulada; no simplificado, pelo acerto daquela
+ * parcela. Só a primeira em aberto se paga agora e só a última paga se desfaz.
+ */
+function installmentEntries(split: SplitDoc, e: ExpenseDoc, debtor: MemberId, payments: readonly PaymentDoc[], day: string, open: boolean): PairEntry[] {
+  const plan = e.installments!;
+  const full = sharesOf(e, split)[debtor] ?? 0;
+  if (full <= 0) return [];
+  const dates = installmentDates(plan);
+  const parts = splitInstallments(full, plan.count);
+  const detailed = payModeOf(split) === 'detailed';
+  const out: Array<PairEntry & { kind: 'share' }> = [];
+  let firstOpen = true;
+  for (let n = 1; n <= dueCount(e, debtor, day); n++) {
+    const payment = detailed ? null : (payments.find((p) => p.from === debtor && p.to === e.payer && p.inst?.e === e.id && p.inst.n === n) ?? null);
+    const paid = detailed ? (e.paid[debtor] ?? 0) >= sumThrough(full, plan.count, n) : !!payment;
+    const at = detailed ? e.paidAt?.[debtor] : null;
+    out.push({
+      kind: 'share',
+      expense: e,
+      debtor,
+      creditor: e.payer,
+      share: parts[n - 1]!,
+      due: paid ? 0 : parts[n - 1]!,
+      state: paid ? 'paid' : open ? 'open' : 'offset',
+      pending: paid && (detailed ? !!e.pendConf[debtor] : !!payment?.pendConf),
+      paidAt: payment ? payment.when : at ? new Date(at) : null,
+      via: detailed && paid ? (e.via?.[debtor] ?? null) : null,
+      inst: { n, of: plan.count, date: dates[n - 1]!, payment, first: !paid && firstOpen, last: false },
+    });
+    if (!paid) firstOpen = false;
+  }
+  const lastPaid = out.filter((x) => x.state === 'paid').at(-1);
+  if (lastPaid?.inst) lastPaid.inst.last = true;
+  return out;
 }

@@ -1,6 +1,6 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { onCall } from 'firebase-functions/v2/https';
-import { dueShares } from '@qpq/calc';
+import { dueCount, dueShares, shares, splitInstallments, sumThrough, type Expense as CalcExpense } from '@qpq/calc';
 import {
   coverPath,
   PAY_MODES,
@@ -51,6 +51,17 @@ async function loadShare(tx: FirebaseFirestore.Transaction, data: Record<string,
   return { splitId, split, me, ref, e, id, share, iAmPayer, paid: e.paid?.[id] ?? 0, pending: !!e.pendConf?.[id], proof: e.proof?.[id], via };
 }
 
+/**
+ * Até quanto marcar: tudo o que já conta da parte, ou, numa parcelada, só até a parcela `upTo`
+ * (a vencida, sem a próxima; spec 05).
+ */
+function targetOf(s: Awaited<ReturnType<typeof loadShare>>, upTo: unknown): number {
+  if (upTo === undefined) return s.share;
+  const plan = s.e.installments;
+  if (!plan || typeof upTo !== 'number' || !Number.isInteger(upTo) || upTo < 1 || upTo > dueCount(s.e, s.id, today())) return fail('invalid-input');
+  return sumThrough(shares(s.e, orderOf(s.split))[s.id] ?? 0, plan.count, upTo);
+}
+
 /** No modo simplificado não se paga por despesa (spec 06). */
 function requireDetailed(split: SplitData): void {
   if (payModeOf(split) === 'simple') fail('mode-simple');
@@ -88,23 +99,24 @@ export const markShare = onCall(opts, async (req): Promise<PayWriteResponse> => 
     const s = await loadShare(tx, data, uid);
     requireShareActor(s.me, s.e.payer, s.id);
     requireDetailed(s.split);
+    const target = targetOf(s, data.upTo);
     // Já paga: só "Recebi" de quem pagou ainda muda algo (tira a pendência).
-    if (s.paid >= s.share && !(s.iAmPayer && s.pending)) return s.e.paySeq ?? 0;
+    if (s.paid >= target && !(s.iAmPayer && s.pending)) return s.e.paySeq ?? 0;
     const notes = await findShare(tx, s.splitId, s.ref.id, s.id);
     // "Recebi" de quem pagou confirma o aviso e resolve contestações antigas (spec 07).
     if (s.iAmPayer) setStatus(tx, notes, ['new', 'disputed'], 'confirmed');
     // Só quem marca a própria parte avisa quem pagou.
-    else if (s.me[0] === s.id) notify(tx, s.splitId, s.split, s.e.payer, { kind: 'paid', from: s.id, amount: s.share, expId: s.ref.id, expName: s.e.name as string, memberId: s.id });
+    else if (s.me[0] === s.id) notify(tx, s.splitId, s.split, s.e.payer, { kind: 'paid', from: s.id, amount: Math.max(0, target - s.paid) || target, expId: s.ref.id, expName: s.e.name as string, memberId: s.id });
     return payWrite(
       tx,
       s.ref,
       s.e,
       // Quem recebe marcando já está confirmando: sem pendência (spec 06).
       {
-        [`paid.${s.id}`]: Math.max(s.paid, s.share),
+        [`paid.${s.id}`]: Math.max(s.paid, target),
         [`pendConf.${s.id}`]: s.iAmPayer ? FieldValue.delete() : true,
         // Hora do pagamento (linha "Resolvido · …" no Saldo); "Recebi" sobre parte já paga não muda.
-        ...(s.paid < s.share ? { [`paidAt.${s.id}`]: Date.now() } : {}),
+        ...(s.paid < target ? { [`paidAt.${s.id}`]: Date.now() } : {}),
       },
       { kind: s.iAmPayer ? 'received' : 'paid', by: s.me[0], memberId: s.id },
     );
@@ -141,6 +153,12 @@ export const unmarkShare = onCall(opts, async (req): Promise<PayWriteResponse> =
         // O `paySeq` desta despesa sobe junto com as outras que o acerto cobria.
         return (s.e.paySeq ?? 0) + 1;
       }
+    }
+    // Parcelada: desfazer só as parcelas depois de `upTo` (as anteriores continuam pagas, spec 05).
+    const keep = typeof data.upTo === 'number' && data.upTo >= 1 && s.e.installments ? targetOf(s, data.upTo) : 0;
+    if (keep > 0) {
+      if (s.paid <= keep) return s.e.paySeq ?? 0;
+      return payWrite(tx, s.ref, s.e, { [`paid.${s.id}`]: keep }, { kind: 'unpaid', by: s.me[0], memberId: s.id });
     }
     const notes = await findShare(tx, s.splitId, s.ref.id, s.id);
     // Quem desfaz o próprio pagamento tira o aviso que ainda esperava confirmação.
@@ -221,7 +239,11 @@ export const createPayment = onCall(opts, async (req): Promise<CreatePaymentResp
       expenses: expenses.docs.filter((d) => !d.get('deletedAt')).map((d) => d.data() as Expense),
       payments: payments.docs.map((d) => d.data() as Payment),
     };
-    const amount = ledgerOf(split, money).M[from]?.[to] ?? 0;
+    const owed = ledgerOf(split, money).M[from]?.[to] ?? 0;
+    // Uma parcela só (modo simplificado, spec 05): o valor dela, se ainda não foi paga.
+    const inst = data.inst === undefined ? null : instOf(split, expenses.docs, payments.docs, from, to, data.inst);
+    const amount = inst ? inst.amount : owed;
+    if (inst && inst.amount > owed) fail('invalid-input');
     if (amount <= 0) return { amount: 0 };
     // Quem recebe registrando já está confirmando; senão, fica esperando a confirmação (como na parte).
     const pendConf = me[0] !== to;
@@ -229,7 +251,7 @@ export const createPayment = onCall(opts, async (req): Promise<CreatePaymentResp
     const detailed = payModeOf(split) === 'detailed';
     const open = detailed ? openShares(split, expenses.docs, from, to) : [];
     const legacy = detailed ? legacyOf(payments.docs, from, to) : [];
-    tx.create(ref, { from, to, amount, by: me[0], when: FieldValue.serverTimestamp(), proof: null, pendConf, ...(detailed ? coversOf(open, legacy) : {}) });
+    tx.create(ref, { from, to, amount, by: me[0], when: FieldValue.serverTimestamp(), proof: null, pendConf, ...(inst ? { inst: inst.ref } : {}), ...(detailed ? coversOf(open, legacy) : {}) });
     if (detailed) await writeCovers(tx, open, legacy, ref.id, me[0], pendConf ? from : null);
     touchMoney(tx, splitRef);
     // Avisa a outra pessoa do acerto (as duas, se quem registrou foi um admin de fora).
@@ -237,6 +259,24 @@ export const createPayment = onCall(opts, async (req): Promise<CreatePaymentResp
     return { amount };
   });
 });
+
+/**
+ * Acerto de uma parcela (modo simplificado): `from` deve a parcela `n` de uma despesa parcelada
+ * paga por `to`, que já conta no saldo (vencida, próxima ou antecipada) e ainda não foi paga.
+ */
+function instOf(split: SplitData, expenses: readonly FirebaseFirestore.DocumentSnapshot[], payments: readonly FirebaseFirestore.DocumentSnapshot[], from: string, to: string, raw: unknown) {
+  if (payModeOf(split) === 'detailed' || !raw || typeof raw !== 'object') return fail('invalid-input');
+  const { expenseId, n } = raw as { expenseId?: unknown; n?: unknown };
+  const doc = expenses.find((d) => d.id === expenseId);
+  const e = doc?.data() as (CalcExpense & { deletedAt?: unknown }) | undefined;
+  if (!doc || !e || e.deletedAt || !e.installments || e.payer !== to) return fail('invalid-input');
+  if (typeof n !== 'number' || !Number.isInteger(n) || n < 1 || n > dueCount(e, from, today())) return fail('invalid-input');
+  const share = shares(e, orderOf(split))[from] ?? 0;
+  if (share <= 0) return fail('invalid-input');
+  const paid = payments.some((p) => p.get('from') === from && p.get('inst')?.e === doc.id && p.get('inst')?.n === n);
+  if (paid) return fail('invalid-input');
+  return { ref: { e: doc.id, n }, amount: splitInstallments(share, e.installments.count)[n - 1]! };
+}
 
 /** Desfazer acerto: as duas pessoas ou admin. */
 export const deletePayment = onCall(opts, async (req) => {

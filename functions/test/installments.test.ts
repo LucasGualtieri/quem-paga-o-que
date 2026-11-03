@@ -163,6 +163,68 @@ describe('notifyDueAt (aviso de vencimento)', () => {
   });
 });
 
+describe('pagar parcela por parcela (29/10/2026)', () => {
+  it('detalhado: marcar só até a parcela 1, mesmo com a 2 já no saldo', async () => {
+    const w = await world('detailed');
+    const id = await create(w.bia, w, airbnb(w, monthsFromNow(0)));
+    await w.lucas.call('markShare', { splitId: w.splitId, expenseId: id, memberId: w.eu, upTo: 1 });
+    expect(((await exp(w, id)).paid as Record<string, number>)[w.eu]).toBe(10000);
+    // A 3ª ainda não conta: não dá para pagar até ela.
+    expect(await reasonOf(w.lucas.call('markShare', { splitId: w.splitId, expenseId: id, memberId: w.eu, upTo: 3 }))).toBe('invalid-input');
+    await w.lucas.call('markShare', { splitId: w.splitId, expenseId: id, memberId: w.eu, upTo: 2 });
+    expect(((await exp(w, id)).paid as Record<string, number>)[w.eu]).toBe(20000);
+    // Desfazer só a parcela 2: a 1 continua paga.
+    await w.lucas.call('unmarkShare', { splitId: w.splitId, expenseId: id, memberId: w.eu, upTo: 1 });
+    expect(((await exp(w, id)).paid as Record<string, number>)[w.eu]).toBe(10000);
+  });
+
+  it('simplificado: acerto de uma parcela, com o valor dela, uma vez só', async () => {
+    const w = await world();
+    const id = await create(w.bia, w, airbnb(w, monthsFromNow(0)));
+    const pid = newId();
+    expect(await w.lucas.call('createPayment', { splitId: w.splitId, id: pid, from: w.eu, to: w.beatriz, inst: { expenseId: id, n: 1 } })).toEqual({ amount: 10000 });
+    expect((await admin().doc(`splits/${w.splitId}/payments/${pid}`).get()).data()).toMatchObject({ amount: 10000, inst: { e: id, n: 1 } });
+    // De novo a mesma parcela, uma que ainda não conta, ou no sentido errado: recusa.
+    expect(await reasonOf(w.lucas.call('createPayment', { splitId: w.splitId, id: newId(), from: w.eu, to: w.beatriz, inst: { expenseId: id, n: 1 } }))).toBe('invalid-input');
+    expect(await reasonOf(w.lucas.call('createPayment', { splitId: w.splitId, id: newId(), from: w.eu, to: w.beatriz, inst: { expenseId: id, n: 3 } }))).toBe('invalid-input');
+    expect(await reasonOf(w.bia.call('createPayment', { splitId: w.splitId, id: newId(), from: w.beatriz, to: w.eu, inst: { expenseId: id, n: 2 } }))).toBe('invalid-input');
+    // O acerto do par paga o resto que conta (a parcela 2).
+    expect(await w.lucas.call('createPayment', { splitId: w.splitId, id: newId(), from: w.eu, to: w.beatriz })).toEqual({ amount: 10000 });
+  });
+
+  it('acerto de parcela não existe no modo detalhado', async () => {
+    const w = await world('detailed');
+    const id = await create(w.bia, w, airbnb(w, monthsFromNow(0)));
+    expect(await reasonOf(w.lucas.call('createPayment', { splitId: w.splitId, id: newId(), from: w.eu, to: w.beatriz, inst: { expenseId: id, n: 1 } }))).toBe('invalid-input');
+  });
+});
+
+describe('desfazer antecipação', () => {
+  it('as antecipadas voltam ao calendário', async () => {
+    const w = await world();
+    const id = await create(w.bia, w, airbnb(w, monthsFromNow(1)));
+    await w.lucas.call('advanceInstallments', { splitId: w.splitId, expenseId: id, memberId: w.eu, all: true });
+    expect(await w.lucas.call('advanceInstallments', { splitId: w.splitId, expenseId: id, memberId: w.eu, undo: true })).toEqual({ advanced: 1 });
+    expect((await exp(w, id)).advanced).toEqual({});
+    // Sem nada antecipado, desfazer não muda nada.
+    expect(await w.lucas.call('advanceInstallments', { splitId: w.splitId, expenseId: id, memberId: w.eu, undo: true })).toEqual({ advanced: 1 });
+  });
+
+  it('parcela antecipada já paga bloqueia (detalhado: pela parte; simplificado: pelo acerto da parcela)', async () => {
+    const d = await world('detailed');
+    const id = await create(d.bia, d, airbnb(d, monthsFromNow(1)));
+    await d.lucas.call('advanceInstallments', { splitId: d.splitId, expenseId: id, memberId: d.eu, all: true });
+    await d.lucas.call('markShare', { splitId: d.splitId, expenseId: id, memberId: d.eu });
+    expect(await reasonOf(d.lucas.call('advanceInstallments', { splitId: d.splitId, expenseId: id, memberId: d.eu, undo: true }))).toBe('installment-paid');
+
+    const s = await world();
+    const id2 = await create(s.bia, s, airbnb(s, monthsFromNow(1)));
+    await s.lucas.call('advanceInstallments', { splitId: s.splitId, expenseId: id2, memberId: s.eu, all: true });
+    await s.lucas.call('createPayment', { splitId: s.splitId, id: newId(), from: s.eu, to: s.beatriz, inst: { expenseId: id2, n: 3 } });
+    expect(await reasonOf(s.lucas.call('advanceInstallments', { splitId: s.splitId, expenseId: id2, memberId: s.eu, undo: true }))).toBe('installment-paid');
+  });
+});
+
 describe('finalização automática com parcelas', () => {
   it('não finaliza enquanto houver parcela a vencer', async () => {
     const w = await world();

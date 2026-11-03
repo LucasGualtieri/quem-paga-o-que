@@ -1,6 +1,6 @@
 import { FieldValue, type DocumentReference, type DocumentSnapshot, type Transaction } from 'firebase-admin/firestore';
 import { dueShares, type Expense } from '@qpq/calc';
-import type { ProofInfo } from '@qpq/shared';
+import type { PaymentInst, ProofInfo } from '@qpq/shared';
 import { orderOf, today, touchMoney, type SplitData } from './common.ts';
 import { addHistory } from './expenses.ts';
 import { unregister } from './proofs.ts';
@@ -39,6 +39,8 @@ export interface StoredPayment {
   /** Acertos antigos (do modo simplificado) do mesmo par que este acerto incorporou. */
   absorbs?: string[];
   absorbedBy?: string;
+  /** Acerto de uma parcela só (modo simplificado, spec 05). */
+  inst?: PaymentInst;
 }
 
 type ExpenseData = Expense & { version: number; paySeq?: number; deletedAt?: unknown; via?: Record<string, string>; pendConf?: Record<string, boolean>; proof?: Record<string, ProofInfo | null> };

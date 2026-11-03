@@ -164,7 +164,7 @@ export function requireEditor(split: SplitData, uid: string, authorId: string): 
   return me;
 }
 
-export type HistoryKind = 'created' | 'edited' | 'deleted' | 'restored' | 'paid' | 'received' | 'unpaid' | 'confirmed' | 'disputed' | 'proof' | 'settled' | 'advanced';
+export type HistoryKind = 'created' | 'edited' | 'deleted' | 'restored' | 'paid' | 'received' | 'unpaid' | 'confirmed' | 'disputed' | 'proof' | 'settled' | 'advanced' | 'unadvanced';
 
 /** Entrada do Histórico; nas de pagamento, `memberId` é de quem é a parte. */
 export async function addHistory(

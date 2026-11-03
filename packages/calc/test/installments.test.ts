@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dueCount, dueShares, installmentDates, isValidPlan, ledger, splitInstallments, validateExpense, type Expense } from '../src/index.ts';
+import { dueCount, dueShares, installmentDates, isValidPlan, ledger, splitInstallments, sumThrough, validateExpense, type Expense } from '../src/index.ts';
 import { order } from './fixtures.ts';
 
 // Airbnb R$ 2.500,00 em 4x, pago pela Beatriz e dividido igualmente entre os quatro.
@@ -25,6 +25,15 @@ describe('splitInstallments', () => {
     expect(splitInstallments(62500, 4)).toEqual([15625, 15625, 15625, 15625]);
     expect(splitInstallments(1000, 3)).toEqual([334, 333, 333]);
     expect(splitInstallments(0, 2)).toEqual([0, 0]);
+  });
+});
+
+describe('sumThrough', () => {
+  it('soma as k primeiras parcelas (com o centavo extra da primeira)', () => {
+    expect(sumThrough(1000, 3, 1)).toBe(334);
+    expect(sumThrough(1000, 3, 2)).toBe(667);
+    expect(sumThrough(1000, 3, 3)).toBe(1000);
+    expect(sumThrough(1000, 3, 0)).toBe(0);
   });
 });
 

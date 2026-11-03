@@ -168,5 +168,23 @@ export function useExpenseActions(split: SplitDoc, me: Member) {
     [splitId, toast, t, fail],
   );
 
-  return { create, update, remove, removeMany, duplicate, advance, restore: (e: ExpenseDoc) => mark(e, false) };
+  /** "Desfazer antecipação": as parcelas antecipadas de `memberId` voltam ao calendário. */
+  const undoAdvance = useCallback(
+    (e: ExpenseDoc, memberId: string) => {
+      const { [memberId]: _gone, ...advanced } = e.advanced ?? {};
+      const doc: ExpenseDoc = { ...e, advanced, version: e.version + 1 };
+      const undo = startOp({ splitId, doc });
+      enqueue(e.id, () => api.advanceInstallments({ splitId, expenseId: e.id, memberId, undo: true })).then(
+        () => confirmOp(e.id, e.version + 1),
+        (error) => {
+          undo();
+          fail(error);
+        },
+      );
+      toast.show({ text: t('expense.plan.undone') });
+    },
+    [splitId, toast, t, fail],
+  );
+
+  return { create, update, remove, removeMany, duplicate, advance, undoAdvance, restore: (e: ExpenseDoc) => mark(e, false) };
 }

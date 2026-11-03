@@ -115,6 +115,7 @@ function Body({ split, me, doc, expenses, payments }: { split: SplitDoc; me: Mem
     if (h.kind === 'created') return t('expense.detail.hCreated', { name, amount: fmt(h.to ?? doc.amount) });
     if (h.kind === 'edited') return h.from !== undefined && h.to !== undefined ? t('expense.detail.hEditedAmount', { name, from: fmt(h.from), to: fmt(h.to) }) : t('expense.detail.hEdited', { name });
     if (h.kind === 'deleted') return t('expense.detail.hDeleted', { name });
+    if (h.kind === 'unadvanced') return h.by === h.memberId ? t('expense.plan.hUndone', { name }) : t('expense.plan.hUndoneFor', { name, who: whoName });
     if (h.kind === 'advanced') return h.by === h.memberId ? t('expense.plan.hAdvanced', { name, count: h.to ?? 0 }) : t('expense.plan.hAdvancedFor', { name, who: whoName, count: h.to ?? 0 });
     return t('expense.detail.hRestored', { name });
   };
@@ -321,7 +322,7 @@ function Body({ split, me, doc, expenses, payments }: { split: SplitDoc; me: Mem
           </div>
         </section>
 
-        {doc.installments && <PlanSection split={split} me={me} doc={doc} fmt={fmt} onAdvance={actions.advance} />}
+        {doc.installments && <PlanSection split={split} me={me} doc={doc} fmt={fmt} onAdvance={actions.advance} onUndoAdvance={actions.undoAdvance} />}
 
         {doc.mode === 'items' && (doc.items?.length ?? 0) > 0 && (
           <section>

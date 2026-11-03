@@ -36,6 +36,13 @@ export function splitInstallments(share: Cents, count: number): Cents[] {
   return Array.from({ length: count }, (_, i) => base + (i === 0 ? share - base * count : 0));
 }
 
+/** Quanto somam as `k` primeiras parcelas de uma parte (o que fica pago ao pagar até a parcela `k`). */
+export function sumThrough(share: Cents, count: number, k: number): Cents {
+  return splitInstallments(share, count)
+    .slice(0, k)
+    .reduce((s, x) => s + x, 0);
+}
+
 /** Plano válido: de 2 a MAX_INSTALLMENTS parcelas e primeira data no formato AAAA-MM-DD. */
 export function isValidPlan(plan: Installments): boolean {
   return Number.isInteger(plan.count) && plan.count >= 2 && plan.count <= MAX_INSTALLMENTS && YMD.test(plan.first) && installmentDates(plan)[0] === plan.first;
@@ -64,10 +71,7 @@ export function dueShares(expense: Expense, order: JoinOrder, today?: string): S
   if (!plan || today === undefined) return full;
   const out: Shares = {};
   for (const [id, v] of Object.entries(full)) {
-    const n = dueCount(expense, id, today);
-    out[id] = splitInstallments(v, plan.count)
-      .slice(0, n)
-      .reduce((s, x) => s + x, 0);
+    out[id] = sumThrough(v, plan.count, dueCount(expense, id, today));
   }
   return out;
 }

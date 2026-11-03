@@ -13,7 +13,7 @@ import { useWho } from './common.tsx';
  * próxima ou todas. Pode antecipar a própria pessoa, quem pagou a despesa ou um admin, com o
  * split aberto.
  */
-export function PlanSection({ split, me, doc, fmt, onAdvance }: { split: SplitDoc; me: Member; doc: ExpenseDoc; fmt: (c: number) => string; onAdvance: (e: ExpenseDoc, memberId: string, all: boolean) => void }) {
+export function PlanSection({ split, me, doc, fmt, onAdvance, onUndoAdvance }: { split: SplitDoc; me: Member; doc: ExpenseDoc; fmt: (c: number) => string; onAdvance: (e: ExpenseDoc, memberId: string, all: boolean) => void; onUndoAdvance: (e: ExpenseDoc, memberId: string) => void }) {
   const { t } = useTranslation();
   const lang = useLang();
   const who = useWho(split, me);
@@ -64,7 +64,11 @@ export function PlanSection({ split, me, doc, fmt, onAdvance }: { split: SplitDo
             const n = dueCount(doc, m.id, day);
             const mine = splitInstallments(sh[m.id] ?? 0, plan.count);
             const left = mine.slice(n).reduce((s, x) => s + x, 0);
-            const can = isOpen && n < plan.count && (m.id === me.id || doc.payer === me.id || me.admin);
+            // Antecipar e desfazer: a própria pessoa, quem pagou ou admin, com o split aberto.
+            const allowed = isOpen && (m.id === me.id || doc.payer === me.id || me.admin);
+            const can = allowed && n < plan.count;
+            // Antecipadas além das vencidas e da próxima: dá para devolvê-las ao calendário.
+            const undo = allowed && (doc.advanced?.[m.id] ?? 0) > dueCount({ installments: plan }, m.id, day);
             return (
               <div key={m.id} className="row2">
                 <div className="top">
@@ -74,16 +78,23 @@ export function PlanSection({ split, me, doc, fmt, onAdvance }: { split: SplitDo
                     <span className="cap amt">{n < plan.count ? t('expense.plan.counted', { n, count: plan.count, left: fmt(left) }) : t('expense.plan.allCounted')}</span>
                   </span>
                 </div>
-                {can && (
+                {(can || undo) && (
                   <div className="acts end">
-                    {n + 1 < plan.count && (
+                    {undo && (
+                      <Button size="sm" variant="ghost" onClick={() => onUndoAdvance(doc, m.id)}>
+                        {t('expense.plan.undoAdvance')}
+                      </Button>
+                    )}
+                    {can && n + 1 < plan.count && (
                       <Button size="sm" variant="ghost" onClick={() => onAdvance(doc, m.id, true)}>
                         {t('expense.plan.advanceAll', { amount: fmt(left) })}
                       </Button>
                     )}
-                    <Button size="sm" variant="secondary" onClick={() => onAdvance(doc, m.id, false)}>
-                      {t('expense.plan.advanceNext', { amount: fmt(mine[n]!) })}
-                    </Button>
+                    {can && (
+                      <Button size="sm" variant="secondary" onClick={() => onAdvance(doc, m.id, false)}>
+                        {t('expense.plan.advanceNext', { amount: fmt(mine[n]!) })}
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>
