@@ -9,7 +9,7 @@ A notificação principal é uma só: "Beatriz pagou R$ 40,00 pra você", enviad
 | Alguém marca a própria parte como paga | Quem pagou a despesa (é a notificação da lista, com botões de confirmar) |
 | Alguém registra um acerto pelo cartão do Meu saldo | A outra pessoa do acerto (quem recebe confirma ou diz "Não recebi"; "Não recebi" avisa quem pagou) |
 | Alguém envia comprovante depois | A outra pessoa do pagamento |
-| Quem recebe toca "Não recebi" | Quem marcou que pagou ("o pagamento não chegou") |
+| Quem recebe toca "Não recebi" | Quem marcou que pagou ("o pagamento não chegou"). Se foi um admin pelo "Ver como" de quem recebe: "Lucas registrou que Beatriz não recebeu R$ 171,25"; quem fez a ação nunca é avisado de si mesmo (03/11/2026) |
 | Quem deve toca "Pedir chave Pix" | A pessoa sem chave ("Beatriz quer te pagar por Pix"; abre o Meu saldo do split com a folha da chave aberta). Some do sino quando ela cadastra a chave |
 | Quem pediu a chave vê a pessoa cadastrar | Quem pediu ("Lucas cadastrou a chave Pix"; abre o Meu saldo do split) |
 | Vence uma parcela de despesa parcelada e a seguinte entra no saldo (rotina de hora em hora) | Quem deve aquela parte, menos quem já antecipou ("Parcela 2 de 4 de “Airbnb” entrou no saldo · +R$ 156,25 para Beatriz · vence 2 dez"; abre a despesa) |

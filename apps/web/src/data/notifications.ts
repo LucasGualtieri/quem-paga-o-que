@@ -77,7 +77,12 @@ export function viewOf(n: NotificationDoc, t: T, name: (id: string | null) => st
     case 'proof':
       return { title: t('notif.proof', { name: from }), sub: `${what} · ${n.splitName} · ${amount}`, to };
     case 'disputed':
-      return { title: t('notif.disputed', { name: from, amount }), sub: `${what} · ${n.splitName}`, to };
+      // Admin agindo por quem recebe: "Lucas registrou que Beatriz não recebeu…".
+      return {
+        title: n.payTo && n.from !== n.payTo ? t('notif.adminDisputed', { name: from, who: name(n.payTo), amount }) : t('notif.disputed', { name: from, amount }),
+        sub: `${what} · ${n.splitName}`,
+        to,
+      };
     case 'autoFinalized':
       return { title: t('notif.autoFinalized', { split: n.splitName }), sub: t('notif.autoFinalizedSub'), to: `/s/${n.splitId}` };
     case 'pixRequested':

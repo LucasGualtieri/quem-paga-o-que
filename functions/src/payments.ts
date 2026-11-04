@@ -195,7 +195,9 @@ export const disputeShare = onCall(opts, async (req): Promise<PayWriteResponse> 
     if (!s.pending) fail('not-pending');
     setStatus(tx, await findShare(tx, s.splitId, s.ref.id, s.id), ['new'], 'disputed');
     // Avisa quem marcou que pagou: "o pagamento não chegou".
-    notify(tx, s.splitId, s.split, s.id, { kind: 'disputed', from: s.me[0], amount: s.share, expId: s.ref.id, expName: s.e.name as string, memberId: s.id });
+    // Avisa quem marcou que pagou (menos se foi quem fez a ação); `payTo` diz quem não recebeu,
+    // para o texto certo quando foi um admin agindo por ela.
+    if (s.id !== s.me[0]) notify(tx, s.splitId, s.split, s.id, { kind: 'disputed', from: s.me[0], amount: s.share, expId: s.ref.id, expName: s.e.name as string, memberId: s.id, payTo: s.e.payer });
     file = s.proof?.path ?? null;
     return payWrite(tx, s.ref, s.e, clearShare(tx, s), { kind: 'disputed', by: s.me[0], memberId: s.id });
   });
@@ -341,7 +343,8 @@ export const disputePayment = onCall(opts, async (req) => {
   const file = await db().runTransaction(async (tx) => {
     const x = await loadPendingPayment(tx, data, uid);
     setStatus(tx, x.notes, ['new'], 'disputed');
-    notify(tx, x.splitId, x.split, x.p.from, { kind: 'disputed', from: x.me[0], amount: x.p.amount, paymentId: x.ref.id, payFrom: x.p.from, payTo: x.p.to });
+    // Avisa quem registrou o pagamento, menos se foi quem fez a ação (admin pelo "Ver como").
+    if (x.p.from !== x.me[0]) notify(tx, x.splitId, x.split, x.p.from, { kind: 'disputed', from: x.me[0], amount: x.p.amount, paymentId: x.ref.id, payFrom: x.p.from, payTo: x.p.to });
     await undoSettlement(tx, x.ref, x.p, x.read, x.me[0]);
     return x.p.proof?.path ?? null;
   });

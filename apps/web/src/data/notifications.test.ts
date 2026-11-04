@@ -54,6 +54,9 @@ describe('textos das notificações (spec 07)', () => {
     expect(viewOf({ ...base, kind: 'proof' }, t, name, money)).toMatchObject({ title: 'Beatriz enviou um comprovante', sub: 'Pizza · Ano Novo · R$ 40,00' });
     expect(viewOf({ ...base, kind: 'proof', expId: null, expName: null, paymentId: 'p1' }, t, name, money)).toMatchObject({ sub: 'Acerto de contas · Ano Novo · R$ 40,00', to: '/s/s1/saldo' });
     expect(viewOf({ ...base, kind: 'disputed', from: 'm1', fromName: 'Lucas' }, t, name, money)).toMatchObject({ title: 'Lucas avisou que não recebeu R$ 40,00', sub: 'Pizza · Ano Novo' });
+    // Quem recebe é quem avisa: o texto de sempre. Admin por ela: diz quem não recebeu.
+    expect(viewOf({ ...base, kind: 'disputed', from: 'm1', fromName: 'Lucas', payTo: 'm1' }, t, name, money).title).toBe('Lucas avisou que não recebeu R$ 40,00');
+    expect(viewOf({ ...base, kind: 'disputed', from: 'm3', fromName: 'Catarina', payTo: 'm1' }, t, name, money).title).toBe('Catarina registrou que Lucas não recebeu R$ 40,00');
   });
 
   it('split excluído: leva à explicação, mesmo sem o split na lista', () => {

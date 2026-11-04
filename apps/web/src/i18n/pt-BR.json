@@ -751,6 +751,7 @@
     "adminPaid": "{{name}} registrou que {{who}} te pagou {{amount}}",
     "adminReceived": "{{name}} registrou que você pagou {{amount}} para {{who}}",
     "proof": "{{name}} enviou um comprovante",
+    "adminDisputed": "{{name}} registrou que {{who}} não recebeu {{amount}}",
     "disputed": "{{name}} avisou que não recebeu {{amount}}",
     "settle": "Acerto de contas",
     "withProof": "com comprovante",

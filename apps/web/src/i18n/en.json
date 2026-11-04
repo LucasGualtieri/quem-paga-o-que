@@ -751,6 +751,7 @@
     "adminPaid": "{{name}} recorded that {{who}} paid you {{amount}}",
     "adminReceived": "{{name}} recorded that you paid {{who}} {{amount}}",
     "proof": "{{name}} sent a receipt",
+    "adminDisputed": "{{name}} recorded that {{who}} didn't receive {{amount}}",
     "disputed": "{{name}} says {{amount}} didn’t arrive",
     "settle": "Settle-up",
     "withProof": "with receipt",

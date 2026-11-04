@@ -396,6 +396,22 @@ describe('confirmPayment / disputePayment (acerto com confirmação)', () => {
     expect(await exists(path)).toBe(false);
     expect(await reasonOf(w.lucas.call('disputePayment', { splitId: w.splitId, paymentId: id }))).toBe('payment-missing');
   });
+
+  it('"Não recebi" de um admin por quem recebe: avisa quem pagou que foi a Beatriz quem não recebeu; quem fez a ação não é avisado', async () => {
+    const w = await world();
+    await expense(w.lucas, w, { payer: w.beatriz });
+    const notes = async (u: TestUser) => (await admin().collection('notifications').where('to', '==', u.uid).get()).docs.map((d) => d.data()).filter((n) => n.kind === 'disputed');
+    // Catarina registra que pagou a Beatriz; Lucas (admin, pelo "Ver como Beatriz") diz que ela não recebeu.
+    const cat = newId();
+    await w.cat.call('createPayment', { splitId: w.splitId, id: cat, from: w.catarina, to: w.beatriz });
+    await w.lucas.call('disputePayment', { splitId: w.splitId, paymentId: cat });
+    expect(await notes(w.cat)).toMatchObject([{ from: w.eu, payFrom: w.catarina, payTo: w.beatriz }]);
+    // O próprio Lucas pagou a Beatriz e, como admin, diz por ela que não recebeu: ninguém avisa o Lucas dele mesmo.
+    const mine = newId();
+    await w.lucas.call('createPayment', { splitId: w.splitId, id: mine, from: w.eu, to: w.beatriz });
+    await w.lucas.call('disputePayment', { splitId: w.splitId, paymentId: mine });
+    expect(await notes(w.lucas)).toEqual([]);
+  });
 });
 
 describe('modos de pagamento (spec 06)', () => {
